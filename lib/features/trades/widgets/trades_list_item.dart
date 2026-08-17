@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
@@ -60,9 +62,7 @@ class TradesListItem extends ConsumerWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         decoration: BoxDecoration(
-
           color: AppTheme.dark1,
-
           borderRadius: BorderRadius.circular(12.0),
         ),
         child: Padding(
@@ -104,11 +104,10 @@ class TradesListItem extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color:
-                                  double.tryParse(trade.premium!) != null &&
-                                          double.parse(trade.premium!) > 0
-                                      ? AppTheme.premiumPositiveChip
-                                      : AppTheme.premiumNegativeChip,
+                              color: double.tryParse(trade.premium!) != null &&
+                                      double.parse(trade.premium!) > 0
+                                  ? AppTheme.premiumPositiveChip
+                                  : AppTheme.premiumNegativeChip,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -181,17 +180,15 @@ class TradesListItem extends ConsumerWidget {
           ),
         ),
       ),
-    );
+    ).withAutomationId(AutomationIds.tradesItem(trade.orderId ?? ''));
   }
 
   Widget _buildRoleChip(BuildContext context, bool isCreator) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-
         color: isCreator ? AppTheme.createdByYouChip : AppTheme.takenByYouChip,
         borderRadius: BorderRadius.circular(12),
-
       ),
       child: Text(
         isCreator ? S.of(context)!.createdByYou : S.of(context)!.takenByYou,
@@ -214,8 +211,7 @@ class TradesListItem extends ConsumerWidget {
     String label;
 
     if (bondBadgeLabel != null) {
-      backgroundColor =
-          AppTheme.statusPendingBackground.withValues(alpha: 0.6);
+      backgroundColor = AppTheme.statusPendingBackground.withValues(alpha: 0.6);
       textColor = AppTheme.statusPendingText;
       label = bondBadgeLabel;
       return Container(
@@ -237,7 +233,6 @@ class TradesListItem extends ConsumerWidget {
 
     switch (status) {
       case Status.active:
-
         backgroundColor =
             AppTheme.statusActiveBackground.withValues(alpha: 0.3);
         textColor = AppTheme.statusActiveText;
@@ -351,6 +346,7 @@ class TradesListItem extends ConsumerWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-    );
+    ).withAutomationId(AutomationIds.tradesItemStatus,
+        merge: false, label: status.value);
   }
 }

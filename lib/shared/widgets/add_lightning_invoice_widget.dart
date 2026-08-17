@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class AddLightningInvoiceWidget extends StatefulWidget {
@@ -70,7 +72,7 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
                 alignLabelWithHint: true,
               ),
               maxLines: 6,
-            ),
+            ).withAutomationId(AutomationIds.invoiceText),
           ),
           const SizedBox(height: 16),
           Row(
@@ -88,7 +90,7 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                ),
+                ).withAutomationId(AutomationIds.invoiceCancel),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -111,7 +113,7 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                ),
+                ).withAutomationId(AutomationIds.invoiceSubmit),
               ),
             ],
           ),

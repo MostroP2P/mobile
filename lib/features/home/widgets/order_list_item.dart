@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -67,7 +69,8 @@ class OrderListItem extends ConsumerWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             final sessions = ref.watch(sessionNotifierProvider);
-            final session = sessions.firstWhereOrNull((s) => s.orderId == order.orderId);
+            final session =
+                sessions.firstWhereOrNull((s) => s.orderId == order.orderId);
             if (session != null && session.role != null) {
               context.push('/trade_detail/${session.orderId}');
               return;
@@ -297,7 +300,8 @@ class OrderListItem extends ConsumerWidget {
               ),
             ],
           ),
-        ),
+        ).withAutomationId(AutomationIds.orderBookItem(order.orderId ?? ''),
+            merge: false),
       ),
     );
   }

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/services/nwc/nwc_connection.dart';
 import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart';
@@ -163,7 +165,7 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
                             tooltip: S.of(context)!.scanQrCode,
                           ),
                         ),
-                      ),
+                      ).withAutomationId(AutomationIds.walletNwcUri),
                     ),
 
                     // Validation error
@@ -208,7 +210,7 @@ class _ConnectWalletScreenState extends ConsumerState<ConnectWalletScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                      ),
+                      ).withAutomationId(AutomationIds.walletNwcConnect),
                     ),
                   ],
                 ),

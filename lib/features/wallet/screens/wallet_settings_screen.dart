@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/features/wallet/widgets/wallet_balance_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -186,7 +188,7 @@ class WalletSettingsScreen extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-          ),
+          ).withAutomationId(AutomationIds.walletSettingsDisconnect),
         ),
       ],
     );
@@ -301,7 +303,7 @@ class WalletSettingsScreen extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                  ),
+                  ).withAutomationId(AutomationIds.walletSettingsConnect),
                 ),
               ],
             ),

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/mostro/mostro_nodes_provider.dart';
 import 'package:mostro_mobile/features/mostro/widgets/mostro_node_avatar.dart';
 import 'package:mostro_mobile/features/mostro/widgets/mostro_node_selector.dart';
@@ -771,7 +773,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                              ),
+                              ).withAutomationId(
+                                  AutomationIds.settingsMostroNodePubkey),
                               const SizedBox(height: 2),
                               Text(
                                 S.of(context)!.tapToSelectNode,
@@ -800,7 +803,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ],
                   ),
                 ),
-              ),
+              ).withAutomationId(AutomationIds.settingsMostroNode,
+                  merge: false),
             ),
             Container(
               margin: const EdgeInsets.only(top: 16),

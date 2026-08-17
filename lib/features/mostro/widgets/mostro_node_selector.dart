@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/mostro/mostro_node.dart';
 import 'package:mostro_mobile/features/mostro/mostro_nodes_provider.dart';
 import 'package:mostro_mobile/features/mostro/widgets/add_custom_node_dialog.dart';
@@ -145,7 +147,7 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
                             fontSize: 14,
                           ),
                         ),
-                      ),
+                      ).withAutomationId(AutomationIds.nodeAddCustom),
                     ],
                   ),
                   SizedBox(
@@ -288,7 +290,7 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
               ],
             ),
           ),
-        ),
+        ).withAutomationId(AutomationIds.nodeItem(node.pubkey), merge: false),
       ),
     );
   }

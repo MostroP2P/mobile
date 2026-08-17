@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/core/config/communities.dart';
 import 'package:mostro_mobile/features/community/community.dart';
 import 'package:mostro_mobile/features/community/providers/community_selector_provider.dart';
@@ -47,7 +49,7 @@ class _CommunitySelectorScreenState
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(S.of(ctx)!.communityDisclaimerAccept),
-          ),
+          ).withAutomationId(AutomationIds.communityNoticeAccept),
         ],
       ),
     );
@@ -174,7 +176,7 @@ class _CommunitySelectorScreenState
                         ),
                       ],
                     ),
-                  ),
+                  ).withAutomationId(AutomationIds.communityCustomNode),
                   const SizedBox(height: 8),
                   // Confirm button
                   if (_selectedPubkey != null)
@@ -205,7 +207,7 @@ class _CommunitySelectorScreenState
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                    ),
+                    ).withAutomationId(AutomationIds.communityDone),
                   // Skip button
                   TextButton(
                     onPressed: _isSelecting ? null : () => _onSkip(context),
@@ -216,7 +218,7 @@ class _CommunitySelectorScreenState
                         fontSize: 14,
                       ),
                     ),
-                  ),
+                  ).withAutomationId(AutomationIds.communitySkip),
                   SizedBox(
                     height: MediaQuery.of(context).viewPadding.bottom + 8,
                   ),

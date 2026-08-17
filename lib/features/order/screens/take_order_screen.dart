@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as mostro_action;
 import 'package:mostro_mobile/data/models/enums/status.dart';
@@ -130,9 +132,8 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
         String priceText = '';
         if (order.amount == '0') {
           final premium = order.premium;
-          final premiumValue = premium != null
-              ? double.tryParse(premium) ?? 0.0
-              : 0.0;
+          final premiumValue =
+              premium != null ? double.tryParse(premium) ?? 0.0 : 0.0;
 
           if (premiumValue == 0) {
             // No premium - show only market price
@@ -140,9 +141,8 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
           } else {
             // Has premium/discount - show market price with percentage
             final isPremiumPositive = premiumValue >= 0;
-            final premiumDisplay = isPremiumPositive
-                ? '(+$premiumValue%)'
-                : '($premiumValue%)';
+            final premiumDisplay =
+                isPremiumPositive ? '(+$premiumValue%)' : '($premiumValue%)';
             priceText = '${S.of(context)!.atMarketPrice} $premiumDisplay';
           }
         }
@@ -157,11 +157,11 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
               Text(
                 hasFixedSatsAmount
                     ? (widget.orderType == OrderType.sell
-                          ? "${S.of(context)!.someoneIsSellingTitle.replaceAll(' Sats', '')} ${order.amount} Sats"
-                          : "${S.of(context)!.someoneIsBuyingTitle.replaceAll(' Sats', '')} ${order.amount} Sats")
+                        ? "${S.of(context)!.someoneIsSellingTitle.replaceAll(' Sats', '')} ${order.amount} Sats"
+                        : "${S.of(context)!.someoneIsBuyingTitle.replaceAll(' Sats', '')} ${order.amount} Sats")
                     : (widget.orderType == OrderType.sell
-                          ? S.of(context)!.someoneIsSellingTitle
-                          : S.of(context)!.someoneIsBuyingTitle),
+                        ? S.of(context)!.someoneIsSellingTitle
+                        : S.of(context)!.someoneIsBuyingTitle),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -174,9 +174,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                   Flexible(
                     child: RichText(
                       text: TextSpan(
-                        text: S
-                            .of(context)!
-                            .forAmountWithCurrency(
+                        text: S.of(context)!.forAmountWithCurrency(
                               amountString,
                               order.currency ?? '',
                             ),
@@ -262,7 +260,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
             onPressed: () => context.pop(),
             style: AppTheme.theme.outlinedButtonTheme.style,
             child: Text(S.of(context)!.close),
-          ),
+          ).withAutomationId(AutomationIds.orderTakeClose),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -337,11 +335,12 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                                       border: InputBorder.none,
                                       contentPadding:
                                           const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 8,
-                                          ),
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
                                     ),
-                                  ),
+                                  ).withAutomationId(
+                                      AutomationIds.orderTakeAmount),
                                 ),
                                 actions: [
                                   TextButton(
@@ -407,7 +406,8 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                  ),
+                                  ).withAutomationId(
+                                      AutomationIds.orderTakeAmountConfirm),
                                 ],
                               );
                             },
@@ -423,8 +423,8 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                               enteredAmount,
                             );
                           } else {
-                            final lndAddress = widget._lndAddressController.text
-                                .trim();
+                            final lndAddress =
+                                widget._lndAddressController.text.trim();
                             await orderDetailsNotifier.takeSellOrder(
                               order.orderId!,
                               enteredAmount,
@@ -461,8 +461,8 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                             fiatAmount,
                           );
                         } else {
-                          final lndAddress = widget._lndAddressController.text
-                              .trim();
+                          final lndAddress =
+                              widget._lndAddressController.text.trim();
                           await orderDetailsNotifier.takeSellOrder(
                             order.orderId!,
                             fiatAmount,
@@ -495,7 +495,7 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                     ),
                   )
                 : Text(buttonText),
-          ),
+          ).withAutomationId(AutomationIds.orderTakeConfirm),
         ),
       ],
     );

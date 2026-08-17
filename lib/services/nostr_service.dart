@@ -40,7 +40,7 @@ class NostrService {
   /// 10002 discovery), so init never fails on an empty list.
   @visibleForTesting
   static List<String> effectiveRelays(List<String> configured) =>
-      configured.isEmpty ? Config.bootstrapRelays : configured;
+      configured.isEmpty ? Config.discoveryRelays : configured;
 
   Future<void> init(Settings settings) async {
     final relays = effectiveRelays(settings.relays);
@@ -223,7 +223,7 @@ class NostrService {
   /// discovery possible when no discovered relay is reachable.
   Future<void> ensureBootstrapConnectivity() async {
     final current = settings.relays;
-    final merged = {...current, ...Config.bootstrapRelays}.toList();
+    final merged = {...current, ...Config.discoveryRelays}.toList();
 
     if (ListEquality().equals(current, merged)) {
       logger.d('Bootstrap relays already part of the active relay set');
@@ -231,7 +231,7 @@ class NostrService {
     }
 
     logger.i(
-      'Bootstrap: connecting to defensive relays: ${Config.bootstrapRelays}',
+      'Bootstrap: connecting to defensive relays: ${Config.discoveryRelays}',
     );
     await updateSettings(settings.copyWith(relays: merged));
   }

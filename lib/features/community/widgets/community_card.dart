@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/community/community.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
@@ -180,7 +182,10 @@ class CommunityCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+      // Container mode: the card holds its own tap plus one per social link,
+      // and merging would collapse those independent actions into one node.
+    ).withAutomationId(AutomationIds.communityCard(community.pubkey),
+        merge: false);
   }
 
   Widget _buildCurrencyTag(String label) {

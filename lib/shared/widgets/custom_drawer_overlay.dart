@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/shared/providers/drawer_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -127,6 +129,13 @@ class CustomDrawerOverlay extends ConsumerWidget {
     );
   }
 
+  /// Stable automation identifier per drawer destination.
+  static String _drawerIdentifier(String route) => switch (route) {
+        '/key_management' => AutomationIds.drawerAccount,
+        '/settings' => AutomationIds.drawerSettings,
+        _ => AutomationIds.drawerAbout,
+      };
+
   Widget _buildMenuItem(
     BuildContext context,
     WidgetRef ref, {
@@ -152,6 +161,6 @@ class CustomDrawerOverlay extends ConsumerWidget {
         ref.read(drawerProvider.notifier).closeDrawer();
         context.push(route);
       },
-    );
+    ).withAutomationId(_drawerIdentifier(route));
   }
 }

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/shared/providers/drawer_provider.dart';
 import 'package:mostro_mobile/shared/widgets/notification_history_bell_widget.dart';
 import 'dart:async';
@@ -68,7 +70,7 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final bool showBackButton;
   final bool showDrawerButton;
   final List<Widget>? actions;
-  
+
   const MostroAppBar({
     super.key,
     this.title,
@@ -92,7 +94,7 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
             size: 28,
           ),
           onPressed: () => context.pop(),
-        ),
+        ).withAutomationId(AutomationIds.appBarBack),
       );
     } else if (showDrawerButton) {
       leading = Padding(
@@ -105,16 +107,17 @@ class MostroAppBar extends ConsumerWidget implements PreferredSizeWidget {
             size: 28,
           ),
           onPressed: () => ref.read(drawerProvider.notifier).toggleDrawer(),
-        ),
+        ).withAutomationId(AutomationIds.appBarDrawer),
       );
     }
-    
+
     // Use provided actions or default to just notification bell
-    List<Widget> appBarActions = actions ?? [
-      const NotificationBellWidget(),
-      const SizedBox(width: 16),
-    ];
-    
+    List<Widget> appBarActions = actions ??
+        [
+          const NotificationBellWidget(),
+          const SizedBox(width: 16),
+        ];
+
     return AppBar(
       backgroundColor: AppTheme.backgroundDark,
       elevation: 0,

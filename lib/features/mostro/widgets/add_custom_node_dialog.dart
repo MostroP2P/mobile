@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/mostro/mostro_node.dart';
 import 'package:mostro_mobile/features/mostro/mostro_nodes_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -10,7 +12,6 @@ import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class AddCustomNodeDialog {
-
   static Future<void> show(BuildContext context, WidgetRef ref) async {
     // Capture parent context values before entering dialog
     final parentMessenger = ScaffoldMessenger.of(context);
@@ -82,8 +83,7 @@ class _AddCustomNodeDialogContentState
       backgroundColor: AppTheme.backgroundCard,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-            color: Colors.white.withValues(alpha: 0.1)),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       title: Text(
         S.of(context)!.addCustomNodeTitle,
@@ -114,27 +114,22 @@ class _AddCustomNodeDialogContentState
               ),
               child: TextField(
                 controller: pubkeyController,
-                style:
-                    const TextStyle(color: AppTheme.textPrimary),
+                style: const TextStyle(color: AppTheme.textPrimary),
                 decoration: InputDecoration(
-                  labelText:
-                      S.of(context)!.enterNodePubkey,
-                  labelStyle: const TextStyle(
-                      color: AppTheme.textSecondary),
+                  labelText: S.of(context)!.enterNodePubkey,
+                  labelStyle: const TextStyle(color: AppTheme.textSecondary),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
                   ),
                   hintText: S.of(context)!.pubkeyHint,
-                  hintStyle: const TextStyle(
-                      color: AppTheme.textSecondary),
+                  hintStyle: const TextStyle(color: AppTheme.textSecondary),
                   errorText: errorMessage,
-                  errorStyle:
-                      const TextStyle(color: Colors.red),
+                  errorStyle: const TextStyle(color: Colors.red),
                 ),
                 autofocus: true,
-              ),
+              ).withAutomationId(AutomationIds.nodeCustomPubkey),
             ),
             const SizedBox(height: 12),
             // Name input
@@ -152,23 +147,19 @@ class _AddCustomNodeDialogContentState
               ),
               child: TextField(
                 controller: nameController,
-                style:
-                    const TextStyle(color: AppTheme.textPrimary),
+                style: const TextStyle(color: AppTheme.textPrimary),
                 decoration: InputDecoration(
-                  labelText:
-                      S.of(context)!.enterNodeName,
-                  labelStyle: const TextStyle(
-                      color: AppTheme.textSecondary),
+                  labelText: S.of(context)!.enterNodeName,
+                  labelStyle: const TextStyle(color: AppTheme.textSecondary),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
                   ),
                   hintText: S.of(context)!.nodeNameHint,
-                  hintStyle: const TextStyle(
-                      color: AppTheme.textSecondary),
+                  hintStyle: const TextStyle(color: AppTheme.textSecondary),
                 ),
-              ),
+              ).withAutomationId(AutomationIds.nodeCustomName),
             ),
           ],
         ),
@@ -184,7 +175,7 @@ class _AddCustomNodeDialogContentState
               fontWeight: FontWeight.w500,
             ),
           ),
-        ),
+        ).withAutomationId(AutomationIds.nodeCustomCancel),
         const SizedBox(width: 12),
         ElevatedButton(
           onPressed: () async {
@@ -203,8 +194,7 @@ class _AddCustomNodeDialogContentState
             // Reject nsec private keys
             if (input.startsWith('nsec')) {
               setState(() {
-                errorMessage =
-                    localizations.invalidPubkeyFormat;
+                errorMessage = localizations.invalidPubkeyFormat;
               });
               return;
             }
@@ -212,11 +202,11 @@ class _AddCustomNodeDialogContentState
             // Convert npub to hex if needed, then normalize
             String hexPubkey;
             try {
-              hexPubkey = AddCustomNodeDialog._convertToHex(input).toLowerCase();
+              hexPubkey =
+                  AddCustomNodeDialog._convertToHex(input).toLowerCase();
             } catch (_) {
               setState(() {
-                errorMessage =
-                    localizations.invalidPubkeyFormat;
+                errorMessage = localizations.invalidPubkeyFormat;
               });
               return;
             }
@@ -224,8 +214,7 @@ class _AddCustomNodeDialogContentState
             // Validate hex format
             if (!MostroNode.isValidHexPubkey(hexPubkey)) {
               setState(() {
-                errorMessage =
-                    localizations.invalidPubkeyFormat;
+                errorMessage = localizations.invalidPubkeyFormat;
               });
               return;
             }
@@ -234,14 +223,12 @@ class _AddCustomNodeDialogContentState
             final nodes = widget.ref.read(mostroNodesProvider);
             if (nodes.any((n) => n.pubkey == hexPubkey)) {
               setState(() {
-                errorMessage =
-                    localizations.nodeAlreadyExists;
+                errorMessage = localizations.nodeAlreadyExists;
               });
               return;
             }
 
-            final notifier =
-                widget.ref.read(mostroNodesProvider.notifier);
+            final notifier = widget.ref.read(mostroNodesProvider.notifier);
             final added = await notifier.addCustomNode(
               hexPubkey,
               name: name.isEmpty ? null : name,
@@ -261,8 +248,7 @@ class _AddCustomNodeDialogContentState
               );
             } else {
               setState(() {
-                errorMessage =
-                    localizations.nodeAlreadyExists;
+                errorMessage = localizations.nodeAlreadyExists;
               });
             }
           },
@@ -284,7 +270,7 @@ class _AddCustomNodeDialogContentState
               fontWeight: FontWeight.w500,
             ),
           ),
-        ),
+        ).withAutomationId(AutomationIds.nodeCustomConfirm),
       ],
     );
   }

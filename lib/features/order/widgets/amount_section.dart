@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -223,7 +225,7 @@ class _AmountSectionState extends State<AmountSection> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   validator: _validateMinAmount,
                   onChanged: (_) => _notifyAmountChanged(),
-                ),
+                ).withAutomationId(AutomationIds.orderCreateFiatAmount),
               ),
 
               // "to" label and max amount input (shown after first digit)
@@ -250,7 +252,7 @@ class _AmountSectionState extends State<AmountSection> {
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: _validateMaxAmount,
-                  ),
+                  ).withAutomationId(AutomationIds.orderCreateFiatAmountMax),
                 ),
               ],
             ],

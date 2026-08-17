@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
@@ -54,7 +56,8 @@ class CurrencySection extends ConsumerWidget {
                 currentSelection: selectedFiatCode,
               );
               if (selectedCode != null) {
-                ref.read(selectedFiatCodeProvider.notifier).state = selectedCode;
+                ref.read(selectedFiatCodeProvider.notifier).state =
+                    selectedCode;
                 onCurrencySelected();
               }
             },
@@ -75,10 +78,9 @@ class CurrencySection extends ConsumerWidget {
                 const Icon(Icons.keyboard_arrow_down, color: Colors.white),
               ],
             ),
-          );
+          ).withAutomationId(AutomationIds.orderCreateCurrency);
         },
       ),
     );
   }
-
 }

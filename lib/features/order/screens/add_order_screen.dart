@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -90,7 +92,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     _fixedPriceRangeErrorTimer?.cancel();
     _scrollController.dispose();
     _lightningAddressController.dispose();
-    _customPaymentMethodController.removeListener(_onCustomPaymentMethodChanged);
+    _customPaymentMethodController
+        .removeListener(_onCustomPaymentMethodChanged);
     _customPaymentMethodController.dispose();
     _satsAmountController.dispose();
     super.dispose();
@@ -199,29 +202,29 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     if (satsAmount < minAllowed) {
       return fiatLimits.isDisplayable
           ? S.of(context)!.fiatAmountTooLowRange(
-              fiatLimits.minFiat.toString(),
-              fiatLimits.maxFiat.toString(),
-              selectedFiatCode,
-              minAllowed.toString(),
-              maxAllowed.toString(),
-            )
+                fiatLimits.minFiat.toString(),
+                fiatLimits.maxFiat.toString(),
+                selectedFiatCode,
+                minAllowed.toString(),
+                maxAllowed.toString(),
+              )
           : S.of(context)!.fiatAmountTooLow(
-              minAllowed.toString(),
-              maxAllowed.toString(),
-            );
+                minAllowed.toString(),
+                maxAllowed.toString(),
+              );
     } else {
       return fiatLimits.isDisplayable
           ? S.of(context)!.fiatAmountTooHighRange(
-              fiatLimits.minFiat.toString(),
-              fiatLimits.maxFiat.toString(),
-              selectedFiatCode,
-              minAllowed.toString(),
-              maxAllowed.toString(),
-            )
+                fiatLimits.minFiat.toString(),
+                fiatLimits.maxFiat.toString(),
+                selectedFiatCode,
+                minAllowed.toString(),
+                maxAllowed.toString(),
+              )
           : S.of(context)!.fiatAmountTooHigh(
-              minAllowed.toString(),
-              maxAllowed.toString(),
-            );
+                minAllowed.toString(),
+                maxAllowed.toString(),
+              );
     }
   }
 
@@ -397,7 +400,8 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
                               inputFormatters: [
                                 FilteringTextInputFormatter.digitsOnly,
                               ],
-                            ),
+                            ).withAutomationId(
+                                AutomationIds.orderCreateSatsAmount),
                           ),
                         ],
                         const SizedBox(height: 16),

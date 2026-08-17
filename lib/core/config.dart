@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:mostro_mobile/core/test_environment.dart';
 import 'package:mostro_mobile/core/config/communities.dart';
 
 class Config {
@@ -19,6 +20,15 @@ class Config {
     'wss://nos.lol',
     'wss://relay.damus.io',
   ];
+
+  /// Relays used for discovery when nothing else is configured. In the
+  /// Mortsom test environment this is the seeded local relay list, never
+  /// the public bootstrap relays: a disconnected local relay must produce a
+  /// test failure, not public-network traffic (automation contract §3).
+  static List<String> get discoveryRelays =>
+      TestEnvironment.disableBootstrapFallback
+          ? TestEnvironment.seedRelays
+          : bootstrapRelays;
 
   // Derived from trustedCommunities to maintain single source of truth
   static final List<Map<String, String>> trustedMostroNodes =

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class AddOrderButton extends StatefulWidget {
@@ -92,9 +94,9 @@ class _AddOrderButtonState extends State<AddOrderButton>
                             ),
                             icon: const SizedBox(width: 16, height: 16),
                             label: Text(S.of(context)!.buy,
-                                style:
-                                    const TextStyle(fontWeight: FontWeight.bold)),
-                          ),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
+                          ).withAutomationId(AutomationIds.orderAddBuy),
                           if (_isMenuOpen)
                             const Positioned(
                               left: 12,
@@ -125,9 +127,9 @@ class _AddOrderButtonState extends State<AddOrderButton>
                             ),
                             icon: const SizedBox(width: 16, height: 16),
                             label: Text(S.of(context)!.sell,
-                                style:
-                                    const TextStyle(fontWeight: FontWeight.bold)),
-                          ),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
+                          ).withAutomationId(AutomationIds.orderAddSell),
                           if (_isMenuOpen)
                             const Positioned(
                               left: 12,
@@ -162,7 +164,7 @@ class _AddOrderButtonState extends State<AddOrderButton>
                 );
               },
             ),
-          ),
+          ).withAutomationId(AutomationIds.orderAddFab),
         ],
       ),
     );

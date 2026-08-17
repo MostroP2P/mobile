@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/order/providers/payment_methods_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/form_section.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
@@ -40,21 +42,22 @@ class PaymentMethodsSection extends ConsumerWidget {
 
     return FormSection(
       title: S.of(context)!.paymentMethodsForCurrency(selectedFiatCode ?? ''),
-      icon: const Icon(Icons.credit_card, color: AppTheme.mostroGreen, size: 18),
+      icon:
+          const Icon(Icons.credit_card, color: AppTheme.mostroGreen, size: 18),
       iconBackgroundColor: AppTheme.mostroGreen.withValues(alpha: 0.3),
       extraContent: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: TextField(
-            key: const Key('paymentMethodField'),
-            controller: customController,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              hintText: S.of(context)!.enterCustomPaymentMethod,
-              hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
-            ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: TextField(
+          key: const Key('paymentMethodField'),
+          controller: customController,
+          style: const TextStyle(color: Colors.white, fontSize: 15),
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            hintText: S.of(context)!.enterCustomPaymentMethod,
+            hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
           ),
-        ),
+        ).withAutomationId(AutomationIds.orderCreatePaymentMethod),
+      ),
       child: paymentMethodsData.when(
         loading: () => Text(S.of(context)!.loadingPaymentMethods,
             style: const TextStyle(color: Colors.white)),
@@ -72,7 +75,8 @@ class PaymentMethodsSection extends ConsumerWidget {
                 .map((method) => _translatePaymentMethod(method, context))
                 .toList();
           } else {
-            availableMethods = List<String>.from(data['default'] ?? ['Bank Transfer', 'Cash in person', 'Other'])
+            availableMethods = List<String>.from(data['default'] ??
+                    ['Bank Transfer', 'Cash in person', 'Other'])
                 .map((method) => _translatePaymentMethod(method, context))
                 .toList();
           }
@@ -117,9 +121,8 @@ class PaymentMethodsSection extends ConsumerWidget {
   ) {
     // Remove "Other" from available methods since custom field is always visible
     final translatedOther = _translatePaymentMethod('Other', context);
-    availableMethods = availableMethods
-        .where((m) => m != translatedOther)
-        .toList();
+    availableMethods =
+        availableMethods.where((m) => m != translatedOther).toList();
 
     // Normalize to current locale so checkbox states align with localized labels
     final localizedSelected = selectedMethods
@@ -144,23 +147,25 @@ class PaymentMethodsSection extends ConsumerWidget {
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: availableMethods.map((method) => CheckboxListTile(
-                          title: Text(method,
-                              style: const TextStyle(color: Colors.white)),
-                          value: dialogSelectedMethods.contains(method),
-                          activeColor: AppTheme.mostroGreen,
-                          checkColor: Colors.black,
-                          contentPadding: EdgeInsets.zero,
-                          onChanged: (selected) {
-                            setDialogState(() {
-                              if (selected == true) {
-                                dialogSelectedMethods.add(method);
-                              } else {
-                                dialogSelectedMethods.remove(method);
-                              }
-                            });
-                          },
-                        )).toList(),
+                    children: availableMethods
+                        .map((method) => CheckboxListTile(
+                              title: Text(method,
+                                  style: const TextStyle(color: Colors.white)),
+                              value: dialogSelectedMethods.contains(method),
+                              activeColor: AppTheme.mostroGreen,
+                              checkColor: Colors.black,
+                              contentPadding: EdgeInsets.zero,
+                              onChanged: (selected) {
+                                setDialogState(() {
+                                  if (selected == true) {
+                                    dialogSelectedMethods.add(method);
+                                  } else {
+                                    dialogSelectedMethods.remove(method);
+                                  }
+                                });
+                              },
+                            ))
+                        .toList(),
                   ),
                 ),
               ),
@@ -184,7 +189,8 @@ class PaymentMethodsSection extends ConsumerWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.activeColor,
                     foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 24),
                     minimumSize: const Size(0, 52),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

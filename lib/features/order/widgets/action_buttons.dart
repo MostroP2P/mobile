@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as nostr_action;
 import 'package:mostro_mobile/shared/widgets/mostro_reactive_button.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -29,10 +31,11 @@ class ActionButtons extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.backgroundCard,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 0),
               ),
               child: Text(S.of(context)!.cancel),
-            ),
+            ).withAutomationId(AutomationIds.orderCreateCancel),
           ),
         ),
         const SizedBox(width: 12),
@@ -54,7 +57,7 @@ class ActionButtons extends StatelessWidget {
                   : AppTheme.backgroundInactive,
               foregroundColor:
                   onSubmit != null ? Colors.white : AppTheme.textInactive,
-            ),
+            ).withAutomationId(AutomationIds.orderCreateSubmit),
           ),
         ),
       ],

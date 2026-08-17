@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/features/home/providers/home_order_providers.dart';
 import 'package:mostro_mobile/features/home/widgets/order_list_item.dart';
@@ -137,6 +139,7 @@ class HomeScreen extends ConsumerWidget {
             orderType == OrderType.sell,
             OrderType.sell,
             AppTheme.buyColor,
+            AutomationIds.orderBookTabBuy,
           ),
           _buildTabButton(
             context,
@@ -145,6 +148,7 @@ class HomeScreen extends ConsumerWidget {
             orderType == OrderType.buy,
             OrderType.buy,
             AppTheme.sellColor,
+            AutomationIds.orderBookTabSell,
           ),
         ],
       ),
@@ -158,6 +162,9 @@ class HomeScreen extends ConsumerWidget {
     bool isActive,
     OrderType type,
     Color activeColor,
+    // Named by the visible tab, not by `type`: the Buy BTC tab filters for
+    // sell orders, so deriving the id from `type` would swap the two.
+    String automationId,
   ) {
     return Expanded(
       child: InkWell(
@@ -184,7 +191,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
         ),
-      ),
+      ).withAutomationId(automationId),
     );
   }
 
@@ -227,7 +234,8 @@ class HomeScreen extends ConsumerWidget {
               splashColor: AppTheme.activeColor.withValues(alpha: 0.3),
               highlightColor: AppTheme.activeColor.withValues(alpha: 0.15),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -254,7 +262,9 @@ class HomeScreen extends ConsumerWidget {
                       color: Colors.white.withValues(alpha: 0.2),
                     ),
                     Text(
-                      S.of(context)!.offersCount(filteredOrders.length.toString()),
+                      S
+                          .of(context)!
+                          .offersCount(filteredOrders.length.toString()),
                       style: const TextStyle(
                         color: Colors.grey,
                         fontSize: 12,

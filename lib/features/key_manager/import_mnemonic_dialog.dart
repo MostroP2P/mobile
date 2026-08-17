@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/mnemonic_validator.dart';
 
@@ -150,7 +152,7 @@ class _ImportMnemonicDialogState extends State<ImportMnemonicDialog> {
                     });
                   }
                 },
-              ),
+              ).withAutomationId(AutomationIds.keysImportMnemonic),
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -165,7 +167,7 @@ class _ImportMnemonicDialogState extends State<ImportMnemonicDialog> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
+                  ).withAutomationId(AutomationIds.keysImportCancel),
                   const SizedBox(width: 12),
                   ElevatedButton(
                     onPressed: _handleImport,
@@ -187,7 +189,7 @@ class _ImportMnemonicDialogState extends State<ImportMnemonicDialog> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
+                  ).withAutomationId(AutomationIds.keysImportConfirm),
                 ],
               ),
             ],

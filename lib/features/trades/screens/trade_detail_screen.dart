@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
@@ -476,7 +478,7 @@ class TradeDetailScreen extends ConsumerWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
+                      ).withAutomationId(AutomationIds.tradeReleaseConfirm),
                     ],
                   ),
                 );
@@ -616,7 +618,7 @@ class TradeDetailScreen extends ConsumerWidget {
       showSuccessIndicator: true,
       timeout: const Duration(seconds: 10),
       controller: controller,
-    );
+    ).withAutomationId(AutomationIds.tradeAction(action.name));
   }
 
   Widget _buildCancelButton(
@@ -685,7 +687,7 @@ class TradeDetailScreen extends ConsumerWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-              ),
+              ).withAutomationId(AutomationIds.tradeCancelConfirm),
             ],
           ),
         );
@@ -700,7 +702,7 @@ class TradeDetailScreen extends ConsumerWidget {
         foregroundColor: Colors.white,
       ),
       child: Text(buttonText),
-    );
+    ).withAutomationId(AutomationIds.tradeCancel);
   }
 
   Widget _buildDisputeButton(
@@ -761,7 +763,7 @@ class TradeDetailScreen extends ConsumerWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
+              ).withAutomationId(AutomationIds.tradeDisputeConfirm),
             ],
           ),
         );
@@ -802,7 +804,7 @@ class TradeDetailScreen extends ConsumerWidget {
         foregroundColor: Colors.white,
       ),
       child: Text(S.of(context)!.disputeButton),
-    );
+    ).withAutomationId(AutomationIds.tradeDispute);
   }
 
   Widget _buildContactButton(BuildContext context) {

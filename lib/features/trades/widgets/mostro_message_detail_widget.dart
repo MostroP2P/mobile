@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
@@ -49,7 +51,8 @@ class MostroMessageDetail extends ConsumerWidget {
                     color: Colors.grey[400],
                     fontSize: 12,
                   ),
-                ),
+                ).withAutomationId(AutomationIds.orderStatus,
+                    merge: false, label: orderState.status.value),
               ],
             ),
           ),
@@ -77,8 +80,7 @@ class MostroMessageDetail extends ConsumerWidget {
     if (bondPhase == BondPayoutPhase.completed) {
       final prev = _previousNonBondAction(messages) ?? tradeState.action;
       final base = _renderActionMessage(context, ref, tradeState, prev);
-      final canRate =
-          messages.any((m) => m.action == actions.Action.rate);
+      final canRate = messages.any((m) => m.action == actions.Action.rate);
       final extension = canRate
           ? S.of(context)!.bondPayoutCompletedWithRating
           : S.of(context)!.bondPayoutCompletedMessage;

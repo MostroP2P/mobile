@@ -3,6 +3,8 @@ import 'package:introduction_screen/introduction_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.dart';
 import 'package:mostro_mobile/features/notifications/providers/backup_reminder_provider.dart';
@@ -178,7 +180,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
   @override
   Widget build(BuildContext context) {
     final firstRunState = ref.watch(firstRunProvider);
-    
+
     return firstRunState.when(
       data: (isFirstRun) {
         // If this is not the first run, redirect to home
@@ -190,7 +192,7 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
           });
           return const SizedBox.shrink();
         }
-        
+
         // Show walkthrough for first run
         final theme = Theme.of(context);
         return SafeArea(
@@ -200,11 +202,15 @@ class _WalkthroughScreenState extends ConsumerState<WalkthroughScreen> {
             onSkip: () => _onIntroEnd(context),
             showSkipButton: true,
             showBackButton: true,
-            back: const Icon(Icons.arrow_back),
-            skip: Text(S.of(context)!.skip),
-            next: const Icon(Icons.arrow_forward),
+            back: const Icon(Icons.arrow_back)
+                .withAutomationId(AutomationIds.onboardingBack),
+            skip: Text(S.of(context)!.skip)
+                .withAutomationId(AutomationIds.onboardingSkip),
+            next: const Icon(Icons.arrow_forward)
+                .withAutomationId(AutomationIds.onboardingNext),
             done: Text(S.of(context)!.done,
-                style: const TextStyle(fontWeight: FontWeight.w600)),
+                    style: const TextStyle(fontWeight: FontWeight.w600))
+                .withAutomationId(AutomationIds.onboardingDone),
             dotsDecorator: DotsDecorator(
               activeColor: theme.primaryColor,
               size: const Size(8, 8),

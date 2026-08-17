@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
-import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart' show NwcResponseException, NwcTimeoutException, NwcErrorCode;
+import 'package:mostro_mobile/services/nwc/nwc_exceptions.dart'
+    show NwcResponseException, NwcTimeoutException, NwcErrorCode;
 
 /// Invoice generation status for the NWC auto-invoice flow.
 enum NwcInvoiceStatus {
@@ -177,7 +180,7 @@ class _NwcInvoiceWidgetState extends ConsumerState<NwcInvoiceWidget> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-          ),
+          ).withAutomationId(AutomationIds.invoiceNwcGenerate),
         ),
         const SizedBox(height: 8),
         Text(
@@ -272,7 +275,8 @@ class _NwcInvoiceWidgetState extends ConsumerState<NwcInvoiceWidget> {
               fontFamily: 'monospace',
             ),
             textAlign: TextAlign.center,
-          ),
+          ).withAutomationId(AutomationIds.invoiceNwcText,
+              merge: false, label: _generatedInvoice ?? ''),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
@@ -295,7 +299,7 @@ class _NwcInvoiceWidgetState extends ConsumerState<NwcInvoiceWidget> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
+            ).withAutomationId(AutomationIds.invoiceNwcConfirm),
           ),
         ],
       ),

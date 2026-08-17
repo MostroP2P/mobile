@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
@@ -36,7 +38,7 @@ class OrderConfirmationScreen extends ConsumerWidget {
                 key: const Key('homeButton'),
                 onPressed: () => context.go('/'),
                 child: Text(S.of(context)!.backToHome),
-              ),
+              ).withAutomationId(AutomationIds.orderConfirmHome),
             ],
           ),
         ),

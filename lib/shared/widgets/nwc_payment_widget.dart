@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -176,8 +178,8 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
     // Show the "Show invoice" fallback whenever the user is not actively
     // paying or already done, so they can always pay from another wallet
     // (e.g. when the NWC wallet has insufficient balance).
-    final showFallback = _status == NwcPaymentStatus.idle ||
-        _status == NwcPaymentStatus.failed;
+    final showFallback =
+        _status == NwcPaymentStatus.idle || _status == NwcPaymentStatus.failed;
 
     return Column(
       children: [
@@ -283,7 +285,7 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-          ),
+          ).withAutomationId(AutomationIds.payNwc),
         ),
         if (balanceSats != null) ...[
           const SizedBox(height: 8),

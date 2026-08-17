@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
@@ -96,7 +98,10 @@ class WalletStatusCard extends ConsumerWidget {
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
                               ),
-                            ),
+                            ).withAutomationId(AutomationIds.walletConnection,
+                                merge: false,
+                                label:
+                                    isConnected ? 'connected' : 'disconnected'),
                             if (isConnected &&
                                 nwcState.balanceSats != null) ...[
                               const SizedBox(height: 4),
@@ -119,7 +124,7 @@ class WalletStatusCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-              ),
+              ).withAutomationId(AutomationIds.settingsWallet),
             ),
           ],
         ),

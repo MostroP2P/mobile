@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
@@ -36,7 +38,8 @@ class _PayLightningInvoiceScreenState
 
     final nwcState = ref.watch(nwcProvider);
     final isNwcConnected = nwcState.status == NwcStatus.connected;
-    final showNwcPayment = isNwcConnected && !_manualMode && lnInvoice.isNotEmpty;
+    final showNwcPayment =
+        isNwcConnected && !_manualMode && lnInvoice.isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -55,15 +58,22 @@ class _PayLightningInvoiceScreenState
               // NWC auto-payment flow
               Text(
                 S.of(context)!.payInvoiceToContinue(
-                  sats.toString(),
-                  fiatCode,
-                  fiatAmount,
-                  widget.orderId,
-                ),
+                      sats.toString(),
+                      fiatCode,
+                      fiatAmount,
+                      widget.orderId,
+                    ),
                 style: const TextStyle(color: AppTheme.cream1, fontSize: 18),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
+              // Automation readout: the invoice being paid, so a black-box
+              // driver can correlate the payment by hash without reading the
+              // QR code. Invisible; screen readers get the invoice string.
+              const SizedBox(width: 1, height: 1).withAutomationId(
+                  AutomationIds.payInvoiceText,
+                  merge: false,
+                  label: lnInvoice),
               NwcPaymentWidget(
                 lnInvoice: lnInvoice,
                 sats: sats,
@@ -90,7 +100,7 @@ class _PayLightningInvoiceScreenState
                       backgroundColor: Colors.red,
                     ),
                     child: Text(S.of(context)!.cancel),
-                  ),
+                  ).withAutomationId(AutomationIds.payCancel),
                 ],
               ),
             ] else ...[

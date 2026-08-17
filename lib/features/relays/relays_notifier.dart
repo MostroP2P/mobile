@@ -4,6 +4,7 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/ease.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/core/test_environment.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
@@ -123,7 +124,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
 
     if (input.startsWith('wss://')) {
       return input; // Already properly formatted
-    } else if (input.startsWith('ws://') || input.startsWith('http')) {
+    } else if (input.startsWith('ws://')) {
+      // Plain WebSocket relays are accepted only inside the Mortsom test
+      // environment, where the relay is a local process on a private address.
+      return TestEnvironment.allowInsecureRelays ? input : null;
+    } else if (input.startsWith('http')) {
       return null; // Reject non-secure protocols
     } else {
       return 'wss://$input'; // Auto-add wss:// prefix
@@ -143,7 +148,12 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       input = input.substring(8);
     }
 
-    // Reject IP addresses (basic check for numbers and dots only)
+    // Reject IP addresses (basic check for numbers and dots only), except
+    // the emulator's host address family inside the test environment.
+    if (TestEnvironment.allowInsecureRelays &&
+        RegExp(r'^[\d.]+(:\d+)?$').hasMatch(input)) {
+      return true;
+    }
     if (RegExp(r'^[\d.]+$').hasMatch(input)) {
       return false;
     }
@@ -560,7 +570,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       logger.i('Discovered ${normalizedRelays.length} relays from Mostro 10002: '
           '$normalizedRelays');
       final normalizedBootstrap =
-          Config.bootstrapRelays.map(_normalizeRelayUrl).toSet();
+          Config.discoveryRelays.map(_normalizeRelayUrl).toSet();
       final retiredBootstrap =
           normalizedBootstrap.where((b) => !normalizedRelays.contains(b)).toList();
       if (retiredBootstrap.isNotEmpty) {

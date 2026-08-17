@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/core/automation/automation_id.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/key_manager/import_mnemonic_dialog.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
@@ -13,6 +15,7 @@ import 'package:mostro_mobile/features/notifications/providers/backup_reminder_p
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class KeyManagementScreen extends ConsumerStatefulWidget {
@@ -36,6 +39,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     _loadKeys();
   }
 
+  /// Master public key (npub) for display; never the private material.
+  String? _publicKey;
+
   Future<void> _loadKeys() async {
     setState(() {
       _loading = true;
@@ -46,6 +52,10 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
       if (hasMaster) {
         _mnemonic = await keyManager.getMnemonic();
         _tradeKeyIndex = await keyManager.getCurrentKeyIndex();
+        final publicHex = keyManager.masterKeyPair?.public;
+        _publicKey = publicHex == null
+            ? null
+            : NostrUtils.encodePublicKeyToNpub(publicHex);
       } else {
         if (mounted) _mnemonic = S.of(context)!.noMnemonicFound;
         _tradeKeyIndex = 0;
@@ -72,7 +82,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
     await eventStorage.deleteAll();
 
     await ref.read(notificationsRepositoryProvider).clearAll();
-    
+
     final keyManager = ref.read(keyManagerProvider);
     await keyManager.generateAndStoreMasterKey();
 
@@ -133,7 +143,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             color: AppTheme.textPrimary,
           ),
           onPressed: () => context.pop(),
-        ),
+        ).withAutomationId(AutomationIds.appBarBack),
         title: Text(
           S.of(context)!.account,
           style: const TextStyle(
@@ -160,6 +170,10 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Public key readout (identity, safe to show)
+                        _buildPublicKeyCard(context),
+                        const SizedBox(height: 16),
+
                         // Secret Words Card
                         _buildSecretWordsCard(context),
                         const SizedBox(height: 16),
@@ -200,6 +214,38 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                 ),
               ],
             ),
+    );
+  }
+
+  /// Compact card with the account public key (npub). It is the identity
+  /// readout automation and users rely on to tell accounts apart.
+  Widget _buildPublicKeyCard(BuildContext context) {
+    final npub = _publicKey ?? '';
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            const Icon(LucideIcons.user, color: AppTheme.activeColor, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: SelectableText(
+                npub,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                ),
+              ).withAutomationId(AutomationIds.keysPublicKey),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -280,7 +326,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                       fontSize: 14,
                       fontFamily: 'monospace',
                     ),
-                  ),
+                  ).withAutomationId(AutomationIds.keysSeedText),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -292,7 +338,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                           });
                           // Dismiss backup reminder when user views seed phrase
                           if (_showSecretWords) {
-                            ref.read(backupReminderProvider.notifier).dismissBackupReminder();
+                            ref
+                                .read(backupReminderProvider.notifier)
+                                .dismissBackupReminder();
                           }
                         },
                         icon: Icon(
@@ -312,7 +360,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ),
+                      ).withAutomationId(AutomationIds.keysSeedReveal),
                     ],
                   ),
                 ],
@@ -385,7 +433,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               title: S.of(context)!.reputationMode,
               description: S.of(context)!.standardPrivacyWithReputation,
               isSelected: !settings.fullPrivacyMode,
-              onTap: () => ref.read(settingsProvider.notifier).updatePrivacyMode(false),
+              onTap: () =>
+                  ref.read(settingsProvider.notifier).updatePrivacyMode(false),
             ),
             const SizedBox(height: 8),
             _buildPrivacyOption(
@@ -393,7 +442,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
               title: S.of(context)!.fullPrivacyMode,
               description: S.of(context)!.maximumAnonymity,
               isSelected: settings.fullPrivacyMode,
-              onTap: () => ref.read(settingsProvider.notifier).updatePrivacyMode(true),
+              onTap: () =>
+                  ref.read(settingsProvider.notifier).updatePrivacyMode(true),
             ),
           ],
         ),
@@ -529,7 +579,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
             ),
           ],
         ),
-      ),
+      ).withAutomationId(AutomationIds.keysGenerate),
     );
   }
 
@@ -565,7 +615,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
           ),
         ],
       ),
-    );
+    ).withAutomationId(AutomationIds.keysImport);
   }
 
   Widget _buildRefreshUserButton(BuildContext context) {
@@ -587,14 +637,12 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Widget _buildPrivacyOption(
-    BuildContext context,
-    {
-      required String title,
-      required String description,
-      required bool isSelected,
-      required VoidCallback onTap,
-    }
-  ) {
+    BuildContext context, {
+    required String title,
+    required String description,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -640,7 +688,9 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                     Text(
                       title,
                       style: TextStyle(
-                        color: isSelected ? AppTheme.textPrimary : AppTheme.textInactive,
+                        color: isSelected
+                            ? AppTheme.textPrimary
+                            : AppTheme.textInactive,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -745,7 +795,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-            ),
+            ).withAutomationId(AutomationIds.keysGenerateCancel),
             const SizedBox(width: 12),
             ElevatedButton(
               onPressed: () {
@@ -769,7 +819,7 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-            ),
+            ).withAutomationId(AutomationIds.keysGenerateConfirm),
           ],
         );
       },
@@ -829,7 +879,8 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
               ),
               child: Text(
                 S.of(context)!.refresh,
@@ -846,7 +897,6 @@ class _KeyManagementScreenState extends ConsumerState<KeyManagementScreen> {
   }
 
   Future<void> _showImportMnemonicDialog(BuildContext context) async {
-
     final mnemonic = await showDialog<String>(
       context: context,
       builder: (BuildContext dialogContext) {
