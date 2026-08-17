@@ -123,6 +123,8 @@ dev_dependencies:
     sdk: flutter
   flutter_intl: ^0.0.1
   mockito: ^5.4.5
+  # In-memory SharedPreferencesAsync backend for widget tests
+  shared_preferences_platform_interface: ^2.4.1
   build_runner: ^2.4.0
   # Mutation testing for test quality assurance
   mutation_test: ^1.8.0
@@ -176,3 +178,4 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/images/launcher-icon.png"
   adaptive_icon_background: "#2D2D2D"
   min_sdk_android: 21
+

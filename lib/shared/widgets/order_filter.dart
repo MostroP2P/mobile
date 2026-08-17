@@ -524,22 +524,30 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
               ),
               const SizedBox(height: 8),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "${S.of(context)!.discount}: ${premiumMin.toInt()}%",
-                    style: const TextStyle(
-                      color: AppTheme.sellColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  Flexible(
+                    child: Text(
+                      "${S.of(context)!.discount}: ${premiumMin.toInt()}%",
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppTheme.sellColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  Text(
-                    "${S.of(context)!.premium}: ${premiumMax.toInt()}%",
-                    style: const TextStyle(
-                      color: AppTheme.buyColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      "${S.of(context)!.premium}: ${premiumMax.toInt()}%",
+                      textAlign: TextAlign.end,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppTheme.buyColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -596,22 +604,30 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
               ),
               const SizedBox(height: 8),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "${S.of(context)!.min}: ${ratingMin.toInt()}",
-                    style: const TextStyle(
-                      color: AppTheme.sellColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  Flexible(
+                    child: Text(
+                      "${S.of(context)!.min}: ${ratingMin.toInt()}",
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppTheme.sellColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  Text(
-                    "${S.of(context)!.max}: ${ratingMax.toInt()}",
-                    style: const TextStyle(
-                      color: AppTheme.buyColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      "${S.of(context)!.max}: ${ratingMax.toInt()}",
+                      textAlign: TextAlign.end,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppTheme.buyColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -668,21 +684,30 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
               ),
               const SizedBox(height: 8),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "${S.of(context)!.days}: 0",
-                    style: const TextStyle(
-                      color: AppTheme.sellColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  Flexible(
+                    child: Text(
+                      "${S.of(context)!.days}: 0",
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppTheme.sellColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  SizedBox(
-                    width: 72,
+                  const SizedBox(width: 8),
+                  // Sized by its content rather than a fixed 72 px box: longer
+                  // translations ("Giorni", "Tage") wrapped to a second line.
+                  // The right edge still lands on the panel edge, matching the
+                  // days input below.
+                  Flexible(
                     child: Text(
                       "${S.of(context)!.days}: ${minDays > 20 ? minDays : 20}",
                       textAlign: TextAlign.end,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppTheme.buyColor,
                         fontSize: 12,
@@ -734,6 +759,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                   width: 72,
                   height: 32,
                   child: TextField(
+                    key: const Key('minDaysField'),
                     controller: _daysController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [

@@ -860,12 +860,9 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
 
   /// Normalize relay URL to prevent duplicates (removes trailing slash)
   String _normalizeRelayUrl(String url) {
-    url = url.trim();
-    // Remove trailing slash if present
-    if (url.endsWith('/')) {
-      url = url.substring(0, url.length - 1);
-    }
-    return url;
+    // Remove every trailing slash so `wss://relay//` and `wss://relay/`
+    // normalize to the same key as `wss://relay`.
+    return url.trim().replaceAll(RegExp(r'/+$'), '');
   }
 
   @override

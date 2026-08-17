@@ -1,5 +1,9 @@
 import 'package:dart_nostr/dart_nostr.dart';
 
+/// Matches every trailing slash so `wss://relay.example//` normalizes the same
+/// way as `wss://relay.example/`.
+final RegExp _trailingSlashes = RegExp(r'/+$');
+
 /// Represents a NIP-65 relay list event (kind 10002) from a Mostro instance.
 /// These events contain the list of relays where the Mostro instance publishes its events.
 class RelayListEvent {
@@ -49,7 +53,7 @@ class RelayListEvent {
     return relays
         .where((url) => url.startsWith('wss://') || url.startsWith('ws://'))
         .map((url) => url.trim())
-        .map((url) => url.endsWith('/') ? url.substring(0, url.length - 1) : url)
+        .map((url) => url.replaceAll(_trailingSlashes, ''))
         .toList();
   }
 
