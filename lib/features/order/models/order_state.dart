@@ -93,12 +93,69 @@ class OrderState {
     );
   }
 
+  /// Dispute statuses in which the dispute is over: a resolution has already
+  /// been applied and no further admin action is expected for it.
+  static const _terminalDisputeStatuses = {
+    'resolved',
+    'seller-refunded',
+    'closed',
+  };
+
+  static bool _isAdminDisputeAction(Action action) =>
+      action == Action.adminSettled ||
+      action == Action.adminSettle ||
+      action == Action.adminCanceled ||
+      action == Action.adminCancel ||
+      action == Action.adminTookDispute ||
+      action == Action.adminTakeDispute;
+
+  /// Whether local state corroborates that a dispute exists for this order.
+  ///
+  /// Evidence is the tracked [Dispute] object and nothing else. In particular
+  /// [Status.dispute] does not qualify: any action mapping to that status sets
+  /// it without carrying a dispute, so accepting it would let a bare
+  /// `dispute` message stand in as the evidence for the `admin-*` message
+  /// right behind it.
+  ///
+  /// The incoming payload does not count either — taking an attacker-supplied
+  /// Dispute as its own justification is the vector this guards against. An
+  /// already-resolved dispute is not re-resolved, which blocks replaying an
+  /// authentic resolution onto a later state.
+  bool get _acceptsAdminDisputeAction {
+    final localDispute = dispute;
+    if (localDispute == null) return false;
+
+    final localDisputeStatus = localDispute.status?.toLowerCase();
+    return localDisputeStatus == null ||
+        !_terminalDisputeStatuses.contains(localDisputeStatus);
+  }
+
+  /// Whether [updateWith] would drop this action for lack of dispute evidence.
+  ///
+  /// Callers use this to suppress the message's side effects too. A rejected
+  /// resolution that still raises a notification or navigates would hand the
+  /// attacker the user-visible half of the forgery.
+  bool rejectsAdminDisputeAction(Action action) =>
+      _isAdminDisputeAction(action) && !_acceptsAdminDisputeAction;
+
   OrderState updateWith(MostroMessage message) {
     logger.i('Updating OrderState with Action: ${message.action}');
 
     // Preserve the current state entirely for cantDo messages - they are informational only
     if (message.action == Action.cantDo) {
       return copyWith(cantDo: message.getPayload<CantDo>());
+    }
+
+    // An admin resolution only means something as the outcome of a dispute that
+    // already exists. Applied unconditionally, a forged or replayed admin-*
+    // message flips a live trade to a terminal state and drives the resolution
+    // UI, so drop it unless local state corroborates the dispute.
+    if (_isAdminDisputeAction(message.action) && !_acceptsAdminDisputeAction) {
+      logger.w(
+        'Ignoring ${message.action} for order ${message.id}: no dispute '
+        'evidence in local state (status: $status, dispute: ${dispute?.status ?? 'none'})',
+      );
+      return this;
     }
 
     // Track whether fiat was sent at any point in this order's lifecycle
@@ -155,12 +212,28 @@ class OrderState {
       newPeer = peer; // Preserve existing
     }
 
-    // Handle dispute status updates based on action
-    Dispute? updatedDispute = message.getPayload<Dispute>() ?? dispute;
-    
+    // Handle dispute status updates based on action.
+    // A payload dispute never re-points a tracked dispute at a different id:
+    // only the dispute this order already carries can be updated from the wire.
+    final localDispute = dispute;
+    final payloadDispute = message.getPayload<Dispute>();
+    final bool payloadDisputeAccepted = payloadDispute != null &&
+        (localDispute == null ||
+            payloadDispute.disputeId == localDispute.disputeId);
+
+    if (payloadDispute != null && !payloadDisputeAccepted) {
+      logger.w(
+        'Ignoring dispute payload ${payloadDispute.disputeId} for order '
+        '${message.id}: does not match tracked dispute ${localDispute!.disputeId}',
+      );
+    }
+
+    Dispute? updatedDispute =
+        payloadDisputeAccepted ? payloadDispute : localDispute;
+
     // If we got a dispute from the message payload, ensure it has the message timestamp
     // This is critical for correct sorting in the dispute list
-    if (updatedDispute != null && message.getPayload<Dispute>() != null) {
+    if (updatedDispute != null && payloadDisputeAccepted) {
       // Use message timestamp if dispute doesn't have a createdAt or if message has a timestamp
       // Note: Nostr timestamps are in seconds, so convert to milliseconds
       if (message.timestamp != null) {
@@ -331,11 +404,16 @@ class OrderState {
       // Actions that should set status to canceled
       case Action.canceled:
       case Action.cancel:
-      case Action.adminCanceled:
-      case Action.adminCancel:
       case Action.cooperativeCancelAccepted:
       case Action.holdInvoicePaymentCanceled:
         return Status.canceled;
+
+      // A dispute resolved by cancelation is its own terminal state: it keeps
+      // the admin resolution visible to the user and out of the plain-cancel
+      // cleanup paths, which are built around Action.canceled.
+      case Action.adminCanceled:
+      case Action.adminCancel:
+        return Status.canceledByAdmin;
 
       // Actions that should set status to cooperatively canceled (pending cancellation)
       case Action.cooperativeCancelInitiatedByYou:

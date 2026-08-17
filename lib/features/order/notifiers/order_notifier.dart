@@ -8,12 +8,21 @@ import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notifiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
+import 'package:mostro_mobile/shared/utils/order_sync_helpers.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
   ProviderSubscription<AsyncValue<List<NostrEvent>>>? _publicEventsSubscription;
   bool _isSyncing = false; // Only for sync() method
-  
+  bool _hydrated = false; // A sync() has read the history successfully
+  bool _resyncRequested = false; // A sync() was asked for while one was running
+  int _resyncAttempts = 0;
+
+  /// Bounds the chain of replays a single startup may schedule. Rejected
+  /// resolutions are hostile input, so the chain must not be paced by how fast
+  /// they arrive.
+  static const _maxChainedResyncs = 3;
+
   OrderNotifier(super.orderId, super.ref) {
     mostroService = ref.read(mostroServiceProvider);
     sync();
@@ -35,9 +44,25 @@ class OrderNotifier extends AbstractMostroNotifier {
         wasUserInitiatedCancel: wasUserInitiatedCancel);
   }
 
-  Future<void> sync() async {
-    if (_isSyncing) return;
+  /// Replays the persisted history when a resolution was rejected only because
+  /// startup had not loaded its dispute yet. Once hydrated, a rejection is the
+  /// correct outcome and no replay is needed — which also keeps forged
+  /// resolutions from each costing a full storage read.
+  @override
+  void onAdminResolutionRejected(MostroMessage message) {
+    if (_hydrated) return;
+    logger.i(
+        'Re-syncing order $orderId: ${message.action} arrived before hydration completed');
+    sync();
+  }
 
+  Future<void> sync() async {
+    if (_isSyncing) {
+      _resyncRequested = true;
+      return;
+    }
+
+    var succeeded = false;
     try {
       _isSyncing = true;
 
@@ -45,6 +70,7 @@ class OrderNotifier extends AbstractMostroNotifier {
       final messages = await storage.getAllMessagesForOrderId(orderId);
       if (messages.isEmpty) {
         logger.w('No messages found for order $orderId');
+        succeeded = true;
         return;
       }
 
@@ -73,6 +99,7 @@ class OrderNotifier extends AbstractMostroNotifier {
       if (state.status == Status.canceled) {
         await reconcileCanceledBondedSession();
       }
+      succeeded = true;
     } catch (e, stack) {
       logger.e(
         'Error syncing order state for $orderId',
@@ -81,6 +108,24 @@ class OrderNotifier extends AbstractMostroNotifier {
       );
     } finally {
       _isSyncing = false;
+
+      final completion = resolveSyncCompletion(
+        succeeded: succeeded,
+        resyncRequested: _resyncRequested,
+        resyncAttempts: _resyncAttempts,
+        maxChainedResyncs: _maxChainedResyncs,
+      );
+      _resyncRequested = false;
+
+      switch (completion) {
+        case SyncCompletion.replay:
+          _resyncAttempts++;
+          sync();
+        case SyncCompletion.hydrated:
+          _hydrated = true;
+        case SyncCompletion.unhydrated:
+          break;
+      }
     }
   }
 

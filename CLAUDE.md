@@ -50,7 +50,10 @@ When implementing or debugging protocol-related features (order flows, actions, 
 ### Nostr Integration
 - **NostrService** (`services/nostr_service.dart`) manages relay connections and messaging
 - All Nostr protocol interactions go through this service
-- **MostroFSM** (`core/mostro_fsm.dart`) manages order state transitions
+- **MostroFSM** (`core/mostro_fsm.dart`) defines a transition matrix but is **not wired in** — nothing imports it
+  - Order status is actually derived by `OrderState._getStatusFromAction` (`features/order/models/order_state.dart`), which maps actions to statuses without consulting the matrix
+  - Do not read `mostro_fsm.dart` as an active validation layer. Its role axis models who performs an action, not the local user's role in the trade (the app never assigns `Role.admin` to a session), so wiring it as-is would reject legitimate admin resolutions
+  - The only transition guard that runs today is the dispute-evidence check on `admin-*` actions in `OrderState.updateWith`
 
 ### Navigation and UI
 - **GoRouter** for navigation (configured in `core/app_routes.dart`)

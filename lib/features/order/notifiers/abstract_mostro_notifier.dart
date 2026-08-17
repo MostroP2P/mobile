@@ -107,9 +107,25 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               final wasUserInitiatedCancel = msg.action == Action.canceled &&
                   _userInitiatedCancels.remove(orderId);
 
+              // Evaluated before the state update, which is what consumes the
+              // dispute evidence this depends on.
+              final rejectedAdminAction =
+                  state.rejectsAdminDisputeAction(msg.action);
+
               if (mounted) {
                 state = state.updateWith(msg);
               }
+
+              // The state change was dropped; its side effects must go with it.
+              // Otherwise a forged admin resolution still reaches the user as a
+              // notification and a jump to the trade detail.
+              if (rejectedAdminAction) {
+                logger.w(
+                    'Dropping side effects for rejected ${msg.action} on order $orderId');
+                onAdminResolutionRejected(msg);
+                return;
+              }
+
               if (msg.timestamp != null &&
                   msg.timestamp! >
                       DateTime.now()
@@ -164,6 +180,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
           values: values ?? {}, orderId: orderId, eventId: eventId);
     }
   }
+
+  /// Called when an admin resolution was dropped for lack of dispute evidence.
+  ///
+  /// The rejection is decided from in-memory state, which during startup may
+  /// not yet hold the dispute this resolution belongs to. Subclasses that
+  /// hydrate from storage override this to replay the persisted history, where
+  /// the dispute and the resolution are applied in order. Replaying is safe:
+  /// the guard runs on every message of the replay, so a resolution with no
+  /// dispute ahead of it in the history is still rejected.
+  void onAdminResolutionRejected(MostroMessage message) {}
 
   Future<void> handleEvent(MostroMessage event,
       {bool bypassTimestampGate = false,
@@ -663,6 +689,16 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         break;
 
       case Action.adminSettled:
+        if (isRecent && !bypassTimestampGate) {
+          navProvider.go('/trade_detail/$orderId');
+        }
+        break;
+
+      // Mirrors adminSettled: an admin resolution is terminal but keeps its
+      // session, so the user retains the record of how the dispute ended.
+      // Deliberately not routed through the Action.canceled cleanup, which
+      // deletes the session and would erase that record.
+      case Action.adminCanceled:
         if (isRecent && !bypassTimestampGate) {
           navProvider.go('/trade_detail/$orderId');
         }
