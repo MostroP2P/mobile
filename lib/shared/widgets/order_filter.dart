@@ -698,11 +698,16 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  SizedBox(
-                    width: 72,
+                  // Sized by its content rather than a fixed 72 px box: longer
+                  // translations ("Giorni", "Tage") wrapped to a second line.
+                  // The right edge still lands on the panel edge, matching the
+                  // days input below.
+                  Flexible(
                     child: Text(
                       "${S.of(context)!.days}: ${minDays > 20 ? minDays : 20}",
                       textAlign: TextAlign.end,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppTheme.buyColor,
                         fontSize: 12,

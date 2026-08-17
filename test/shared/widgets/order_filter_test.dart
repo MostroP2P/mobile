@@ -37,6 +37,7 @@ Future<void> pumpFilter(
   WidgetTester tester, {
   Map<String, dynamic>? paymentMethods,
   List<Override> extra = const [],
+  Locale? locale,
 }) async {
   _container = ProviderContainer(
     overrides: [
@@ -52,6 +53,7 @@ Future<void> pumpFilter(
     UncontrolledProviderScope(
       container: _container,
       child: MaterialApp(
+        locale: locale,
         localizationsDelegates: S.localizationsDelegates,
         supportedLocales: S.supportedLocales,
         home: const Scaffold(body: Center(child: OrderFilter())),
@@ -196,6 +198,34 @@ void main() {
         expect(finder, findsOneWidget, reason: 'missing range label "$label"');
         expect(tester.getSize(finder).width, lessThanOrEqualTo(panelWidth));
       }
+
+      expect(tester.takeException(), isNull);
+      await disposeWidget(tester);
+    });
+
+    // "Giorni" is the longest translation of the days label, so this is the
+    // worst case for the two fixed-width boxes on the right of the days row.
+    testWidgets('keeps the days labels on one line in every locale',
+        (tester) async {
+      await pumpFilter(tester, locale: const Locale('it'));
+      final l10n = _l10n(tester);
+
+      final maxLabel = find.text('${l10n.days}: 20');
+      expect(maxLabel, findsOneWidget);
+
+      final lineHeight = tester.getSize(find.text('${l10n.days}: 0')).height;
+      expect(
+        tester.getSize(maxLabel).height,
+        lineHeight,
+        reason: 'the max-days label wrapped instead of staying on one line',
+      );
+
+      // The label used to be pinned to a 72 px box to line up with the days
+      // input; shrink-wrapping must keep that right edge.
+      expect(
+        tester.getBottomRight(maxLabel).dx,
+        tester.getBottomRight(find.byKey(const Key('minDaysField'))).dx,
+      );
 
       expect(tester.takeException(), isNull);
       await disposeWidget(tester);
