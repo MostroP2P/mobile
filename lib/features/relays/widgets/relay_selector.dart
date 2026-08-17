@@ -162,7 +162,7 @@ class RelaySelector extends ConsumerWidget {
               color: Colors.white,
               size: 24,
             ),
-          ).withAutomationId(AutomationIds.settingsRelayDelete),
+          ).withAutomationId(AutomationIds.settingsRelayDelete(relayInfo.url)),
         ],
       ),
     );

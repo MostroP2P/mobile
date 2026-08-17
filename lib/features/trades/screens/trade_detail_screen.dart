@@ -687,9 +687,7 @@ class TradeDetailScreen extends ConsumerWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-              )
-                  .withAutomationId(AutomationIds.tradeDisputeConfirm)
-                  .withAutomationId(AutomationIds.tradeCancelConfirm),
+              ).withAutomationId(AutomationIds.tradeCancelConfirm),
             ],
           ),
         );
@@ -765,7 +763,7 @@ class TradeDetailScreen extends ConsumerWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
+              ).withAutomationId(AutomationIds.tradeDisputeConfirm),
             ],
           ),
         );

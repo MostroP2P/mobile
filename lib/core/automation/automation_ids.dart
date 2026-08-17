@@ -59,8 +59,17 @@ class AutomationIds {
   static const String settingsRelaysAddUrl = 'settings.relays.add.url';
   static const String settingsRelaysAddConfirm = 'settings.relays.add.confirm';
   static const String settingsRelaysAddCancel = 'settings.relays.add.cancel';
-  static String settingsRelayItem(String url) => 'settings.relays.item.$url';
-  static const String settingsRelayDelete = 'settings.relays.item.delete';
+  static String settingsRelayItem(String url) =>
+      'settings.relays.item.${_normalizeRelayUrl(url)}';
+  static String settingsRelayDelete(String url) =>
+      'settings.relays.item.${_normalizeRelayUrl(url)}.delete';
+
+  /// A relay URL reaches the UI with and without a trailing slash and both
+  /// name the same relay, so the identifier normalizes it the way the relay
+  /// list itself does. Without a URL key every delete control would share one
+  /// identifier and automation could not pick a relay to remove.
+  static String _normalizeRelayUrl(String url) =>
+      url.trim().replaceAll(RegExp(r'/+$'), '');
 
   // Mostro node selector
   static const String nodeAddCustom = 'node.add_custom';

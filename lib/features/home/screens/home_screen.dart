@@ -139,6 +139,7 @@ class HomeScreen extends ConsumerWidget {
             orderType == OrderType.sell,
             OrderType.sell,
             AppTheme.buyColor,
+            AutomationIds.orderBookTabBuy,
           ),
           _buildTabButton(
             context,
@@ -147,6 +148,7 @@ class HomeScreen extends ConsumerWidget {
             orderType == OrderType.buy,
             OrderType.buy,
             AppTheme.sellColor,
+            AutomationIds.orderBookTabSell,
           ),
         ],
       ),
@@ -160,6 +162,9 @@ class HomeScreen extends ConsumerWidget {
     bool isActive,
     OrderType type,
     Color activeColor,
+    // Named by the visible tab, not by `type`: the Buy BTC tab filters for
+    // sell orders, so deriving the id from `type` would swap the two.
+    String automationId,
   ) {
     return Expanded(
       child: InkWell(
@@ -186,9 +191,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
         ),
-      ).withAutomationId(type == OrderType.buy
-          ? AutomationIds.orderBookTabBuy
-          : AutomationIds.orderBookTabSell),
+      ).withAutomationId(automationId),
     );
   }
 
