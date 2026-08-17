@@ -214,10 +214,12 @@ void main() {
       );
 
       await tester.tap(
-        find.descendant(
-          of: find.byType(DisputeListItem),
-          matching: find.byType(GestureDetector),
-        ).first,
+        find
+            .descendant(
+              of: find.byType(DisputeListItem),
+              matching: find.byType(GestureDetector),
+            )
+            .first,
         warnIfMissed: false,
       );
       await tester.pumpAndSettle();

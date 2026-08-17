@@ -38,12 +38,14 @@ Future<void> pumpFilter(
   Map<String, dynamic>? paymentMethods,
   List<Override> extra = const [],
 }) async {
-  _container = ProviderContainer(overrides: [
-    currencyCodesProvider.overrideWith((ref) async => _currencies),
-    paymentMethodsDataProvider
-        .overrideWith((ref) async => paymentMethods ?? _paymentMethods),
-    ...extra,
-  ]);
+  _container = ProviderContainer(
+    overrides: [
+      currencyCodesProvider.overrideWith((ref) async => _currencies),
+      paymentMethodsDataProvider
+          .overrideWith((ref) async => paymentMethods ?? _paymentMethods),
+      ...extra,
+    ],
+  );
   addTearDown(_container.dispose);
 
   await tester.pumpWidget(
@@ -60,14 +62,9 @@ Future<void> pumpFilter(
   await tester.pump(const Duration(milliseconds: 300));
 }
 
-/// Drains the RenderFlex overflow the panel currently produces (see the
-/// "overflows horizontally" test) and fails on anything else.
-void expectNoUnexpectedError(WidgetTester tester) {
-  final error = tester.takeException();
-  if (error == null) return;
-  expect(error, isFlutterError);
-  expect('$error', contains('overflowed'));
-}
+/// The localizations the panel itself resolved, so tests target the same
+/// labels the user sees instead of widget ordering.
+S _l10n(WidgetTester tester) => S.of(tester.element(find.byType(OrderFilter)))!;
 
 /// Unmounts the widget and drains any pending timers it scheduled.
 Future<void> disposeWidget(WidgetTester tester) async {
@@ -115,6 +112,13 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
+      // Only USD matches "us"; the other two options stay hidden.
+      final options = find.descendant(
+        of: find.byType(ListView),
+        matching: find.byType(Text),
+      );
+      expect(options, findsOneWidget);
+      expect(tester.widget<Text>(options).data, 'USD');
       expect(tester.takeException(), isNull);
     });
 
@@ -126,12 +130,18 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      final options = find.text('EUR');
-      if (options.evaluate().isNotEmpty) {
-        await tester.tap(options.last, warnIfMissed: false);
-        await tester.pump();
-      }
+      final option = find.descendant(
+        of: find.byType(ListView),
+        matching: find.text('EUR'),
+      );
+      expect(option, findsOneWidget);
 
+      await tester.tap(option);
+      await tester.pump();
+
+      expect(reported, [
+        ['EUR'],
+      ]);
       expect(tester.takeException(), isNull);
     });
 
@@ -144,18 +154,16 @@ void main() {
         onChanged: reported.add,
       );
 
-      final chips = find.byType(Chip);
-      if (chips.evaluate().isNotEmpty) {
-        final deleteIcons = find.descendant(
-          of: chips.first,
-          matching: find.byType(InkWell),
-        );
-        if (deleteIcons.evaluate().isNotEmpty) {
-          await tester.tap(deleteIcons.first, warnIfMissed: false);
-          await tester.pump();
-        }
-      }
+      // One dismiss affordance per selected value, in selection order.
+      final dismissIcons = find.byIcon(Icons.close);
+      expect(dismissIcons, findsNWidgets(2));
 
+      await tester.tap(dismissIcons.first);
+      await tester.pump();
+
+      expect(reported, [
+        ['EUR'],
+      ]);
       expect(tester.takeException(), isNull);
     });
   });
@@ -165,35 +173,61 @@ void main() {
       await pumpFilter(tester);
 
       expect(find.byType(OrderFilter), findsOneWidget);
-      expectNoUnexpectedError(tester);
+      expect(tester.takeException(), isNull);
       await disposeWidget(tester);
     });
 
-    // The panel is pinned to a 320 px width while one of its rows needs more
-    // room, so Flutter reports a horizontal overflow. Tracked as a separate
-    // defect; pinned here so a layout fix shows up as a deliberate change.
-    testWidgets('currently overflows horizontally', (tester) async {
+    // Regression test for the horizontal RenderFlex overflow the range rows
+    // used to produce: both ends of every range row must lay out inside the
+    // panel without the framework reporting an overflow.
+    testWidgets('lays out its range rows without overflowing', (tester) async {
       await pumpFilter(tester);
+      final l10n = _l10n(tester);
 
-      final error = tester.takeException();
+      final panelWidth = tester.getSize(find.byType(OrderFilter)).width;
+      final labels = <String>[
+        '${l10n.discount}: -10%',
+        '${l10n.premium}: 10%',
+        '${l10n.min}: 0',
+        '${l10n.max}: 5',
+      ];
+      for (final label in labels) {
+        final finder = find.text(label);
+        expect(finder, findsOneWidget, reason: 'missing range label "$label"');
+        expect(tester.getSize(finder).width, lessThanOrEqualTo(panelWidth));
+      }
 
-      expect(error, isFlutterError);
-      expect('$error', contains('overflowed'));
+      expect(tester.takeException(), isNull);
       await disposeWidget(tester);
     });
 
     testWidgets('seeds itself from the current filter providers',
         (tester) async {
-      await pumpFilter(tester, extra: [
-        currencyFilterProvider.overrideWith((ref) => ['USD']),
-        paymentMethodFilterProvider.overrideWith((ref) => ['Bank Transfer']),
-        ratingFilterProvider.overrideWith((ref) => (min: 2.0, max: 4.0)),
-        premiumRangeFilterProvider.overrideWith((ref) => (min: -5.0, max: 5.0)),
-        minDaysFilterProvider.overrideWith((ref) => 7),
-      ]);
+      await pumpFilter(
+        tester,
+        extra: [
+          currencyFilterProvider.overrideWith((ref) => ['USD']),
+          paymentMethodFilterProvider.overrideWith((ref) => ['Bank Transfer']),
+          ratingFilterProvider.overrideWith((ref) => (min: 2.0, max: 4.0)),
+          premiumRangeFilterProvider
+              .overrideWith((ref) => (min: -5.0, max: 5.0)),
+          minDaysFilterProvider.overrideWith((ref) => 7),
+        ],
+      );
+      final l10n = _l10n(tester);
 
-      expect(find.byType(OrderFilter), findsOneWidget);
-      expectNoUnexpectedError(tester);
+      expect(find.text('${l10n.discount}: -5%'), findsOneWidget);
+      expect(find.text('${l10n.premium}: 5%'), findsOneWidget);
+      expect(find.text('${l10n.min}: 2'), findsOneWidget);
+      expect(find.text('${l10n.max}: 4'), findsOneWidget);
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('minDaysField')))
+            .controller!
+            .text,
+        '7',
+      );
+      expect(tester.takeException(), isNull);
       await disposeWidget(tester);
     });
 
@@ -202,7 +236,7 @@ void main() {
       await pumpFilter(tester);
 
       expect(find.text('Other'), findsNothing);
-      expectNoUnexpectedError(tester);
+      expect(tester.takeException(), isNull);
       await disposeWidget(tester);
     });
 
@@ -214,69 +248,116 @@ void main() {
       });
 
       expect(find.byType(OrderFilter), findsOneWidget);
-      expectNoUnexpectedError(tester);
+      expect(tester.takeException(), isNull);
       await disposeWidget(tester);
     });
 
     testWidgets('scrolls through the whole filter panel', (tester) async {
       await pumpFilter(tester);
 
-      final scrollables = find.byType(Scrollable);
-      if (scrollables.evaluate().isNotEmpty) {
-        await tester.drag(scrollables.first, const Offset(0, -800));
-        await tester.pump();
-      }
+      final scrollable = find.byType(SingleChildScrollView);
+      expect(scrollable, findsOneWidget);
+      // The panel's own viewport, not the ones nested inside its text fields.
+      final panelScrollable = tester.state<ScrollableState>(
+        find
+            .descendant(of: scrollable, matching: find.byType(Scrollable))
+            .first,
+      );
+      expect(panelScrollable.position.pixels, 0);
 
-      expectNoUnexpectedError(tester);
+      await tester.drag(scrollable, const Offset(0, -800));
+      await tester.pump();
+
+      expect(panelScrollable.position.pixels, greaterThan(0));
+      expect(tester.takeException(), isNull);
       await disposeWidget(tester);
     });
 
     testWidgets('accepts a minimum-days value', (tester) async {
       await pumpFilter(tester);
 
-      final fields = find.byType(TextField);
-      if (fields.evaluate().isNotEmpty) {
-        await tester.enterText(fields.last, '15');
-        await tester.pump();
-      }
+      final daysField = find.byKey(const Key('minDaysField'));
+      expect(daysField, findsOneWidget);
 
-      expectNoUnexpectedError(tester);
+      await tester.enterText(daysField, '15');
+      await tester.pump();
+      final l10n = _l10n(tester);
+
+      // The right-hand label tracks the typed value once it passes 20.
+      expect(find.text('${l10n.days}: 20'), findsOneWidget);
+      expect(tester.takeException(), isNull);
       await disposeWidget(tester);
     });
 
     testWidgets('resets every filter provider when cleared', (tester) async {
-      await pumpFilter(tester, extra: [
-        currencyFilterProvider.overrideWith((ref) => ['USD']),
-        paymentMethodFilterProvider.overrideWith((ref) => ['Bank Transfer']),
-        minDaysFilterProvider.overrideWith((ref) => 7),
-      ]);
+      await pumpFilter(
+        tester,
+        extra: [
+          currencyFilterProvider.overrideWith((ref) => ['USD']),
+          paymentMethodFilterProvider.overrideWith((ref) => ['Bank Transfer']),
+          ratingFilterProvider.overrideWith((ref) => (min: 2.0, max: 4.0)),
+          premiumRangeFilterProvider
+              .overrideWith((ref) => (min: -5.0, max: 5.0)),
+          minDaysFilterProvider.overrideWith((ref) => 7),
+        ],
+      );
 
-      final buttons = find.byWidgetPredicate((w) => w is ButtonStyleButton);
-      if (buttons.evaluate().isNotEmpty) {
-        await tester.tap(buttons.first, warnIfMissed: false);
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
-      }
+      final clear = find.widgetWithText(
+        OutlinedButton,
+        _l10n(tester).clear.toUpperCase(),
+      );
+      expect(clear, findsOneWidget);
 
-      expectNoUnexpectedError(tester);
+      await tester.tap(clear);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(_container.read(currencyFilterProvider), isEmpty);
+      expect(_container.read(paymentMethodFilterProvider), isEmpty);
+      expect(_container.read(ratingFilterProvider), (min: 0.0, max: 5.0));
+      expect(
+          _container.read(premiumRangeFilterProvider), (min: -10.0, max: 10.0));
+      expect(_container.read(minDaysFilterProvider), 0);
+      expect(tester.takeException(), isNull);
       await disposeWidget(tester);
     });
 
     testWidgets('applies the selected filters to the providers',
         (tester) async {
-      await pumpFilter(tester);
+      await pumpFilter(
+        tester,
+        extra: [
+          currencyFilterProvider.overrideWith((ref) => ['USD']),
+          paymentMethodFilterProvider.overrideWith((ref) => ['Bank Transfer']),
+          ratingFilterProvider.overrideWith((ref) => (min: 2.0, max: 4.0)),
+          premiumRangeFilterProvider
+              .overrideWith((ref) => (min: -5.0, max: 5.0)),
+          minDaysFilterProvider.overrideWith((ref) => 7),
+        ],
+      );
 
-      final buttons = find.byWidgetPredicate((w) => w is ButtonStyleButton);
-      if (buttons.evaluate().length > 1) {
-        await tester.tap(buttons.last, warnIfMissed: false);
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
+      // Change one value through the UI so the assertion cannot pass on the
+      // seeded provider state alone.
+      await tester.enterText(find.byKey(const Key('minDaysField')), '15');
+      await tester.pump();
 
-        expect(_container.read(ratingFilterProvider).min, 0.0);
-        expect(_container.read(ratingFilterProvider).max, 5.0);
-      }
+      final apply = find.widgetWithText(
+        ElevatedButton,
+        _l10n(tester).apply.toUpperCase(),
+      );
+      expect(apply, findsOneWidget);
 
-      expectNoUnexpectedError(tester);
+      await tester.tap(apply);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(_container.read(minDaysFilterProvider), 15);
+      expect(_container.read(currencyFilterProvider), ['USD']);
+      expect(_container.read(paymentMethodFilterProvider), ['Bank Transfer']);
+      expect(_container.read(ratingFilterProvider), (min: 2.0, max: 4.0));
+      expect(
+          _container.read(premiumRangeFilterProvider), (min: -5.0, max: 5.0));
+      expect(tester.takeException(), isNull);
       await disposeWidget(tester);
     });
   });

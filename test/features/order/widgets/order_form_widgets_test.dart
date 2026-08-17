@@ -125,13 +125,14 @@ void main() {
         ),
       );
 
-      final infoIcons = find.byType(IconButton);
-      if (infoIcons.evaluate().isNotEmpty) {
-        await tester.tap(infoIcons.first, warnIfMissed: false);
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
-      }
+      final infoIcon = find.byIcon(Icons.info_outline);
+      expect(infoIcon, findsOneWidget);
 
+      await tester.tap(infoIcon);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('What is this?'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
@@ -214,11 +215,14 @@ void main() {
 
       expect(find.byType(PriceTypeSection), findsOneWidget);
 
-      final tappable = find.byType(InkWell);
-      if (tappable.evaluate().isNotEmpty) {
-        await tester.tap(tappable.last, warnIfMissed: false);
-        await tester.pump();
-      }
+      // The market/fixed switch is the only control that reports a toggle.
+      final marketSwitch = find.byKey(const Key('fixedSwitch'));
+      expect(marketSwitch, findsOneWidget);
+
+      await tester.tap(marketSwitch);
+      await tester.pump();
+
+      expect(toggles, [false]);
       expect(tester.takeException(), isNull);
     });
 
@@ -343,12 +347,25 @@ void main() {
         ),
       );
 
-      final chips = find.byType(FilterChip);
-      if (chips.evaluate().isNotEmpty) {
-        await tester.tap(chips.first, warnIfMissed: false);
-        await tester.pump();
-        expect(reported, isNotEmpty);
-      }
+      final l10n = S.of(tester.element(find.byType(PaymentMethodsSection)))!;
+
+      final opener = find.byIcon(Icons.keyboard_arrow_down);
+      expect(opener, findsOneWidget);
+      await tester.tap(opener);
+      await tester.pumpAndSettle();
+
+      // "Other" is served by the custom field, so it is not offered here.
+      expect(find.byType(CheckboxListTile), findsNWidgets(2));
+
+      await tester.tap(find.text(l10n.bankTransfer));
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(ElevatedButton, l10n.confirm));
+      await tester.pumpAndSettle();
+
+      expect(reported, [
+        [l10n.bankTransfer],
+      ]);
       expect(tester.takeException(), isNull);
     });
   });

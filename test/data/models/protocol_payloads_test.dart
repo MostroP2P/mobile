@@ -273,8 +273,8 @@ void main() {
       expect(() => Peer.fromJson(const {}), throwsFormatException);
       expect(() => Peer.fromJson(const {'pubkey': 42}), throwsFormatException);
       expect(() => Peer.fromJson(const {'pubkey': ''}), throwsFormatException);
-      expect(
-          () => Peer.fromJson(const {'pubkey': 'short'}), throwsFormatException);
+      expect(() => Peer.fromJson(const {'pubkey': 'short'}),
+          throwsFormatException);
     });
 
     test('compares by pubkey', () {

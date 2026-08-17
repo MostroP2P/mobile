@@ -266,7 +266,8 @@ void main() {
     });
 
     test('preserves the existing peer when the message carries none', () {
-      final withPeer = baseState().copyWith(peer: Peer(publicKey: _buyerPubkey));
+      final withPeer =
+          baseState().copyWith(peer: Peer(publicKey: _buyerPubkey));
 
       final updated = withPeer.updateWith(message(Action.sendDm));
 

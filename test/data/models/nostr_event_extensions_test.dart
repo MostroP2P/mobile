@@ -34,7 +34,10 @@ NostrEvent orderEvent({List<List<String>>? tags, DateTime? createdAt}) =>
             ['expires_at', '1700003600'],
             ['y', 'mostro'],
             ['z', 'order'],
-            ['p', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'],
+            [
+              'p',
+              'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+            ],
           ],
     );
 

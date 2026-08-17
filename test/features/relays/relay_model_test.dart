@@ -176,7 +176,8 @@ void main() {
 
   group('MostroRelayInfo', () {
     test('compares by url only', () {
-      final a = MostroRelayInfo(url: 'wss://a', isActive: true, isHealthy: true);
+      final a =
+          MostroRelayInfo(url: 'wss://a', isActive: true, isHealthy: true);
       final b = MostroRelayInfo(
         url: 'wss://a',
         isActive: false,
@@ -250,6 +251,11 @@ void main() {
 
     test('strips a single trailing slash', () {
       expect(relayList(['wss://relay.example/']).validRelays,
+          ['wss://relay.example']);
+    });
+
+    test('strips repeated trailing slashes', () {
+      expect(relayList(['wss://relay.example///']).validRelays,
           ['wss://relay.example']);
     });
 

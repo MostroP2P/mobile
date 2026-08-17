@@ -72,8 +72,8 @@ void main() {
         ),
       );
 
-      expect(
-          find.textContaining('Market price', findRichText: true), findsWidgets);
+      expect(find.textContaining('Market price', findRichText: true),
+          findsWidgets);
       expect(find.textContaining('+3%'), findsWidgets);
     });
 

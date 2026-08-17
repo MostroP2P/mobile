@@ -240,10 +240,11 @@ dart run tool/coverage_report.dart
 
 **Current line coverage: 33.00% (6,498 of 19,689 lines), across 952 tests.**
 
-The figure counts every non-generated file under `lib/`. Generated sources
-(`lib/generated/**`, `*.g.dart`, `*.freezed.dart`, `*.mocks.dart`) are excluded
-because `build_runner` re-creates them on every build; counting them would
-distort the number.
+The figure comes from the LCOV records, that is, from every non-generated file
+`flutter test --coverage` instrumented. Generated sources (`lib/generated/**`,
+`*.g.dart`, `*.freezed.dart`, `*.mocks.dart`) are excluded because
+`build_runner` re-creates them on every build; counting them would distort the
+number.
 
 ### Checking coverage yourself
 
@@ -256,8 +257,11 @@ dart run tool/coverage_report.dart  # prints the summary
 
 `tool/coverage_report.dart` reads `coverage/lcov.info` and prints total line
 coverage, the number of files measured, and any `lib/` file that no test ever
-loaded. Those untouched files are reported explicitly instead of being dropped
-from the denominator, which is what a plain `lcov` summary would do.
+loaded. Those untouched files are listed as a warning so they are visible
+instead of vanishing the way a plain `lcov` summary would hide them. They carry
+no instrumented lines, so they are **not** part of the percentage: `--min` can
+pass while they remain unmeasured. Import a file from a test to bring it into
+the measured set.
 
 Useful flags:
 

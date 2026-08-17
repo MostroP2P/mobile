@@ -359,9 +359,7 @@ void main() {
 
     test('rejects empty identifying fields at construction time', () {
       Currency build(
-              {String symbol = r'$',
-              String name = 'n',
-              String code = 'C'}) =>
+              {String symbol = r'$', String name = 'n', String code = 'C'}) =>
           Currency(
             symbol: symbol,
             name: name,

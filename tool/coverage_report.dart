@@ -1,8 +1,15 @@
 // Coverage summary tool.
 //
-// Parses coverage/lcov.info, excludes generated sources, and includes every
-// non-generated file under lib/ in the denominator so that files never touched
-// by a test are not silently dropped from the percentage.
+// Parses coverage/lcov.info and excludes generated sources. The percentage is
+// computed strictly from the LCOV records, i.e. from the files `flutter test`
+// actually instrumented.
+//
+// Non-generated files under lib/ that never appear in LCOV are listed
+// separately as an informational warning: `flutter test --coverage` only
+// instruments libraries a test loaded, and their executable-line count cannot
+// be recovered from here. They are therefore NOT part of the denominator, so
+// `--min` can pass while those files remain unmeasured. Import a file from a
+// test to bring it into the measured set.
 //
 // Usage: dart run tool/coverage_report.dart [--min <percent>] [--top <n>]
 import 'dart:io';
@@ -55,11 +62,11 @@ void main(List<String> args) {
     exit(2);
   }
 
-  final parsed = _parseLcov(lcov)
-    ..removeWhere((path, _) => _isExcluded(path));
+  final parsed = _parseLcov(lcov)..removeWhere((path, _) => _isExcluded(path));
 
-  // Any lib/ source absent from lcov was never loaded by a test: count it as
-  // uncovered rather than omitting it from the denominator.
+  // Any lib/ source absent from lcov was never loaded by a test. It has no
+  // instrumented lines, so it cannot contribute to the totals below; it is
+  // reported explicitly instead of disappearing silently.
   final untracked = <String>[];
   for (final path in _libSources()) {
     if (!parsed.containsKey(path)) untracked.add(path);
@@ -72,7 +79,8 @@ void main(List<String> args) {
   stdout.writeln('Line coverage: $hit/$found = ${percent.toStringAsFixed(2)}%');
   stdout.writeln('Files measured: ${parsed.length}');
   if (untracked.isNotEmpty) {
-    stdout.writeln('Files with no instrumented lines: ${untracked.length}');
+    stdout.writeln('Files with no instrumented lines: ${untracked.length} '
+        '(never loaded by a test; NOT counted in the percentage above)');
     for (final path in untracked) {
       stdout.writeln('  $path');
     }
