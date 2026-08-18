@@ -408,12 +408,11 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       return;
     }
 
-    // Create the inner event (kind 1, no tags per the chat spec) FIRST to
-    // get the real event ID used for optimistic UI and echo deduplication
-    final rumor = NostrEvent.fromPartialData(
-      keyPairs: session.tradeKey,
+    // Create the inner event (kind 1 with a `u` nonce tag) FIRST to get
+    // the real event ID used for optimistic UI and echo deduplication
+    final rumor = NostrEventExtensions.createChatRumor(
+      senderKeys: session.tradeKey,
       content: text,
-      kind: 1,
     );
 
     final rumorId = rumor.id;

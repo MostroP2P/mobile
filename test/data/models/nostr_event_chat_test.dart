@@ -36,6 +36,41 @@ void main() {
     );
   }
 
+  group('createChatRumor', () {
+    test('builds a signed kind 1 event with a single u nonce tag', () {
+      final rumor = NostrEventExtensions.createChatRumor(
+        senderKeys: alice,
+        content: 'hello with nonce',
+      );
+
+      expect(rumor.kind, equals(1));
+      expect(rumor.pubkey, equals(alice.public));
+      expect(rumor.id, isNotNull);
+      expect(rumor.sig, isNotNull);
+
+      final uTags = rumor.tags!.where((t) => t[0] == 'u').toList();
+      expect(rumor.tags!.length, equals(1));
+      expect(uTags.length, equals(1));
+      expect(uTags[0][1], matches(RegExp(r'^[0-9a-f]{16}$')));
+    });
+
+    test('identical content at the same timestamp yields distinct ids', () {
+      final createdAt = DateTime.now();
+      final first = NostrEventExtensions.createChatRumor(
+        senderKeys: alice,
+        content: 'ok',
+        createdAt: createdAt,
+      );
+      final second = NostrEventExtensions.createChatRumor(
+        senderKeys: alice,
+        content: 'ok',
+        createdAt: createdAt,
+      );
+
+      expect(first.id, isNot(equals(second.id)));
+    });
+  });
+
   group('chatWrap', () {
     test('produces a kind 14 envelope with the expected shape', () async {
       final inner = buildInner(alice, 'hello from the test');
@@ -72,6 +107,20 @@ void main() {
       expect(unwrapped.pubkey, equals(alice.public));
       expect(unwrapped.kind, equals(1));
       expect(unwrapped.id, equals(inner.id));
+    });
+
+    test('accepts a rumor carrying the u nonce tag', () async {
+      final rumor = NostrEventExtensions.createChatRumor(
+        senderKeys: alice,
+        content: 'nonce round-trip',
+      );
+      final wrapped = await rumor.chatWrap(chatKeys);
+
+      final unwrapped = await wrapped.chatUnwrap(chatKeys, allowedSigners);
+
+      expect(unwrapped.content, equals('nonce round-trip'));
+      expect(unwrapped.id, equals(rumor.id));
+      expect(unwrapped.tags!.where((t) => t[0] == 'u').length, equals(1));
     });
 
     test('works in both directions with the same derived keys', () async {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/range_amount.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
@@ -364,6 +365,34 @@ extension NostrEventExtensions on NostrEvent {
 
   /// Mostro chat envelope (kind 14): default subscription event limit.
   static const chatDefaultLimit = 100;
+
+  /// Mostro chat: build the signed kind 1 inner event for a chat message.
+  /// A random `u` nonce tag keeps same-second identical texts from
+  /// colliding into one inner id, which dedup would drop as a replay.
+  static NostrEvent createChatRumor({
+    required NostrKeyPairs senderKeys,
+    required String content,
+    DateTime? createdAt,
+  }) {
+    return NostrEvent.fromPartialData(
+      keyPairs: senderKeys,
+      content: content,
+      kind: 1,
+      tags: [
+        ["u", _chatNonceHex()],
+      ],
+      createdAt: createdAt,
+    );
+  }
+
+  /// 8 random bytes as 16 hex chars, from a cryptographic source.
+  static String _chatNonceHex() {
+    final rng = Random.secure();
+    return List.generate(
+      8,
+      (_) => rng.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
+  }
 
   /// Mostro chat: wrap this signed kind 1 event into a kind 14 envelope
   /// signed by `K_sign`, NIP-44 self-encrypted under `K_conv`.
