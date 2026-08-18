@@ -6,6 +6,7 @@ import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/payment_failed.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
+import 'package:mostro_mobile/data/models/user_info.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 
 const _buyerPubkey =
@@ -154,6 +155,57 @@ void main() {
       expect(updated.cantDo?.cantDoReason, CantDoReason.notFound);
       expect(updated.peer?.publicKey, _buyerPubkey);
       expect(updated.paymentFailed?.paymentAttempts, 1);
+    });
+  });
+
+  group('OrderState peerReputation', () {
+    const reputation = UserInfo(rating: 4.375, reviews: 4, operatingDays: 64);
+
+    test('updateWith stores the snapshot from a reputation-only Peer', () {
+      final state = baseState().updateWith(
+        message<Peer>(
+          Action.payInvoice,
+          payload: Peer(publicKey: '', reputation: reputation),
+        ),
+      );
+
+      expect(state.peerReputation, reputation);
+      // An empty pubkey must never become the tracked counterpart
+      expect(state.peer, isNull);
+    });
+
+    test('is preserved across later messages without reputation', () {
+      var state = baseState().updateWith(
+        message<Peer>(
+          Action.addInvoice,
+          payload: Peer(publicKey: '', reputation: reputation),
+        ),
+      );
+
+      // fiat-sent-ok shape: real pubkey, reputation absent
+      state = state.updateWith(
+        message<Peer>(
+          Action.fiatSentOk,
+          payload: Peer(publicKey: _buyerPubkey),
+        ),
+      );
+      expect(state.peerReputation, reputation);
+      expect(state.peer?.publicKey, _buyerPubkey);
+
+      state = state.updateWith(message(Action.rate));
+      expect(state.peerReputation, reputation);
+    });
+
+    test('fromMostroMessage picks the snapshot up without setting a peer', () {
+      final state = OrderState.fromMostroMessage(
+        message<Peer>(
+          Action.addInvoice,
+          payload: Peer(publicKey: '', reputation: reputation),
+        ),
+      );
+
+      expect(state.peerReputation, reputation);
+      expect(state.peer, isNull);
     });
   });
 

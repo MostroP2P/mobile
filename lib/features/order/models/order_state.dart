@@ -13,6 +13,10 @@ class OrderState {
   final PaymentFailed? paymentFailed;
   final bool fiatWasSent;
 
+  /// Counterpart reputation snapshot, from the daemon's taker-reputation
+  /// notice (a Peer payload with empty pubkey riding the flow action).
+  final UserInfo? peerReputation;
+
   OrderState({
     required this.status,
     required this.action,
@@ -23,6 +27,7 @@ class OrderState {
     this.peer,
     this.paymentFailed,
     this.fiatWasSent = false,
+    this.peerReputation,
   });
 
   factory OrderState.fromMostroMessage(MostroMessage message) {
@@ -33,14 +38,18 @@ class OrderState {
       paymentRequest: message.getPayload<PaymentRequest>(),
       cantDo: message.getPayload<CantDo>(),
       dispute: message.getPayload<Dispute>(),
-      peer: message.getPayload<Peer>(),
+      // Reputation-only Peers carry an empty pubkey and are not a counterpart
+      peer: message.getPayload<Peer>()?.publicKey.isNotEmpty == true
+          ? message.getPayload<Peer>()
+          : null,
       paymentFailed: message.getPayload<PaymentFailed>(),
+      peerReputation: message.getPayload<Peer>()?.reputation,
     );
   }
 
   @override
   String toString() =>
-      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute, peer: $peer, paymentFailed: $paymentFailed, fiatWasSent: $fiatWasSent)';
+      'OrderState(status: $status, action: $action, order: $order, paymentRequest: $paymentRequest, cantDo: $cantDo, dispute: $dispute, peer: $peer, paymentFailed: $paymentFailed, fiatWasSent: $fiatWasSent, peerReputation: $peerReputation)';
 
   @override
   bool operator ==(Object other) =>
@@ -54,7 +63,8 @@ class OrderState {
           other.dispute == dispute &&
           other.paymentFailed == paymentFailed &&
           other.peer == peer &&
-          other.fiatWasSent == fiatWasSent;
+          other.fiatWasSent == fiatWasSent &&
+          other.peerReputation == peerReputation;
 
   @override
   int get hashCode => Object.hash(
@@ -67,6 +77,7 @@ class OrderState {
         peer,
         paymentFailed,
         fiatWasSent,
+        peerReputation,
       );
 
   OrderState copyWith({
@@ -79,6 +90,7 @@ class OrderState {
     Peer? peer,
     PaymentFailed? paymentFailed,
     bool? fiatWasSent,
+    UserInfo? peerReputation,
   }) {
     return OrderState(
       status: status ?? this.status,
@@ -90,6 +102,7 @@ class OrderState {
       peer: peer ?? this.peer,
       paymentFailed: paymentFailed ?? this.paymentFailed,
       fiatWasSent: fiatWasSent ?? this.fiatWasSent,
+      peerReputation: peerReputation ?? this.peerReputation,
     );
   }
 
@@ -261,6 +274,9 @@ class OrderState {
       peer: newPeer,
       paymentFailed: message.getPayload<PaymentFailed>() ?? paymentFailed,
       fiatWasSent: newFiatWasSent,
+      // Preserve the last non-null snapshot: later Peers (e.g. fiat-sent-ok)
+      // carry reputation: null and must not clear it
+      peerReputation: message.getPayload<Peer>()?.reputation ?? peerReputation,
     );
 
     logger.i('New state: ${newState.status} - ${newState.action}');
