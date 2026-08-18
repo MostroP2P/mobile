@@ -219,6 +219,14 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       final eventStore = ref.read(eventStorageProvider);
       if (await eventStore.hasItem(wrapperEventId)) return;
 
+      // Unwrap and authenticate BEFORE persisting: the signature is not part
+      // of the event id, so storing an unverified copy would let a corrupted
+      // duplicate occupy the id and dedup away the valid one for good
+      final unwrappedEvent = await event.chatUnwrap(
+        chatKeys,
+        session.disputeChatAllowedSigners,
+      );
+
       // Store the outer event (encrypted) to disk — same pattern as P2P chat
       await eventStore.putItem(
         wrapperEventId,
@@ -233,14 +241,6 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
           'type': 'dispute_chat',
           'dispute_id': disputeId,
         },
-      );
-      if (!mounted) return;
-
-      // Unwrap and authenticate: the inner event must be signed by a
-      // conversation party (trade key or admin pubkey)
-      final unwrappedEvent = await event.chatUnwrap(
-        chatKeys,
-        session.disputeChatAllowedSigners,
       );
       if (!mounted) return;
 

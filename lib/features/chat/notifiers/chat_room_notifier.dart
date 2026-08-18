@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
@@ -135,7 +135,11 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
     );
   }
 
-  void _onChatEvent(NostrEvent event) async {
+  /// Test hook for the private stream handler.
+  @visibleForTesting
+  Future<void> handleChatEvent(NostrEvent event) => _onChatEvent(event);
+
+  Future<void> _onChatEvent(NostrEvent event) async {
     try {
       if (event.kind != 14) {
         return;
@@ -157,11 +161,19 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         return;
       }
 
-      // Event belongs to this chat — now check for duplicates and store
+      // Cheap duplicate fast-path (relay re-deliveries, own sent echoes)
       final eventStore = ref.read(eventStorageProvider);
       if (await eventStore.hasItem(event.id!)) {
         return;
       }
+
+      // Unwrap and authenticate BEFORE persisting: the signature is not part
+      // of the event id, so storing an unverified copy would let a corrupted
+      // duplicate occupy the id and dedup away the valid one for good
+      final chat = await event.chatUnwrap(
+        chatKeys,
+        session.peerChatAllowedSigners,
+      );
 
       await eventStore.putItem(
         event.id!,
@@ -176,13 +188,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
           'type': 'chat',
           'order_id': orderId,
         },
-      );
-
-      // Unwrap and authenticate: the inner event must be signed by a
-      // conversation party (own trade key or the peer's)
-      final chat = await event.chatUnwrap(
-        chatKeys,
-        session.peerChatAllowedSigners,
       );
 
       // Advance the persisted since cursor only after the event is accepted
