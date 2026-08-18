@@ -9,6 +9,7 @@ export 'package:mostro_mobile/data/models/order.dart';
 export 'package:mostro_mobile/data/models/payload.dart';
 export 'package:mostro_mobile/data/models/payment_request.dart';
 export 'package:mostro_mobile/data/models/peer.dart';
+export 'package:mostro_mobile/data/models/user_info.dart';
 export 'package:mostro_mobile/data/models/rating_user.dart';
 export 'package:mostro_mobile/data/models/rating.dart';
 export 'package:mostro_mobile/data/models/session.dart';

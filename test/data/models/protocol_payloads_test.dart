@@ -8,6 +8,7 @@ import 'package:mostro_mobile/data/models/orders_response.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/payment_failed.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
+import 'package:mostro_mobile/data/models/user_info.dart';
 import 'package:mostro_mobile/data/models/rating_user.dart';
 import 'package:mostro_mobile/data/models/text_message.dart';
 
@@ -263,8 +264,58 @@ void main() {
       expect(Peer.fromJson(const {'pubkey': _pubkey}).publicKey, _pubkey);
     });
 
-    test('rejects a pubkey that is not 64 hex characters', () {
-      expect(() => Peer(publicKey: ''), throwsArgumentError);
+    test('parses the daemon taker-reputation notice (empty pubkey)', () {
+      // Exact wire shape from mostrod's notify_taker_reputation()
+      final peer = Peer.fromJson(const {
+        'pubkey': '',
+        'reputation': {
+          'rating': 4.375,
+          'reviews': 4,
+          'operating_days': 64,
+        },
+      });
+
+      expect(peer.publicKey, isEmpty);
+      expect(peer.reputation, isNotNull);
+      expect(peer.reputation!.rating, 4.375);
+      expect(peer.reputation!.reviews, 4);
+      expect(peer.reputation!.operatingDays, 64);
+      expect(peer.reputation!.hasNoHistory, isFalse);
+    });
+
+    test('parses a zeroed reputation (new user or full privacy)', () {
+      final peer = Peer.fromJson(const {
+        'pubkey': '',
+        'reputation': {'rating': 0.0, 'reviews': 0, 'operating_days': 0},
+      });
+
+      expect(peer.reputation!.hasNoHistory, isTrue);
+    });
+
+    test('parses a real pubkey with reputation absent (fiat-sent-ok shape)',
+        () {
+      final peer = Peer.fromJson(const {'pubkey': _pubkey});
+
+      expect(peer.publicKey, _pubkey);
+      expect(peer.reputation, isNull);
+    });
+
+    test('round-trips the reputation through toJson', () {
+      final peer = Peer.fromJson(const {
+        'pubkey': '',
+        'reputation': {'rating': 4.375, 'reviews': 4, 'operating_days': 64},
+      });
+
+      expect(peer.toJson(), {
+        'peer': {
+          'pubkey': '',
+          'reputation': {'rating': 4.375, 'reviews': 4, 'operating_days': 64},
+        }
+      });
+      expect(Peer.fromJson(peer.toJson()['peer']), equals(peer));
+    });
+
+    test('rejects a non-empty pubkey that is not 64 hex characters', () {
       expect(() => Peer(publicKey: 'abc'), throwsArgumentError);
       expect(() => Peer(publicKey: 'z' * 64), throwsArgumentError);
     });
@@ -272,15 +323,24 @@ void main() {
     test('throws FormatException for malformed JSON', () {
       expect(() => Peer.fromJson(const {}), throwsFormatException);
       expect(() => Peer.fromJson(const {'pubkey': 42}), throwsFormatException);
-      expect(() => Peer.fromJson(const {'pubkey': ''}), throwsFormatException);
       expect(() => Peer.fromJson(const {'pubkey': 'short'}),
           throwsFormatException);
     });
 
-    test('compares by pubkey', () {
+    test('compares by pubkey and reputation', () {
       expect(Peer(publicKey: _pubkey), Peer(publicKey: _pubkey));
-      expect(Peer(publicKey: _pubkey).hashCode, _pubkey.hashCode);
-      expect(Peer(publicKey: _pubkey).toString(), 'Peer(publicKey: $_pubkey)');
+      expect(
+        Peer(publicKey: _pubkey).hashCode,
+        Peer(publicKey: _pubkey).hashCode,
+      );
+      expect(
+        Peer(publicKey: _pubkey),
+        isNot(equals(Peer(
+          publicKey: _pubkey,
+          reputation:
+              const UserInfo(rating: 5.0, reviews: 1, operatingDays: 1),
+        ))),
+      );
     });
   });
 
