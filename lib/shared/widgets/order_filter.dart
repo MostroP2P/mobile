@@ -255,7 +255,8 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
   double premiumMin = kDefaultPremiumMin;
   double premiumMax = kDefaultPremiumMax;
   int minDays = kDefaultMinDays;
-  final TextEditingController _daysController = TextEditingController(text: '0');
+  final TextEditingController _daysController =
+      TextEditingController(text: kDefaultMinDays.toString());
 
   // Options for the multi-select fields.
   
@@ -800,7 +801,9 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                     onChanged: (text) {
                       final parsed = int.tryParse(text);
                       setState(() {
-                        minDays = parsed == null ? 0 : parsed.clamp(0, 9999);
+                        minDays = parsed == null
+                            ? kDefaultMinDays
+                            : parsed.clamp(0, 9999);
                       });
                     },
                   ),
@@ -832,7 +835,7 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                         premiumMin = kDefaultPremiumMin;
                         premiumMax = kDefaultPremiumMax;
                         minDays = kDefaultMinDays;
-                        _daysController.text = '0';
+                        _daysController.text = kDefaultMinDays.toString();
                       });
 
                       clearAllOrderFilters(ref.read);
