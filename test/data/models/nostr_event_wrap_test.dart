@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -17,8 +19,31 @@ void main() {
   final senderPublicKey = keyDerivator.privateToPublicKey(senderPrivKey);
   final wrongPrivKey = keyDerivator.derivePrivateKey(extendedPrivKey, 3);
 
-  group('p2pWrap / p2pUnwrap round-trip', () {
-    test('wraps and unwraps a text message correctly', () async {
+  /// Reproduces the retired pre-migration wire format (1-layer gift wrap:
+  /// ephemeral key, NIP-44 to the shared key pubkey, kind 1059) so the
+  /// p2pUnwrap path that reads stored history stays covered.
+  Future<NostrEvent> legacyWrap(
+    NostrEvent innerEvent,
+    String receiverPubkey,
+  ) async {
+    final ephemeralKeyPair = NostrUtils.generateKeyPair();
+    final encryptedContent = await NostrUtils.encryptNIP44(
+      jsonEncode(innerEvent.toMap()),
+      ephemeralKeyPair.private,
+      receiverPubkey,
+    );
+    return NostrEvent.fromPartialData(
+      kind: 1059,
+      content: encryptedContent,
+      keyPairs: ephemeralKeyPair,
+      tags: [
+        ["p", receiverPubkey],
+      ],
+    );
+  }
+
+  group('p2pUnwrap (legacy stored history)', () {
+    test('unwraps a legacy-wrapped text message correctly', () async {
       // Compute shared key from both sides
       final senderSharedKey =
           NostrUtils.computeSharedKey(senderPrivKey, receiverPublicKey);
@@ -38,11 +63,7 @@ void main() {
         ],
       );
 
-      // Wrap with p2pWrap
-      final wrappedEvent = await innerEvent.p2pWrap(
-        NostrKeyPairs(private: senderPrivKey),
-        senderSharedKey.public,
-      );
+      final wrappedEvent = await legacyWrap(innerEvent, senderSharedKey.public);
 
       // Unwrap with receiver's shared key
       final unwrapped = await wrappedEvent.p2pUnwrap(receiverSharedKey);
@@ -71,50 +92,13 @@ void main() {
         ],
       );
 
-      final wrappedEvent = await innerEvent.p2pWrap(
-        NostrKeyPairs(private: senderPrivKey),
-        sharedKey.public,
-      );
+      final wrappedEvent = await legacyWrap(innerEvent, sharedKey.public);
 
       // Unwrap with wrong key should throw
       expect(
         () => wrappedEvent.p2pUnwrap(wrongSharedKey),
         throwsA(isA<Exception>()),
       );
-    });
-
-    test('wrapped event has kind 1059 and correct p tag', () async {
-      final sharedKey =
-          NostrUtils.computeSharedKey(senderPrivKey, receiverPublicKey);
-
-      final innerEvent = NostrEvent.fromPartialData(
-        keyPairs: NostrKeyPairs(private: senderPrivKey),
-        content: 'Test message',
-        kind: 1,
-        tags: [
-          ["p", sharedKey.public],
-        ],
-      );
-
-      final wrappedEvent = await innerEvent.p2pWrap(
-        NostrKeyPairs(private: senderPrivKey),
-        sharedKey.public,
-      );
-
-      // Wrapper should be kind 1059
-      expect(wrappedEvent.kind, equals(1059));
-
-      // p tag should point to shared key pubkey
-      final pTag = wrappedEvent.tags?.firstWhere(
-        (tag) => tag.isNotEmpty && tag[0] == 'p',
-        orElse: () => [],
-      );
-      expect(pTag, isNotNull);
-      expect(pTag!.length, greaterThanOrEqualTo(2));
-      expect(pTag[1], equals(sharedKey.public));
-
-      // Wrapper pubkey should be ephemeral (different from sender)
-      expect(wrappedEvent.pubkey, isNot(equals(senderPublicKey)));
     });
 
     test('plain text content round-trips (no JSON wrapper needed)', () async {
@@ -135,10 +119,7 @@ void main() {
         ],
       );
 
-      final wrapped = await innerEvent.p2pWrap(
-        NostrKeyPairs(private: senderPrivKey),
-        sharedKey.public,
-      );
+      final wrapped = await legacyWrap(innerEvent, sharedKey.public);
 
       final unwrapped = await wrapped.p2pUnwrap(receiverSharedKey);
 

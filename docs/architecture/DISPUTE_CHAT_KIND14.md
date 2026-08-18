@@ -136,9 +136,10 @@ event id (`eventStore.hasItem`) and UI state by inner event id.
   kind (14 → `chatUnwrap`, 1059 → `p2pUnwrap`), so existing history stays visible.
 - **Known accepted gap:** legacy 1059 chat events still sitting on relays but never
   received before the app update are not fetched after it.
-- **P2P peer chat (buyer↔seller) is unchanged** and still uses the legacy 1-layer gift
-  wrap (`p2pWrap`/`p2pUnwrap`). Its migration to this same envelope is future work and
-  should reuse `ChatKeys` + `chatWrap`/`chatUnwrap` as-is.
+- **P2P peer chat (buyer↔seller) uses this same envelope** (`ChatKeys` +
+  `chatWrap`/`chatUnwrap`), with the conversation keys derived from the peer shared key
+  instead of the admin one. See `P2P_CHAT_SYSTEM.md`. `p2pUnwrap` remains only for
+  pre-migration history stored on disk (both chats).
 - **Multimedia is unaffected.** Attachment encryption (ChaCha20-Poly1305) keys off the raw
   ECDH secret bytes (`NostrUtils.sharedKeyToBytes(adminSharedKey)`), not K_conv/K_sign, so
   Blossom attachments remain compatible in both directions.

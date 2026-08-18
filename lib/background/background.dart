@@ -42,7 +42,7 @@ String currentLanguage = 'en';
 /// has access to the local `activeSubscriptions` map, `nostrService`,
 /// `eventStore`, and the `logger`. It is `null` in the foreground
 /// isolate and any call there is a no-op.
-void Function(String sharedKeyPublic)? addChatSubscriptionFromBackground;
+void Function(String signPubkey)? addChatSubscriptionFromBackground;
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
@@ -155,26 +155,28 @@ Future<void> serviceMain(ServiceInstance service) async {
       // Expose a hook that `background_notification_service` can call after
       // it has persisted a peer update to add a live chat subscription
       // without waiting for the foreground app to come back.
-      addChatSubscriptionFromBackground = (String sharedKeyPublic) async {
+      addChatSubscriptionFromBackground = (String signPubkey) async {
         try {
-          // Avoid creating duplicate subscriptions for the same shared key.
+          // Avoid creating duplicate subscriptions for the same conversation
+          // (identified by its K_sign author).
           final alreadySubscribed = activeSubscriptions.values.any((entry) {
             final filters = entry['filters'];
             if (filters is! List) return false;
             return filters.any((f) {
               if (f is! Map) return false;
-              final p = f['#p'];
-              return p is List && p.contains(sharedKeyPublic);
+              final authors = f['authors'];
+              return authors is List && authors.contains(signPubkey);
             });
           });
           if (alreadySubscribed) {
-            logger?.d('Chat sub for $sharedKeyPublic already active');
+            logger?.d('Chat sub for $signPubkey already active');
             return;
           }
 
+          // Kind 14 chat envelope authored by K_sign (never #p — flooding)
           final filter = NostrFilter(
-            kinds: [1059],
-            p: [sharedKeyPublic],
+            kinds: [14],
+            authors: [signPubkey],
           );
           final request = NostrRequest(filters: [filter]);
           final subscription = nostrService.subscribeToEvents(request);
@@ -216,7 +218,7 @@ Future<void> serviceMain(ServiceInstance service) async {
             logger?.e('Failed to persist updated chat filter: $e');
           }
 
-          logger?.i('Added background chat subscription for $sharedKeyPublic');
+          logger?.i('Added background chat subscription for $signPubkey');
         } catch (e, stackTrace) {
           logger?.e(
             'Failed to add background chat subscription',

@@ -2,12 +2,13 @@
 
 This document describes how the peer-to-peer chat between trading parties works at the implementation level: how events flow from relays to the UI, how messages are persisted, what is stored encrypted vs. in plaintext, and known issues that have been fixed.
 
-For the **protocol specification** (NIP-59, ECDH, event format), see the [Mostro P2P Chat protocol](https://mostro.network/protocol/chat.html) ([source](https://github.com/MostroP2P/protocol)).
+For the **protocol specification** (ECDH, HKDF key derivation, event format), see the [Mostro P2P Chat protocol](https://mostro.network/protocol/chat.html) ([source](https://github.com/MostroP2P/protocol)).
 
-> **Note:** P2P peer chat still uses the legacy 1-layer gift wrap (kind 1059) described
-> below. The spec's newer kind-14 chat envelope is already used by the **dispute chat**
-> (see `DISPUTE_CHAT_KIND14.md`); migrating P2P chat to it is pending and should reuse the
-> same `ChatKeys` / `chatWrap` / `chatUnwrap` primitives.
+> **Note:** P2P peer chat uses the spec's kind-14 chat envelope (`ChatKeys` +
+> `chatWrap`/`chatUnwrap`), the same primitives as the **dispute chat** (see
+> `DISPUTE_CHAT_KIND14.md`). The legacy 1-layer gift wrap (kind 1059) was fully
+> replaced on the wire; `p2pUnwrap` remains only to read pre-migration history
+> stored on disk.
 
 ---
 
@@ -19,9 +20,11 @@ For the **protocol specification** (NIP-59, ECDH, event format), see the [Mostro
 | `ChatRoomNotifier` | `lib/features/chat/notifiers/chat_room_notifier.dart` | Per-order chat: receives events, stores to disk, decrypts, manages state |
 | `ChatRoomsNotifier` | `lib/features/chat/notifiers/chat_rooms_notifier.dart` | Chat list: loads, refreshes, reloads all chats |
 | `chatRoomsProvider` | `lib/features/chat/chat_room_provider.dart` | Riverpod family provider, creates and initializes `ChatRoomNotifier` |
-| `EventStorage` | `lib/data/repositories/event_storage.dart` | Sembast store for gift wrap events |
+| `EventStorage` | `lib/data/repositories/event_storage.dart` | Sembast store for encrypted chat envelopes |
 | `Session` | `lib/data/models/session.dart` | Holds trade keys, peer info, computes shared key via ECDH |
-| `NostrEvent` extensions | `lib/data/models/nostr_event.dart` | `p2pWrap()` / `p2pUnwrap()` — encrypt/decrypt gift wraps |
+| `ChatKeys` | `lib/shared/utils/chat_keys.dart` | HKDF derivation of K_conv / K_sign from the ECDH secret |
+| `NostrEvent` extensions | `lib/data/models/nostr_event.dart` | `chatWrap()` / `chatUnwrap()` envelope; `p2pUnwrap()` for legacy stored history |
+| `ChatCursorStore` | `lib/services/chat_cursor_store.dart` | Durable per-conversation `since` cursor (prefix `chat_since_`) |
 
 ---
 
@@ -29,41 +32,43 @@ For the **protocol specification** (NIP-59, ECDH, event format), see the [Mostro
 
 ```text
 Relay
-  │  kind 1059 gift wrap events (encrypted)
+  │  kind 14 chat envelopes (NIP-44 encrypted, authored by K_sign)
   ▼
 NostrService (WebSocket)
   │
   ▼
 SubscriptionManager
-  │  ONE subscription with ALL sharedKey pubkeys in a single NostrFilter
+  │  ONE subscription with ALL conversations' pub(K_sign) in a single NostrFilter
   │  Events dispatched via StreamController.broadcast()
   ▼
 ChatRoomNotifier._onChatEvent()  (one listener per active chat)
   │
-  ├─ 1. Check p-tag matches this chat's sharedKey.public → skip if not ours
+  ├─ 1. Check author matches this chat's pub(K_sign) → skip if not ours
   ├─ 2. Dedup: eventStore.hasItem(event.id) → skip if already stored
-  ├─ 3. Store encrypted gift wrap to Sembast (kind 1059, NIP-44 encrypted content)
-  ├─ 4. Decrypt: event.p2pUnwrap(sharedKey) → plaintext kind 1 event
-  ├─ 5. Add to state.messages (in-memory only)
-  └─ 6. Notify chat list to refresh
+  ├─ 3. Store encrypted envelope to Sembast (kind 14, NIP-44 encrypted content)
+  ├─ 4. chatUnwrap(chatKeys, peerChatAllowedSigners) → verified kind 1 inner event
+  ├─ 5. Advance the persisted since cursor (only after acceptance)
+  ├─ 6. Add to state.messages (in-memory only)
+  └─ 7. Notify chat list to refresh
 ```
 
 ### Key detail: single subscription, multiple listeners
 
-`SubscriptionManager` creates **one** relay subscription containing all active chat shared key pubkeys:
+`SubscriptionManager` creates **one** relay subscription containing the K_sign authors of all active chats. The spec requires filtering by `authors`, never by `#p`: a `#p` filter would let any third party flood the subscription with junk events, since relays only verify that an event is signed by *its own* author.
 
 ```dart
 // subscription_manager.dart — _createFilterForType()
 NostrFilter(
-  kinds: [1059],
-  p: sessions
-      .where((s) => s.sharedKey?.public != null)
-      .map((s) => s.sharedKey!.public)
-      .toList(),  // ALL shared keys in ONE filter
+  kinds: [14],
+  authors: chatSessions
+      .map((s) => ChatKeys.fromSharedKey(s.sharedKey!).sign.public)
+      .toList(),  // ALL conversations in ONE filter
+  since: chatSince,  // earliest persisted cursor (ChatCursorStore)
+  limit: NostrEventExtensions.chatDefaultLimit,
 );
 ```
 
-The relay sends events for all chats through this single subscription. Events are dispatched via a `StreamController.broadcast()` to all `ChatRoomNotifier` instances. Each notifier checks the event's `p` tag to determine if the event belongs to its chat.
+The relay sends events for all chats through this single subscription. Events are dispatched via a `StreamController.broadcast()` to all `ChatRoomNotifier` instances. Each notifier checks the event's author against its own `pub(K_sign)` to determine if the event belongs to its chat.
 
 ---
 
@@ -75,14 +80,16 @@ User types message
   ▼
 ChatRoomNotifier.sendMessage(text)
   │
-  ├─ 1. Create kind 1 inner event, signed with tradeKey
-  ├─ 2. p2pWrap(tradeKey, sharedKey.public) → kind 1059 gift wrap
-  │     - Generates ephemeral key pair (single-use)
-  │     - Encrypts inner event JSON with NIP-44 (ephemeral private + shared pubkey)
-  │     - p-tag = sharedKey.public
-  │     - Timestamp randomized to prevent time analysis
+  ├─ 1. createChatRumor: kind 1 inner event signed with tradeKey,
+  │     carrying a random `u` nonce tag (same-second identical texts
+  │     still get distinct inner ids)
+  ├─ 2. chatWrap(chatKeys) → kind 14 envelope
+  │     - NIP-44 self-encryption under K_conv
+  │     - Authored and signed by K_sign
+  │     - Exactly one p-tag = pub(K_conv)
+  │     - Outer timestamp equals the inner one (spec replay defense)
   ├─ 3. Publish wrapped event to relay
-  ├─ 4. Persist wrapped event to Sembast (encrypted, kind 1059)
+  ├─ 4. Persist wrapped event to Sembast (encrypted, kind 14)
   ├─ 5. Add inner event (plaintext) to state.messages for immediate UI display
   └─ 6. Notify chat list to refresh
 ```
@@ -93,26 +100,26 @@ Step 4 ensures sent messages survive app restarts even if the relay echo never a
 
 ## Storage: What Is on Disk
 
-Events are stored in Sembast's `events` store as encrypted gift wraps:
+Events are stored in Sembast's `events` store as encrypted kind-14 envelopes (pre-migration history remains as kind-1059 gift wraps):
 
 ```dart
 {
   'id': event.id,                    // event hash
   'created_at': <unix timestamp>,
-  'kind': 1059,                      // gift wrap
-  'content': '<NIP-44 encrypted>',   // ciphertext — NOT readable without private key
-  'pubkey': '<ephemeral pubkey>',    // single-use key, does not identify the sender
-  'sig': '<ephemeral signature>',
-  'tags': [['p', '<sharedKey.public>']],
+  'kind': 14,                        // chat envelope (legacy history: 1059)
+  'content': '<NIP-44 encrypted>',   // ciphertext — NOT readable without K_conv
+  'pubkey': '<pub(K_sign)>',         // conversation signing key, stable per trade
+  'sig': '<K_sign signature>',
+  'tags': [['p', '<pub(K_conv)>']],
   'type': 'chat',                    // app metadata
   'order_id': '<orderId>',           // app metadata — links event to a specific trade
 }
 ```
 
 **Privacy properties:**
-- The `content` field is NIP-44 encrypted. Reading it requires the ECDH shared key's private component.
-- The `pubkey` is an ephemeral key generated per message. It does not identify the sender.
-- The `p` tag contains the shared key's public component, not any party's real identity.
+- The `content` field is NIP-44 encrypted under K_conv. Reading it requires the ECDH shared secret (or the derived K_conv).
+- Neither `pubkey` (K_sign) nor the `p` tag (K_conv) is linkable to any party's trade or identity keys without the ECDH secret.
+- Sender identity (trade pubkey) is inside the encrypted payload, authenticated by the inner signature.
 - The `order_id` is app-internal metadata not present in the Nostr event itself.
 
 **What is NOT on disk:**
@@ -127,7 +134,7 @@ Events are stored in Sembast's `events` store as encrypted gift wraps:
 `state.messages` holds decrypted `NostrEvent` objects (kind 1) in RAM:
 
 ```dart
-// After p2pUnwrap:
+// After chatUnwrap:
 NostrEvent(
   kind: 1,
   content: "Let's reestablish the peer-to-peer nature of Bitcoin!",  // plaintext
@@ -136,7 +143,7 @@ NostrEvent(
 )
 ```
 
-These exist **only in memory**. When the app closes, they are lost. On restart, `_loadHistoricalMessages()` reads the encrypted gift wraps from Sembast and decrypts them again.
+These exist **only in memory**. When the app closes, they are lost. On restart, `_loadHistoricalMessages()` reads the encrypted envelopes from Sembast and decrypts them again.
 
 ---
 
@@ -210,15 +217,16 @@ Sembast query: WHERE type = 'chat' AND order_id = orderId
   ▼
 For each stored event:
   ├─ Reconstruct NostrEvent from stored map
-  ├─ Verify p-tag matches session.sharedKey.public
-  ├─ p2pUnwrap(sharedKey) → decrypt to kind 1 inner event
+  ├─ kind 14 → chatUnwrap(chatKeys, peerChatAllowedSigners)
+  ├─ kind 1059 (legacy, pre-migration) → verify p-tag matches
+  │  sharedKey.public, then p2pUnwrap(sharedKey)
   └─ Add to historicalMessages list
   │
   ▼
 Merge with existing state.messages, deduplicate by ID, sort by created_at
 ```
 
-The p-tag check during loading (line 353) acts as a safety filter: even if an event was somehow stored with an incorrect `order_id`, it won't be displayed in the wrong chat because the decryption key wouldn't match.
+Decryption itself acts as a safety filter: even if an event were somehow stored with an incorrect `order_id`, it won't be displayed in the wrong chat because the conversation keys wouldn't match.
 
 ---
 
@@ -230,15 +238,15 @@ Text messages have plain string content. Multimedia messages use JSON content:
 1. File/image encrypted with ChaCha20-Poly1305 using shared key bytes
 2. Uploaded to Blossom server (encrypted blob)
 3. JSON metadata sent as message content: `{ "type": "image_encrypted", "blossomUrl": "...", ... }`
-4. The JSON is inside the NIP-44 gift wrap — doubly encrypted
+4. The JSON is inside the NIP-44 chat envelope — doubly encrypted
 
 ### Receiving
-1. Gift wrap arrives → decrypted to kind 1 → JSON content detected
+1. Envelope arrives → decrypted to kind 1 → JSON content detected
 2. `_processMessageContent()` identifies `image_encrypted` / `file_encrypted`
 3. Downloads encrypted blob from Blossom, decrypts with shared key
 4. Caches decrypted media in memory (`MediaCacheMixin`)
 
-**Disk**: Only the gift wrap is stored (Blossom URL inside encrypted payload).
+**Disk**: Only the encrypted envelope is stored (Blossom URL inside encrypted payload). Attachment encryption keys off the raw ECDH secret bytes, not K_conv/K_sign, so attachments are wire-compatible with other clients.
 **Memory**: Decrypted media cached for display, cleared on dispose.
 
 ---
@@ -305,10 +313,12 @@ With 2+ active trades, counterpart messages disappear after closing and reopenin
 | `lib/features/chat/chat_room_provider.dart` | Provider creation, async initialization |
 | `lib/shared/providers/app_init_provider.dart` | App startup sequence, chat subscription setup |
 | `lib/data/repositories/event_storage.dart` | Sembast wrapper for event persistence |
-| `lib/data/models/session.dart` | Session model, ECDH shared key computation |
-| `lib/data/models/nostr_event.dart` | p2pWrap / p2pUnwrap encryption/decryption |
+| `lib/data/models/session.dart` | Session model, ECDH shared key computation, peerChatAllowedSigners |
+| `lib/data/models/nostr_event.dart` | createChatRumor / chatWrap / chatUnwrap; p2pUnwrap for legacy history |
+| `lib/shared/utils/chat_keys.dart` | HKDF derivation of K_conv / K_sign |
+| `lib/services/chat_cursor_store.dart` | Durable per-conversation since cursor |
 | `lib/services/lifecycle_manager.dart` | Foreground/background transitions, chat reload |
 
 ---
 
-*Last Updated: March 2026*
+*Last Updated: August 2026*

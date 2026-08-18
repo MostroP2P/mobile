@@ -226,9 +226,10 @@ class PushNotificationService {
   /// Wake the peer's device by triggering a silent push via `/api/notify`.
   ///
   /// Used after sending a P2P chat message: the push server's Nostr listener
-  /// only matches `kind 1059` events on the recipient's `tradeKey.public`,
-  /// and P2P chat events use `sharedKey.public`. This sender-triggered call
-  /// closes that gap without registering shared keys server-side.
+  /// only matches events addressed to the recipient's `tradeKey.public`, and
+  /// the kind-14 chat envelope is authored by `K_sign` and tagged to
+  /// `pub(K_conv)`. This sender-triggered call closes that gap without
+  /// registering conversation keys server-side.
   ///
   /// Intentionally NOT gated on `isPushEnabledInSettings`: that flag is the
   /// local *receive* preference and controls this device's own token
