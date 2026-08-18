@@ -571,8 +571,8 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                 ),
                 child: RangeSlider(
                   values: RangeValues(premiumMin, premiumMax),
-                  min: -10.0,
-                  max: 10.0,
+                  min: kDefaultPremiumMin,
+                  max: kDefaultPremiumMax,
                   divisions: 20,
                   labels: RangeLabels(
                     "${premiumMin.toInt()}%",
@@ -651,8 +651,8 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                 ),
                 child: RangeSlider(
                   values: RangeValues(ratingMin, ratingMax),
-                  min: 0.0,
-                  max: 5.0,
+                  min: kDefaultRatingMin,
+                  max: kDefaultRatingMax,
                   divisions: 5,
                   labels: RangeLabels(
                     ratingMin.toInt().toString(),

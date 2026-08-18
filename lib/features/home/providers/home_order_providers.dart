@@ -24,10 +24,17 @@ final premiumRangeFilterProvider = StateProvider<({double min, double max})>(
     (ref) => (min: kDefaultPremiumMin, max: kDefaultPremiumMax));
 final minDaysFilterProvider = StateProvider<int>((ref) => kDefaultMinDays);
 
+/// Single definition of "this filter is active", so the count shown in the UI
+/// can never disagree with the filtering actually applied.
+bool _isMinDaysActive(int minDays) => minDays > kDefaultMinDays;
+
+bool _isRatingActive(({double min, double max}) range) =>
+    range.min > kDefaultRatingMin || range.max < kDefaultRatingMax;
+
+bool _isPremiumActive(({double min, double max}) range) =>
+    range.min > kDefaultPremiumMin || range.max < kDefaultPremiumMax;
+
 /// Number of filters that currently differ from their default value.
-///
-/// Uses the same predicates as [filteredOrdersProvider] so the indicator shown
-/// in the UI can never disagree with the filtering actually applied.
 final activeFilterCountProvider = Provider<int>((ref) {
   final selectedCurrencies = ref.watch(currencyFilterProvider);
   final selectedPaymentMethods = ref.watch(paymentMethodFilterProvider);
@@ -38,15 +45,9 @@ final activeFilterCountProvider = Provider<int>((ref) {
   var count = 0;
   if (selectedCurrencies.isNotEmpty) count++;
   if (selectedPaymentMethods.isNotEmpty) count++;
-  if (minDays > kDefaultMinDays) count++;
-  if (ratingRange.min > kDefaultRatingMin ||
-      ratingRange.max < kDefaultRatingMax) {
-    count++;
-  }
-  if (premiumRange.min > kDefaultPremiumMin ||
-      premiumRange.max < kDefaultPremiumMax) {
-    count++;
-  }
+  if (_isMinDaysActive(minDays)) count++;
+  if (_isRatingActive(ratingRange)) count++;
+  if (_isPremiumActive(premiumRange)) count++;
   return count;
 });
 
@@ -107,13 +108,12 @@ final filteredOrdersProvider = Provider<List<NostrEvent>>((ref) {
       }
 
       // Apply minimum days filter (maker's account age as reported in rating.days)
-      if (minDays > kDefaultMinDays) {
+      if (_isMinDaysActive(minDays)) {
         filtered = filtered.where((o) => (o.rating?.days ?? 0) >= minDays);
       }
 
       // Apply rating filter
-      if (ratingRange.min > kDefaultRatingMin ||
-          ratingRange.max < kDefaultRatingMax) {
+      if (_isRatingActive(ratingRange)) {
         filtered = filtered.where((o) => 
           o.rating != null && 
           o.rating!.totalRating >= ratingRange.min &&
@@ -122,8 +122,7 @@ final filteredOrdersProvider = Provider<List<NostrEvent>>((ref) {
       }
 
       // Apply premium/discount filter
-      if (premiumRange.min > kDefaultPremiumMin ||
-          premiumRange.max < kDefaultPremiumMax) {
+      if (_isPremiumActive(premiumRange)) {
         filtered = filtered.where((o) {
           if (o.premium == null || o.premium!.isEmpty) return false;
           final premiumValue = double.tryParse(o.premium!) ?? 0.0;
