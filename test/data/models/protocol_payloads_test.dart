@@ -280,7 +280,6 @@ void main() {
       expect(peer.reputation!.rating, 4.375);
       expect(peer.reputation!.reviews, 4);
       expect(peer.reputation!.operatingDays, 64);
-      expect(peer.reputation!.hasNoHistory, isFalse);
     });
 
     test('parses a zeroed reputation (new user or full privacy)', () {
@@ -289,7 +288,9 @@ void main() {
         'reputation': {'rating': 0.0, 'reviews': 0, 'operating_days': 0},
       });
 
-      expect(peer.reputation!.hasNoHistory, isTrue);
+      expect(peer.reputation!.rating, 0.0);
+      expect(peer.reputation!.reviews, 0);
+      expect(peer.reputation!.operatingDays, 0);
     });
 
     test('parses a real pubkey with reputation absent (fiat-sent-ok shape)',
@@ -337,8 +338,7 @@ void main() {
         Peer(publicKey: _pubkey),
         isNot(equals(Peer(
           publicKey: _pubkey,
-          reputation:
-              const UserInfo(rating: 5.0, reviews: 1, operatingDays: 1),
+          reputation: const UserInfo(rating: 5.0, reviews: 1, operatingDays: 1),
         ))),
       );
     });

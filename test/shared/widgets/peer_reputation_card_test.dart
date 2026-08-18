@@ -42,7 +42,7 @@ void main() {
     expect(find.text("Seller's Reputation"), findsOneWidget);
   });
 
-  testWidgets('zeroed reputation renders as no history, not 0 stars',
+  testWidgets('zeroed reputation keeps the same card with every metric at 0',
       (tester) async {
     await pumpCard(
       tester,
@@ -50,8 +50,13 @@ void main() {
       counterpartIsBuyer: true,
     );
 
-    expect(find.text('No reputation history yet'), findsOneWidget);
-    expect(find.text('0.0'), findsNothing);
+    expect(find.text("Buyer's Reputation"), findsOneWidget);
+    expect(find.text('0.0'), findsOneWidget);
+    expect(find.text('0'), findsNWidgets(2));
+    // The three metric captions stay in place
+    expect(find.text('Rating'), findsOneWidget);
+    expect(find.text('Reviews'), findsOneWidget);
+    expect(find.text('Days'), findsOneWidget);
   });
 
   group('PeerReputationInline', () {
@@ -96,14 +101,16 @@ void main() {
       expect(find.text('4.4 / 5 · 4 reviews · 64 days'), findsOneWidget);
     });
 
-    testWidgets('zeroed reputation renders as no history', (tester) async {
+    testWidgets('zeroed reputation keeps the line with every metric at 0',
+        (tester) async {
       await pumpInline(
         tester,
         reputation: const UserInfo(rating: 0.0, reviews: 0, operatingDays: 0),
         counterpartIsBuyer: true,
       );
 
-      expect(find.text('No reputation history yet'), findsOneWidget);
+      expect(find.text("Buyer's Reputation"), findsOneWidget);
+      expect(find.text('0.0 / 5 · 0 reviews · 0 days'), findsOneWidget);
     });
   });
 }

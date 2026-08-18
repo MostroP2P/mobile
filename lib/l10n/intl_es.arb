@@ -743,7 +743,6 @@
     "creatorReputationLabel": "Reputación del Creador",
     "buyerReputationLabel": "Reputación del Comprador",
     "sellerReputationLabel": "Reputación del Vendedor",
-    "noReputationHistory": "Aún sin historial de reputación",
     "buyerTookYourSellOrder": "Un comprador ha tomado tu orden de venta.",
     "sellerTookYourBuyOrder": "Un vendedor ha tomado tu orden de compra.",
     "payInvoiceExchangeInstruction": "Si deseas continuar con el intercambio, paga esta factura Lightning de {sats} sats, equivalentes a {fiat_amount} {fiat_code}.",

@@ -288,8 +288,8 @@ class CreatorReputationCard extends StatelessWidget {
 }
 
 /// Card that displays the counterpart's reputation, from the daemon's
-/// taker-reputation notice. Zeroed data (new user or full-privacy taker)
-/// renders as "no history" instead of a misleading 0-star rating.
+/// taker-reputation notice. Keeps the same shape when there is no history
+/// (new user or full-privacy taker), showing zeros in every metric.
 class PeerReputationCard extends StatelessWidget {
   final UserInfo reputation;
   final bool counterpartIsBuyer;
@@ -318,20 +318,11 @@ class PeerReputationCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            if (reputation.hasNoHistory)
-              Text(
-                S.of(context)!.noReputationHistory,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                ),
-              )
-            else
-              _ReputationMetricsRow(
-                rating: reputation.rating,
-                reviews: reputation.reviews,
-                days: reputation.operatingDays,
-              ),
+            _ReputationMetricsRow(
+              rating: reputation.rating,
+              reviews: reputation.reviews,
+              days: reputation.operatingDays,
+            ),
           ],
         ),
       ),
@@ -340,8 +331,8 @@ class PeerReputationCard extends StatelessWidget {
 }
 
 /// Compact, cardless counterpart reputation for dense layouts (invoice
-/// screens): a title line plus "★ 4.4 / 5 · 4 reviews · 64 days".
-/// Zeroed data renders as "no history", same as [PeerReputationCard].
+/// screens): a title line plus "★ 4.4 / 5 · 4 reviews · 64 days". A
+/// counterpart with no history reads as zeros, same as [PeerReputationCard].
 class PeerReputationInline extends StatelessWidget {
   final UserInfo reputation;
   final bool counterpartIsBuyer;
@@ -369,37 +360,28 @@ class PeerReputationInline extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        if (reputation.hasNoHistory)
-          Text(
-            S.of(context)!.noReputationHistory,
-            style: const TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 16,
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.star,
+              color: AppTheme.mostroGreen,
+              size: 18,
             ),
-          )
-        else
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.star,
-                color: AppTheme.mostroGreen,
-                size: 18,
-              ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  '${reputation.rating.toStringAsFixed(1)} / 5 · '
-                  '${S.of(context)!.reputationReviewsCount(reputation.reviews)} · '
-                  '${S.of(context)!.reputationDaysCount(reputation.operatingDays)}',
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 16,
-                  ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                '${reputation.rating.toStringAsFixed(1)} / 5 · '
+                '${S.of(context)!.reputationReviewsCount(reputation.reviews)} · '
+                '${S.of(context)!.reputationDaysCount(reputation.operatingDays)}',
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 16,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
       ],
     );
   }

@@ -26,9 +26,6 @@ class UserInfo {
         'operating_days': operatingDays,
       };
 
-  /// True when the snapshot carries no history (new user or full privacy).
-  bool get hasNoHistory => rating == 0.0 && reviews == 0 && operatingDays == 0;
-
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

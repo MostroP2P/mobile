@@ -307,7 +307,6 @@
     "creatorReputationLabel": "Creator's Reputation",
     "buyerReputationLabel": "Buyer's Reputation",
     "sellerReputationLabel": "Seller's Reputation",
-    "noReputationHistory": "No reputation history yet",
     "buyerTookYourSellOrder": "A buyer has taken your sell order.",
     "sellerTookYourBuyOrder": "A seller has taken your buy order.",
     "payInvoiceExchangeInstruction": "If you want to continue with the exchange, pay this Lightning invoice for {sats} sats, equivalent to {fiat_amount} {fiat_code}.",

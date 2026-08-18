@@ -68,7 +68,6 @@ void main() {
 
     expect(find.text('A buyer has taken your sell order.'), findsOneWidget);
     expect(find.text("Buyer's Reputation"), findsNothing);
-    expect(find.text('No reputation history yet'), findsNothing);
   });
 
   testWidgets('every line shares one size and inherits the theme font',
