@@ -247,19 +247,17 @@ When orders are canceled, Mostro sends `Action.canceled` gift wrap:
 ## Internationalization (i18n)
 
 ### Current Localization Setup
-- **Primary languages**: English (en), Spanish (es), Italian (it)
-- **ARB files location**: `lib/l10n/`
-  - `intl_en.arb` - English (base language)
-  - `intl_es.arb` - Spanish translations
-  - `intl_it.arb` - Italian translations
+- **Supported languages**: English (en, base), Spanish (es), Italian (it), German (de), French (fr), Portuguese (pt)
+- **ALWAYS verify the actual locale set before adding keys**: list `lib/l10n/` (one `intl_<locale>.arb` per language) — new languages get added over time and this list can be outdated. A key missing in any ARB shows up as "N untranslated message(s)" when running `flutter gen-l10n`.
+- **ARB files location**: `lib/l10n/` (`intl_en.arb` is the base language)
 - **Generated files**: `lib/generated/l10n.dart` and language-specific files
 - **Usage**: Import `import 'package:mostro_mobile/generated/l10n.dart';` and use `S.of(context)!.keyName`
 
 ### Localization Best Practices
 - **Always use localized strings**: Replace hardcoded text with `S.of(context)!.keyName`
-- **ARB file structure**: Add new keys to all three ARB files (en, es, it)
+- **ARB file structure**: Add new keys to EVERY `intl_*.arb` file in `lib/l10n/` (verify the current set first), matching each file's existing style/capitalization
 - **Parameterized strings**: Use proper ARB metadata for strings with parameters
-- **Regenerate after changes**: Run `dart run build_runner build -d` after ARB modifications
+- **Regenerate after changes**: Run `flutter gen-l10n` after ARB modifications and check its output for untranslated-message warnings
 - **Context usage**: Pass BuildContext to methods that need localization
 
 ### TimeAgo Localization
