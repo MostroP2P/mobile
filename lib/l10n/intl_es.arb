@@ -739,8 +739,57 @@
     "fiatSentButton": "FIAT ENVIADO",
     "paymentMethodLabel": "Método de Pago",
     "createdOnLabel": "Creado el",
-    "orderIdLabel": "ID de Orden",
+    "orderIdLabel": "ID de la orden",
     "creatorReputationLabel": "Reputación del Creador",
+    "buyerReputationLabel": "Reputación del Comprador",
+    "sellerReputationLabel": "Reputación del Vendedor",
+    "noReputationHistory": "Aún sin historial de reputación",
+    "buyerTookYourSellOrder": "Un comprador ha tomado tu orden de venta.",
+    "sellerTookYourBuyOrder": "Un vendedor ha tomado tu orden de compra.",
+    "payInvoiceExchangeInstruction": "Si deseas continuar con el intercambio, paga esta factura Lightning de {sats} sats, equivalentes a {fiat_amount} {fiat_code}.",
+    "@payInvoiceExchangeInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "addInvoiceExchangeInstruction": "Si deseas continuar con el intercambio, agrega una factura Lightning de {sats} sats, equivalentes a {fiat_amount} {fiat_code}.",
+    "@addInvoiceExchangeInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "reputationReviewsCount": "{count, plural, =1{1 reseña} other{{count} reseñas}}",
+    "@reputationReviewsCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "reputationDaysCount": "{count, plural, =1{1 día} other{{count} días}}",
+    "@reputationDaysCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "ratingTitleLabel": "Calificación",
     "reviewsLabel": "Reseñas",
     "daysLabel": "Días",

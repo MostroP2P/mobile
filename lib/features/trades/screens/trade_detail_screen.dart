@@ -87,6 +87,15 @@ class TradeDetailScreen extends ConsumerWidget {
                   // Detailed info: includes the last Mostro message action text
                   MostroMessageDetail(orderId: orderId),
                 ],
+                // Counterpart reputation, from the daemon's taker notice
+                // (only ever received by the maker)
+                if (tradeState.peerReputation != null) ...[
+                  const SizedBox(height: 16),
+                  PeerReputationCard(
+                    reputation: tradeState.peerReputation!,
+                    counterpartIsBuyer: session?.role == Role.seller,
+                  ),
+                ],
                 const SizedBox(height: 24),
                 // Show countdown timer only for specific statuses
                 _CountdownWidget(
