@@ -10,7 +10,7 @@ import 'package:mostro_mobile/features/chat/providers/active_chat_screens_provid
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
-import 'package:mostro_mobile/services/dispute_chat_cursor_store.dart';
+import 'package:mostro_mobile/services/chat_cursor_store.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/shared/mixins/media_cache_mixin.dart';

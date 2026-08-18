@@ -73,7 +73,7 @@ The spec requires filtering by `authors`, **never by `#p`**: a `#p` filter would
 third party flood the subscription with junk events tagged to the conversation pubkey.
 
 The backlog is bounded by a **durable per-conversation `since` cursor**
-(`DisputeChatCursorStore`, persisted in SharedPreferences), as the spec mandates:
+(`ChatCursorStore`, persisted in SharedPreferences), as the spec mandates:
 
 - The cursor advances **only after `chatUnwrap` accepts an event**, clamped to
   `min(accepted_timestamp, local_now)` so a future-dated event within the skew tolerance
@@ -123,7 +123,7 @@ event id (`eventStore.hasItem`) and UI state by inner event id.
 | Envelope (`chatWrap`/`chatUnwrap`) | `lib/data/models/nostr_event.dart` |
 | Dispute chat notifier (subscribe/send/receive/history) | `lib/features/disputes/notifiers/dispute_chat_notifier.dart` |
 | Centralized `disputeChat` filter (also reused by background) | `lib/features/subscriptions/subscription_manager.dart` |
-| Durable `since` cursor (`DisputeChatCursorStore`) | `lib/services/dispute_chat_cursor_store.dart` |
+| Durable `since` cursor (`ChatCursorStore`) | `lib/services/chat_cursor_store.dart` |
 | Background push routing (`author == pub(K_sign)`) | `lib/features/notifications/services/background_notification_service.dart` |
 | Derivation + envelope tests (incl. official test vector) | `test/shared/utils/chat_keys_test.dart`, `test/data/models/nostr_event_chat_test.dart` |
 

@@ -12,7 +12,7 @@ import 'package:mostro_mobile/features/mostro/transport.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
-import 'package:mostro_mobile/services/dispute_chat_cursor_store.dart';
+import 'package:mostro_mobile/services/chat_cursor_store.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';

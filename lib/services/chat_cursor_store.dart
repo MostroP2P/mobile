@@ -2,98 +2,114 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Persists the per-conversation `since` cursor for dispute chat
-/// subscriptions, as the chat spec requires: "subscribe with `since` set to
-/// the last processed timestamp, persisted locally, together with a limit".
+/// Persists the per-conversation `since` cursor for chat subscriptions, as
+/// the chat spec requires: "subscribe with `since` set to the last processed
+/// timestamp, persisted locally, together with a limit".
 ///
 /// The cursor advances only after chatUnwrap accepts an event, clamped to
 /// min(accepted_timestamp, local_now) so a future-dated event cannot
 /// suppress later messages. Subscriptions subtract [cursorOverlap] so an
 /// event late-delivered by a slow relay is not filtered out forever;
 /// outer-id dedup absorbs the re-delivered tail.
-class DisputeChatCursorStore {
-  static const _keyPrefix = 'dispute_chat_since_';
-
+///
+/// One instance per conversation namespace: [keyPrefix] scopes the
+/// SharedPreferences keys (dispute chat by disputeId, peer chat by orderId).
+class ChatCursorStore {
   /// Overlap window subtracted from the cursor when subscribing.
   static const cursorOverlap = Duration(minutes: 10);
 
+  final String _keyPrefix;
   final SharedPreferencesAsync _prefs;
   final Map<String, DateTime> _cache = {};
 
-  /// Per-dispute chain serializing advance() so concurrent calls cannot
+  /// Per-conversation chain serializing advance() so concurrent calls cannot
   /// interleave their read-compare-write and regress the cursor.
   final Map<String, Future<void>> _advanceQueue = {};
 
-  DisputeChatCursorStore(this._prefs);
+  ChatCursorStore(this._prefs, {required String keyPrefix})
+      : _keyPrefix = keyPrefix;
 
   /// Clamp an accepted event timestamp to the local clock.
   static DateTime clamp(DateTime accepted, DateTime now) =>
       accepted.isAfter(now) ? now : accepted;
 
   /// Last processed timestamp for a conversation, or null if none stored.
-  Future<DateTime?> cursorFor(String disputeId) async {
-    final cached = _cache[disputeId];
+  Future<DateTime?> cursorFor(String conversationId) async {
+    final cached = _cache[conversationId];
     if (cached != null) return cached;
-    final secs = await _prefs.getInt('$_keyPrefix$disputeId');
+    final secs = await _prefs.getInt('$_keyPrefix$conversationId');
     if (secs == null) return null;
     final cursor = DateTime.fromMillisecondsSinceEpoch(secs * 1000);
-    _cache[disputeId] = cursor;
+    _cache[conversationId] = cursor;
     return cursor;
   }
 
   /// Subscription `since` for a conversation: the cursor minus the overlap
   /// window, or null when no cursor is stored yet (callers fall back to the
   /// default lookback).
-  Future<DateTime?> sinceFor(String disputeId) async {
-    final cursor = await cursorFor(disputeId);
+  Future<DateTime?> sinceFor(String conversationId) async {
+    final cursor = await cursorFor(conversationId);
     return cursor?.subtract(cursorOverlap);
   }
 
   /// Synchronous variant for call sites that build filters synchronously.
   /// Returns null when the cursor is not in memory yet — call [warmUp]
   /// first so persisted cursors are visible after a cold start.
-  DateTime? cachedSinceFor(String disputeId) =>
-      _cache[disputeId]?.subtract(cursorOverlap);
+  DateTime? cachedSinceFor(String conversationId) =>
+      _cache[conversationId]?.subtract(cursorOverlap);
 
   /// Load the persisted cursors for the given conversations into the
   /// in-memory cache, so synchronous filter builders see durable state.
-  Future<void> warmUp(Iterable<String> disputeIds) async {
-    for (final disputeId in disputeIds) {
-      await cursorFor(disputeId);
+  Future<void> warmUp(Iterable<String> conversationIds) async {
+    for (final conversationId in conversationIds) {
+      await cursorFor(conversationId);
     }
   }
 
   /// Advance the cursor after an accepted event. Monotonic (never moves
-  /// backward), clamped to the local clock, and serialized per dispute.
+  /// backward), clamped to the local clock, and serialized per conversation.
   Future<void> advance(
-    String disputeId,
+    String conversationId,
     DateTime accepted, {
     DateTime? now,
   }) {
-    final previous = _advanceQueue[disputeId] ?? Future.value();
+    final previous = _advanceQueue[conversationId] ?? Future.value();
     final next = previous
         .catchError((_) {})
-        .then((_) => _advanceSerialized(disputeId, accepted, now: now));
-    _advanceQueue[disputeId] = next;
+        .then((_) => _advanceSerialized(conversationId, accepted, now: now));
+    _advanceQueue[conversationId] = next;
     return next;
   }
 
   Future<void> _advanceSerialized(
-    String disputeId,
+    String conversationId,
     DateTime accepted, {
     DateTime? now,
   }) async {
     final clamped = clamp(accepted, now ?? DateTime.now());
-    final current = await cursorFor(disputeId);
+    final current = await cursorFor(conversationId);
     if (current != null && !clamped.isAfter(current)) return;
-    _cache[disputeId] = clamped;
+    _cache[conversationId] = clamped;
     await _prefs.setInt(
-      '$_keyPrefix$disputeId',
+      '$_keyPrefix$conversationId',
       clamped.millisecondsSinceEpoch ~/ 1000,
     );
   }
 }
 
-final disputeChatCursorStoreProvider = Provider<DisputeChatCursorStore>(
-  (ref) => DisputeChatCursorStore(ref.watch(sharedPreferencesProvider)),
+/// Dispute chat cursors, keyed by disputeId. The prefix predates the
+/// generalization; keeping it preserves cursors stored by older builds.
+final disputeChatCursorStoreProvider = Provider<ChatCursorStore>(
+  (ref) => ChatCursorStore(
+    ref.watch(sharedPreferencesProvider),
+    keyPrefix: 'dispute_chat_since_',
+  ),
+);
+
+/// Peer (buyer-seller) chat cursors, keyed by orderId.
+final chatCursorStoreProvider = Provider<ChatCursorStore>(
+  (ref) => ChatCursorStore(
+    ref.watch(sharedPreferencesProvider),
+    keyPrefix: 'chat_since_',
+  ),
 );
