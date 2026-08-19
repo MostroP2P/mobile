@@ -94,6 +94,26 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
           );
           return;
         }
+        // A valid signature says the node authored this event, not that it
+        // still reflects the node's configuration. Relays pick which events
+        // they serve and in what order, so without a monotonicity check the
+        // last one to arrive wins — letting a relay replay a genuinely signed
+        // but superseded info event to roll the advertised config back (most
+        // importantly `protocol_version` 2 -> 1). Only move forward in time.
+        //
+        // Reset to null on instance switch (see updateSettings), so this never
+        // blocks the newly selected node's own info event.
+        final currentCreatedAt = _mostroInstance?.createdAt;
+        final incomingCreatedAt = event.createdAt;
+        if (currentCreatedAt != null &&
+            (incomingCreatedAt == null ||
+                !incomingCreatedAt.isAfter(currentCreatedAt))) {
+          logger.d(
+            'Ignoring kind-$infoEventKind info event from ${event.pubkey} '
+            'dated $incomingCreatedAt: not newer than $currentCreatedAt',
+          );
+          return;
+        }
         logger.i('Mostro instance info loaded: $event');
         _mostroInstance = event;
         if (!_mostroInstanceController.isClosed) {

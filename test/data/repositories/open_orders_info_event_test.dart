@@ -14,11 +14,13 @@ import '../../mocks.mocks.dart';
 NostrEvent _signedInfoEvent(
   NostrKeyPairs keyPair, {
   String protocolVersion = '2',
+  DateTime? createdAt,
 }) {
   return NostrEvent.fromPartialData(
     kind: 38385,
     content: '',
     keyPairs: keyPair,
+    createdAt: createdAt,
     tags: [
       ['d', 'info'],
       ['y', 'mostro'],
@@ -169,6 +171,97 @@ void main() {
         repository.mostroInstance!.tags,
         contains(equals(['protocol_version', '2'])),
       );
+    });
+  });
+
+  group('OpenOrdersRepository info event freshness', () {
+    // Signature validity says the node authored the event, not that it is
+    // current. A relay that holds on to a superseded info event can replay it
+    // to roll the node's advertised config back — the downgrade path that
+    // survives signature verification.
+    test('ignores a signed but superseded info event', () async {
+      final repository = buildRepository();
+      final now = DateTime.now();
+
+      final current = _signedInfoEvent(
+        nodeKeys,
+        protocolVersion: '2',
+        createdAt: now,
+      );
+      final superseded = _signedInfoEvent(
+        nodeKeys,
+        protocolVersion: '1',
+        createdAt: now.subtract(const Duration(days: 30)),
+      );
+
+      eventController.add(current);
+      await pumpEventQueue();
+      eventController.add(superseded);
+      await pumpEventQueue();
+
+      // Both are genuinely signed; only recency separates them.
+      expect(NostrUtils.isValidEventSignature(superseded), isTrue);
+      expect(repository.mostroInstance!.id, current.id);
+    });
+
+    test('applies a newer info event', () async {
+      final repository = buildRepository();
+      final now = DateTime.now();
+
+      final older = _signedInfoEvent(
+        nodeKeys,
+        createdAt: now.subtract(const Duration(hours: 1)),
+      );
+      final newer = _signedInfoEvent(nodeKeys, createdAt: now);
+
+      eventController.add(older);
+      await pumpEventQueue();
+      eventController.add(newer);
+      await pumpEventQueue();
+
+      expect(repository.mostroInstance!.id, newer.id);
+    });
+
+    test('ignores a re-delivery of the already accepted event', () async {
+      final repository = buildRepository();
+      final event = _signedInfoEvent(nodeKeys, createdAt: DateTime.now());
+
+      final emissions = <NostrEvent>[];
+      final sub = repository.mostroInstanceStream.listen(emissions.add);
+
+      // The same event arriving from several relays must not re-emit.
+      eventController.add(event);
+      await pumpEventQueue();
+      eventController.add(event);
+      await pumpEventQueue();
+
+      expect(emissions, hasLength(1));
+      await sub.cancel();
+    });
+
+    test('accepts the newly selected node info after an instance switch',
+        () async {
+      final repository = buildRepository();
+      final now = DateTime.now();
+
+      eventController.add(_signedInfoEvent(nodeKeys, createdAt: now));
+      await pumpEventQueue();
+
+      // The next node's info event is older in wall-clock terms; the switch
+      // must not let the previous node's timestamp shut it out.
+      final nextNodeKeys = NostrUtils.generateKeyPair();
+      repository.updateSettings(
+        settings.copyWith(mostroPublicKey: nextNodeKeys.public),
+      );
+
+      final nextInfo = _signedInfoEvent(
+        nextNodeKeys,
+        createdAt: now.subtract(const Duration(days: 7)),
+      );
+      eventController.add(nextInfo);
+      await pumpEventQueue();
+
+      expect(repository.mostroInstance!.id, nextInfo.id);
     });
   });
 }
