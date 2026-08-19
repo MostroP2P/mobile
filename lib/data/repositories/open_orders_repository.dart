@@ -110,21 +110,18 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
         }
         // A valid signature says the node authored this event, not that it
         // still reflects the node's configuration. Relays pick which events
-        // they serve and in what order, so without a monotonicity check the
-        // last one to arrive wins — letting a relay replay a genuinely signed
-        // but superseded info event to roll the advertised config back (most
-        // importantly `protocol_version` 2 -> 1). Only move forward in time.
+        // they serve and in what order, so without a replacement rule the last
+        // one to arrive wins — letting a relay replay a genuinely signed but
+        // superseded info event to roll the advertised config back (most
+        // importantly `protocol_version` 2 -> 1).
         //
         // Reset to null on instance switch (see updateSettings), so this never
         // blocks the newly selected node's own info event.
-        final currentCreatedAt = _mostroInstance?.createdAt;
-        final incomingCreatedAt = event.createdAt;
-        if (currentCreatedAt != null &&
-            (incomingCreatedAt == null ||
-                !incomingCreatedAt.isAfter(currentCreatedAt))) {
+        if (!_supersedesCurrentInfo(event)) {
           logger.d(
-            'Ignoring kind-$infoEventKind info event from ${event.pubkey} '
-            'dated $incomingCreatedAt: not newer than $currentCreatedAt',
+            'Ignoring kind-$infoEventKind info event ${event.id} from '
+            '${event.pubkey} dated ${event.createdAt}: does not supersede '
+            '${_mostroInstance?.id} dated ${_mostroInstance?.createdAt}',
           );
           return;
         }
@@ -162,6 +159,35 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
         );
       }
     });
+  }
+
+  /// Whether [candidate] replaces the info event currently in use, under
+  /// NIP-01's ordering for addressable events: the higher `created_at` wins,
+  /// and a tie goes to the lower id.
+  ///
+  /// The tie-break is what makes this converge. Two events sharing a second
+  /// are both genuinely the node's — they cleared the signature check — but
+  /// only one of them is the copy every other client will settle on, and a
+  /// pure "strictly newer" rule silently keeps whichever the fastest relay
+  /// happened to deliver. An exact re-delivery compares equal on both fields
+  /// and is still rejected, so this does not reopen the replay window the
+  /// check exists to close.
+  bool _supersedesCurrentInfo(NostrEvent candidate) {
+    final current = _mostroInstance;
+    if (current == null) return true;
+
+    final candidateAt = candidate.createdAt;
+    if (candidateAt == null) return false;
+    final currentAt = current.createdAt;
+    if (currentAt == null) return true;
+
+    if (candidateAt.isAfter(currentAt)) return true;
+    if (currentAt.isAfter(candidateAt)) return false;
+
+    final candidateId = candidate.id;
+    final currentId = current.id;
+    if (candidateId == null || currentId == null) return false;
+    return candidateId.compareTo(currentId) < 0;
   }
 
   void _emitEvents() {
