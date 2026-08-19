@@ -17,6 +17,11 @@ class MostroStorage extends BaseStorage<MostroMessage> {
       if (await hasItem(id)) return;
       // Add metadata for easier querying
       final Map<String, dynamic> dbMap = message.toJson();
+      // Receive time, and only as a last resort. This is not evidence of when
+      // the node spoke — a relay chooses when to deliver — so it is a
+      // placeholder for messages that carry no signed clock (the v1 gift-wrap
+      // path, and locally synthesised messages). v2 messages arrive with
+      // `timestamp` already set from the node-signed `created_at`.
       message.timestamp ??= DateTime.now().millisecondsSinceEpoch;
       dbMap['timestamp'] = message.timestamp;
 

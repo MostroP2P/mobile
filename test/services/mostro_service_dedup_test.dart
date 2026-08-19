@@ -59,8 +59,9 @@ class _StubSettingsNotifier extends StateNotifier<Settings>
 /// A kind-14 Mostro message, signed by [node] and addressed to [recipient].
 Future<NostrEvent> _mostroMessage(
   NostrKeyPairs node,
-  String recipient,
-) async {
+  String recipient, {
+  DateTime? createdAt,
+}) async {
   final payload = jsonEncode([
     {
       'order': {'version': 2, 'action': 'fiat-sent-ok', 'id': 'order-1'}
@@ -71,6 +72,7 @@ Future<NostrEvent> _mostroMessage(
     kind: 14,
     content: await NostrUtils.encryptNIP44(payload, node.private, recipient),
     keyPairs: node,
+    createdAt: createdAt,
     tags: [
       ['p', recipient],
     ],
@@ -206,5 +208,65 @@ void main() {
 
     expect(await EventStorage(db: eventDb).hasItem(event.id!), isFalse);
     expect(await storedMessages(), isEmpty);
+  });
+
+  // MM-021: freshness has to come from the wire. The kind-14 created_at is
+  // covered by the node's signature, so a relay can withhold a message but
+  // cannot make an old one look new — which is exactly what a replayed
+  // fiat-sent-ok needs in order to re-arm the seller's Release button.
+  group('message freshness', () {
+    test('the stored timestamp is the node-signed created_at', () async {
+      final signedAt = DateTime.now().subtract(const Duration(days: 3));
+      final event = await _mostroMessage(
+        nodeKeys,
+        session.tradeKey.public,
+        createdAt: signedAt,
+      );
+
+      subscriptions.emit(event);
+      await pumpEventQueue();
+
+      final stored = await storedMessages();
+      expect(stored, hasLength(1));
+      // Tolerance of a second: Nostr serialises created_at in whole seconds,
+      // so an event that has crossed the wire loses the sub-second part while
+      // one built in-process keeps it.
+      expect(
+        stored.single.timestamp,
+        closeTo(signedAt.millisecondsSinceEpoch, 1000),
+      );
+    });
+
+    test('a replayed old message does not read as fresh', () async {
+      final event = await _mostroMessage(
+        nodeKeys,
+        session.tradeKey.public,
+        createdAt: DateTime.now().subtract(const Duration(days: 30)),
+      );
+
+      subscriptions.emit(event);
+      await pumpEventQueue();
+
+      final stored = await storedMessages();
+      final age = DateTime.now().millisecondsSinceEpoch -
+          stored.single.timestamp!;
+      expect(
+        age,
+        greaterThan(const Duration(days: 29).inMilliseconds),
+        reason: 'receive time would have made this look seconds old',
+      );
+    });
+
+    test('a fresh message keeps a current timestamp', () async {
+      final event = await _mostroMessage(nodeKeys, session.tradeKey.public);
+
+      subscriptions.emit(event);
+      await pumpEventQueue();
+
+      final stored = await storedMessages();
+      final age = DateTime.now().millisecondsSinceEpoch -
+          stored.single.timestamp!;
+      expect(age, lessThan(const Duration(minutes: 1).inMilliseconds));
+    });
   });
 }
