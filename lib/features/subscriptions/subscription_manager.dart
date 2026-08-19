@@ -103,6 +103,14 @@ class SubscriptionManager {
   /// repository only emits events it has already matched to the connected
   /// node, and using the event's own author keeps the store correct if that
   /// ever changes.
+  ///
+  /// A missing tag is deliberately *not* recorded as [kLegacyProtocolVersion],
+  /// even though [anchoredProtocolVersionFor] reads it that way when resolving
+  /// a transport. Resolution can see that the info event is in hand; the store
+  /// outlives it. Persisting 1 would leave `remembered == 1` with no info
+  /// event after a restart, and a relay that then simply withholds the event
+  /// would resolve v1 off remembered state alone — turning the ratchet, whose
+  /// whole purpose is to block downgrades, into a durable downgrade primitive.
   void _recordAdvertisedProtocolVersion(NostrEvent event) {
     try {
       final version = event.protocolVersion;

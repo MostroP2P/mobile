@@ -426,15 +426,7 @@ class NostrUtils {
         '["EVENT", "", $decryptedContent]',
       );
 
-      if (sealEvent.pubkey != expectedAuthor) {
-        throw ArgumentError(
-          'Unexpected seal author: expected $expectedAuthor, '
-          'got ${sealEvent.pubkey}',
-        );
-      }
-      if (!isValidEventSignature(sealEvent)) {
-        throw ArgumentError('Invalid seal signature');
-      }
+      authenticateSeal(sealEvent, expectedAuthor);
 
       final finalDecryptedContent = await decryptNIP44(
         sealEvent.content!,
@@ -467,6 +459,12 @@ class NostrUtils {
         ),
         subscriptionId: '',
       );
+    } on ArgumentError {
+      // Authentication verdicts propagate unwrapped. Folding them into the
+      // generic Exception below would make "this message is not from the node"
+      // indistinguishable from "the payload was malformed", both to callers
+      // and to anyone reading a log line.
+      rethrow;
     } catch (e) {
       throw Exception('Failed to decrypt NIP-59 event: $e');
     }
@@ -517,6 +515,31 @@ class NostrUtils {
       );
     } catch (e) {
       throw Exception('Failed to decrypt NIP-44 direct event: $e');
+    }
+  }
+
+  /// Authenticates a NIP-59 seal (kind 13) as having been written by
+  /// [expectedAuthor].
+  ///
+  /// The seal is the only layer of a gift wrap that names its sender under a
+  /// signature: the outer wrap (kind 1059) is signed by a throwaway ephemeral
+  /// key and proves nothing, and the rumor inside is unsigned by design, so
+  /// its `pubkey` field is a claim rather than evidence. mostrod builds the
+  /// seal as `EventBuilder::seal(...).sign(identity_keys)` (mostro-core
+  /// `nip59.rs`), and the node uses one keypair for identity and trade, so the
+  /// seal's author is the configured node pubkey.
+  ///
+  /// Single implementation on purpose: both gift-wrap unwrapping paths call
+  /// this, so a change to what "authenticated" means cannot reach one and miss
+  /// the other. Throws when the seal fails either check.
+  static void authenticateSeal(NostrEvent seal, String expectedAuthor) {
+    if (seal.pubkey != expectedAuthor) {
+      throw ArgumentError(
+        'Unexpected seal author: expected $expectedAuthor, got ${seal.pubkey}',
+      );
+    }
+    if (!isValidEventSignature(seal)) {
+      throw ArgumentError('Invalid seal signature');
     }
   }
 

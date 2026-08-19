@@ -146,20 +146,10 @@ extension NostrEventExtensions on NostrEvent {
           throw Exception('SEAL content is empty');
         }
 
-        // STEP 2b: Authenticate the sender. The seal is the only signed
-        // layer that names them: the outer wrap is signed by a throwaway
-        // ephemeral key, and the rumor is unsigned by design, so its pubkey
-        // field is a claim. Pin the author and verify the signature before
-        // trusting anything inside.
-        if (sealEvent.pubkey != expectedAuthor) {
-          throw Exception(
-            'Unexpected seal author: expected $expectedAuthor, '
-            'got ${sealEvent.pubkey}',
-          );
-        }
-        if (!NostrUtils.isValidEventSignature(sealEvent)) {
-          throw Exception('Invalid seal signature');
-        }
+        // STEP 2b: Authenticate the sender before trusting anything inside.
+        // See NostrUtils.authenticateSeal for why the seal is the layer that
+        // carries this evidence.
+        NostrUtils.authenticateSeal(sealEvent, expectedAuthor);
 
         // STEP 3: Decrypt SEAL with sender's pubkey (from SEAL)
         // The SEAL pubkey identifies the actual sender (admin or user)
