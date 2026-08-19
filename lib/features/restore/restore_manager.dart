@@ -6,6 +6,7 @@ import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:dart_nostr/nostr/model/request/request.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/features/mostro/protocol_version_store.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
@@ -281,7 +282,7 @@ class RestoreService {
       );
     }
     final wrappedEvent = await mostroMessage.wrapForTransport(
-      protocolVersion: mostroInstance?.protocolVersion,
+      protocolVersion: anchoredProtocolVersionFor(ref),
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
       masterKey: settings.fullPrivacyMode ? null : _masterKey,
@@ -378,7 +379,7 @@ class RestoreService {
       );
     }
     final wrappedEvent = await mostroMessage.wrapForTransport(
-      protocolVersion: mostroInstance?.protocolVersion,
+      protocolVersion: anchoredProtocolVersionFor(ref),
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
       masterKey: settings.fullPrivacyMode ? null : _masterKey,
@@ -459,7 +460,7 @@ class RestoreService {
       );
     }
     final wrappedEvent = await mostroMessage.wrapForTransport(
-      protocolVersion: mostroInstance?.protocolVersion,
+      protocolVersion: anchoredProtocolVersionFor(ref),
       tradeKey: _tempTradeKey!,
       recipientPubKey: settings.mostroPublicKey,
       masterKey: settings.fullPrivacyMode ? null : _masterKey,
@@ -1076,9 +1077,10 @@ class RestoreService {
       _tempTradeKey = await keyManager.deriveTradeKeyFromIndex(1);
 
       // Wait for the node info event (kind 38385) before sending: at app init
-      // mostroInstance is still null, which makes wrapForTransport default to v1
-      // gift wrap. On a protocol v2 node the request would then go out as kind
-      // 1059 and never be answered, leaving the local key index stale.
+      // nothing is known about the node yet, so the transport resolves to the
+      // default. Against a node that speaks the other protocol the request
+      // would go out on the wrong kind and never be answered, leaving the
+      // local key index stale.
       await _waitForNodeConnectivity(ref.read(settingsProvider).mostroPublicKey);
 
       _tempSubscription = await _createTempSubscription();

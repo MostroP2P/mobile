@@ -121,18 +121,7 @@ class SubscriptionManager {
   /// unavailable or unreadable: a relay can produce that state at will by
   /// simply not serving the info event, and v1's intake authenticates nothing.
   Transport _resolveOrdersTransport() {
-    try {
-      final infoEvent = ref.read(orderRepositoryProvider).mostroInstance;
-      final mostroPubkey = ref.read(settingsProvider).mostroPublicKey;
-      final remembered =
-          ref.read(protocolVersionStoreProvider).versionFor(mostroPubkey);
-      return resolveAnchoredTransport(infoEvent?.protocolVersion, remembered);
-    } catch (e) {
-      logger.w(
-        'Failed to resolve orders transport, using $kDefaultTransport: $e',
-      );
-      return kDefaultTransport;
-    }
+    return resolveTransport(anchoredProtocolVersionFor(ref));
   }
 
   void _initSessionListener() {
