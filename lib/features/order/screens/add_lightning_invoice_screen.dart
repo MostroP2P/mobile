@@ -61,15 +61,23 @@ class _AddLightningInvoiceScreenState
         final orderIdValue = orderPayload?.id ?? orderId;
         // Trade summary shown by every flow: trade type, who took the order,
         // amounts, order id and the counterpart reputation (when received).
-        // Adding an invoice always means the user is the buyer.
+        // Adding an invoice always means the user is the buyer, but not always
+        // the maker: taking a sell order and retrying after a failed payout
+        // land here too.
         final session = ref.watch(sessionProvider(orderId));
+        final orderState = ref.watch(orderNotifierProvider(orderId));
         final header = InvoiceHeader(
           userIsSeller: session?.role == Role.seller,
           sats: amount ?? 0,
           fiatAmount: fiatAmount,
           fiatCode: fiatCode,
           orderId: orderIdValue,
-          reputation: ref.watch(orderNotifierProvider(orderId)).peerReputation,
+          takenByCounterpart: counterpartTookYourOrder(
+            kind: orderState.order?.kind ?? orderPayload?.kind,
+            role: session?.role,
+            status: orderState.status,
+          ),
+          reputation: orderState.peerReputation,
         );
 
         final nwcState = ref.watch(nwcProvider);

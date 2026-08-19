@@ -46,7 +46,8 @@ class _PayLightningInvoiceScreenState
 
     // Trade summary shown by every flow: trade type, who took the order,
     // amounts, order id and the counterpart reputation (when received).
-    // Paying the hold invoice always means the user is the seller.
+    // Paying the hold invoice always means the user is the seller, but not
+    // always the maker: taking a buy order lands here too.
     final session = ref.watch(sessionProvider(widget.orderId));
     final header = InvoiceHeader(
       userIsSeller: session?.role == null || session!.role == Role.seller,
@@ -54,6 +55,11 @@ class _PayLightningInvoiceScreenState
       fiatAmount: fiatAmount,
       fiatCode: fiatCode,
       orderId: widget.orderId,
+      takenByCounterpart: counterpartTookYourOrder(
+        kind: orderState.order?.kind,
+        role: session?.role,
+        status: orderState.status,
+      ),
       reputation: orderState.peerReputation,
     );
 

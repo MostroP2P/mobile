@@ -1,8 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/user_info.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
+
+/// Whether the "someone took your order" line is true for this user.
+///
+/// It only ever is for the maker, at the handoff right after a take. Both
+/// invoice screens are also reached by takers — taking a buy order means
+/// paying the hold invoice, taking a sell one means adding an invoice — and
+/// by the buyer asked for a fresh invoice after a failed payout, and for
+/// them nobody took anything.
+///
+/// A sell order is published by its seller and a buy order by its buyer, so
+/// matching the order kind against the user's role identifies the maker.
+bool counterpartTookYourOrder({
+  required OrderType? kind,
+  required Role? role,
+  required Status status,
+}) {
+  if (kind == null || role == null) return false;
+
+  final userIsMaker = (kind == OrderType.sell) == (role == Role.seller);
+  final justTaken = status == Status.waitingPayment ||
+      status == Status.waitingBuyerInvoice;
+
+  return userIsMaker && justTaken;
+}
 
 /// Header shown on the add/pay invoice screens: who took the order, the
 /// amounts to pay or invoice, the order id and the counterpart's reputation.
@@ -19,6 +46,11 @@ class InvoiceHeader extends StatelessWidget {
   final String orderId;
   final UserInfo? reputation;
 
+  /// Whether to open with the "someone took your order" line. False for
+  /// takers and for the post-payment-failure retry — see
+  /// [counterpartTookYourOrder].
+  final bool takenByCounterpart;
+
   const InvoiceHeader({
     super.key,
     required this.userIsSeller,
@@ -26,6 +58,7 @@ class InvoiceHeader extends StatelessWidget {
     required this.fiatAmount,
     required this.fiatCode,
     required this.orderId,
+    required this.takenByCounterpart,
     this.reputation,
   });
 
@@ -39,11 +72,13 @@ class InvoiceHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          userIsSeller ? s.buyerTookYourSellOrder : s.sellerTookYourBuyOrder,
-          style: boldStyle,
-        ),
-        const SizedBox(height: 8),
+        if (takenByCounterpart) ...[
+          Text(
+            userIsSeller ? s.buyerTookYourSellOrder : s.sellerTookYourBuyOrder,
+            style: boldStyle,
+          ),
+          const SizedBox(height: 8),
+        ],
         Text(
           userIsSeller
               ? s.payInvoiceExchangeInstruction(
