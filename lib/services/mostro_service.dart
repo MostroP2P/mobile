@@ -23,6 +23,15 @@ class MostroService {
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
 
+  /// Event ids currently being decrypted, claimed synchronously.
+  ///
+  /// The durable dedup store cannot serve this purpose: `hasItem` is async, so
+  /// two relays delivering the same event can both observe it as unseen and
+  /// process it twice. A `Set.add` in the event-loop turn closes that window
+  /// without committing anything durable about an event nobody has
+  /// authenticated yet.
+  final Set<String> _inFlightEventIds = <String>{};
+
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
   void init() {
@@ -106,31 +115,47 @@ class MostroService {
     return false;
   }
 
+  /// Handles one event from the orders subscription.
+  ///
+  /// The dedup store is written *after* the event has been authenticated, and
+  /// that ordering is the security property. An event id is not evidence of
+  /// anything: a relay that has seen a genuine message can copy its id onto a
+  /// tampered event and deliver that first. Recording the id up front let the
+  /// forgery claim the slot — it would fail decryption and be dropped, but the
+  /// genuine event arriving behind it would then hit `hasItem` and be silently
+  /// discarded. That is a censorship primitive available to any relay, for
+  /// free, with nothing forged that has to survive a signature check.
   Future<void> _onData(NostrEvent event) async {
-    final eventStore = ref.read(eventStorageProvider);
-
-    if (await eventStore.hasItem(event.id!)) return;
-
-    // Reserve event ID immediately to prevent duplicate processing from multiple relays
-    await eventStore.putItem(event.id!, {
-      'id': event.id,
-      'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
-    });
-
-    final sessions = ref.read(sessionNotifierProvider);
-    final matchingSession = sessions.firstWhereOrNull(
-      (s) => s.tradeKey.public == event.recipient,
-    );
-    if (matchingSession == null) {
-      logger.w('No matching session found for recipient: ${event.recipient}');
+    final eventId = event.id;
+    if (eventId == null) {
+      logger.w('Ignoring event with no id');
       return;
     }
-    final privateKey = matchingSession.tradeKey.private;
+
+    final eventStore = ref.read(eventStorageProvider);
+    if (await eventStore.hasItem(eventId)) return;
+
+    // Claim the id for this turn only. Released in the finally below, so a
+    // rejected event leaves no trace and a later genuine event with the same
+    // id is still processed.
+    if (!_inFlightEventIds.add(eventId)) return;
 
     try {
+      final sessions = ref.read(sessionNotifierProvider);
+      final matchingSession = sessions.firstWhereOrNull(
+        (s) => s.tradeKey.public == event.recipient,
+      );
+      if (matchingSession == null) {
+        logger.w('No matching session found for recipient: ${event.recipient}');
+        return;
+      }
+      final privateKey = matchingSession.tradeKey.private;
+
       // Transport branch (§5 Phase A): v1 gift wrap (kind 1059) yields an inner
       // rumor whose content is the message tuple; v2 NIP-44 direct (kind 14)
       // decrypts straight to the tuple. Both converge on jsonDecode below.
+      // Both paths pin the node as the author and verify a signature, so
+      // reaching the next line means the event is the node's.
       String? content;
       String? decryptedId;
       if (event.kind == 14) {
@@ -149,6 +174,12 @@ class MostroService {
       }
 
       if (content == null) return;
+
+      // Authenticated: only now does the id earn a durable slot.
+      await eventStore.putItem(eventId, {
+        'id': eventId,
+        'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+      });
 
       final result = jsonDecode(content);
 
@@ -189,6 +220,8 @@ class MostroService {
       await _maybeLinkChildOrder(msg, matchingSession);
     } catch (e) {
       logger.e('Error processing event', error: e);
+    } finally {
+      _inFlightEventIds.remove(eventId);
     }
   }
 
