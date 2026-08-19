@@ -5,6 +5,7 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/shared/utils/in_flight_events.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/chat/providers/active_chat_screens_provider.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
@@ -80,6 +81,10 @@ class DisputeChatState {
 /// derived from the admin ECDH shared secret.
 /// Stores the encrypted outer events on disk, same pattern as P2P chat.
 class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCacheMixin {
+  /// Guards against concurrent re-delivery now that the durable write happens
+  /// after the envelope is authenticated. See [InFlightEvents].
+  final InFlightEvents _inFlight = InFlightEvents();
+
   static final EncryptedImageUploadService _imageUploadService =
       EncryptedImageUploadService();
   static final EncryptedFileUploadService _fileUploadService =
@@ -202,7 +207,16 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
 
   /// Handle incoming chat events via chatUnwrap.
   /// Stores the outer event (encrypted) to disk, then unwraps for display.
-  void _onChatEvent(NostrEvent event) async {
+  Future<void> _onChatEvent(NostrEvent event) async {
+    final eventId = event.id;
+    if (eventId == null) return;
+    await _inFlight.guard(eventId, () => _processChatEvent(event, eventId));
+  }
+
+  Future<void> _processChatEvent(
+    NostrEvent event,
+    String wrapperEventId,
+  ) async {
     try {
       if (!mounted || event.kind != 14) return;
 
@@ -213,9 +227,6 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       final chatKeys = _getChatKeys(session);
       if (event.pubkey != chatKeys.sign.public) return;
 
-      // Check for duplicate outer events (relay re-deliveries)
-      final wrapperEventId = event.id;
-      if (wrapperEventId == null) return;
       // Already on disk means a relay re-delivery, an own echo, or an event
       // the background service stored while the app slept. Keep processing:
       // state is keyed by inner id, so only the write is redundant.
