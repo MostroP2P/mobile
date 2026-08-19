@@ -204,6 +204,26 @@ class MostroService {
 
       final msg = MostroMessage.fromJson(result[0]);
 
+      // Freshness comes from the wire, not from when this device happened to
+      // hear about it.
+      //
+      // On v2 the kind-14 `created_at` is covered by the node's signature —
+      // the id is recomputed over it and the signature verified above — so it
+      // is the node stating when it said this, and a relay cannot move it.
+      // That makes it the only trustworthy clock in the protocol, and it
+      // exists only here: NIP-59 deliberately randomises the wrap and seal
+      // timestamps to avoid leaking timing, so the v1 path has nothing
+      // equivalent and keeps falling back to receive time in MostroStorage.
+      //
+      // It also outranks any `timestamp` inside the decrypted payload, which
+      // no signature covers independently.
+      if (event.kind == 14) {
+        final signedAt = event.createdAt;
+        if (signedAt != null) {
+          msg.timestamp = signedAt.millisecondsSinceEpoch;
+        }
+      }
+
       final messageStorage = ref.read(mostroStorageProvider);
 
       // Use the inner rumor id if available (v1), otherwise fall back to the
