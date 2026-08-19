@@ -196,6 +196,58 @@ void main() {
       expect(state.peerReputation, reputation);
     });
 
+    test('the notice never moves the order it rides on', () {
+      final state = baseState(
+        status: Status.waitingTakerBond,
+        action: Action.payBondInvoice,
+      ).updateWith(
+        message<Peer>(
+          Action.addInvoice,
+          payload: Peer(publicKey: '', reputation: reputation),
+        ),
+      );
+
+      // addInvoice would normally map to waiting-buyer-invoice
+      expect(state.status, Status.waitingTakerBond);
+      expect(state.action, Action.payBondInvoice);
+      expect(state.peerReputation, reputation);
+    });
+
+    test('a late notice cannot roll back an order that already advanced', () {
+      var state = baseState()
+          .updateWith(
+            message<Peer>(
+              Action.payInvoice,
+              payload: Peer(publicKey: '', reputation: reputation),
+            ),
+          )
+          .updateWith(
+            message<Order>(
+              Action.fiatSentOk,
+              payload: order(
+                status: Status.fiatSent,
+                buyerTradePubkey: _buyerPubkey,
+              ),
+            ),
+          );
+      expect(state.status, Status.fiatSent);
+
+      // Redelivered by a slow relay long after the trade moved on
+      final afterLateNotice = state.updateWith(
+        message<Peer>(
+          Action.payInvoice,
+          payload: Peer(publicKey: '', reputation: reputation),
+        ),
+      );
+
+      expect(afterLateNotice.status, Status.fiatSent);
+      expect(afterLateNotice.action, Action.fiatSentOk);
+      expect(afterLateNotice.order, state.order);
+      expect(afterLateNotice.peer?.publicKey, _buyerPubkey);
+      expect(afterLateNotice.fiatWasSent, isTrue);
+      expect(afterLateNotice.peerReputation, reputation);
+    });
+
     test('fromMostroMessage picks the snapshot up without setting a peer', () {
       final state = OrderState.fromMostroMessage(
         message<Peer>(

@@ -186,18 +186,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                 .subtract(const Duration(seconds: 60))
                 .millisecondsSinceEpoch;
 
-    // Taker-reputation notice: the daemon reuses the flow action (payInvoice /
-    // addInvoice) with a Peer payload carrying only reputation. The state
-    // update (peerReputation) already happened in updateWith; skip the
-    // duplicate notification and the action's navigation side effects.
-    final isTakerReputationNotice = event.payload is Peer &&
-        (event.action == Action.payInvoice ||
-            event.action == Action.addInvoice);
-
-    // Extract notification data using the centralized extractor
-    final notificationData = isTakerReputationNotice
-        ? null
-        : await NotificationDataExtractor.extractFromMostroMessage(event, ref,
+    // Extract notification data using the centralized extractor, which also
+    // filters out the taker-reputation notice
+    final notificationData =
+        await NotificationDataExtractor.extractFromMostroMessage(event, ref,
             session: session,
             previousStatus: previousStatus,
             wasUserInitiatedCancel: wasUserInitiatedCancel);
@@ -364,7 +356,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
         sessionNotifier.saveSession(session);
         // The reputation notice must not (re-)navigate to the invoice screen
-        if (!isTakerReputationNotice) {
+        if (!event.isTakerReputationNotice) {
           await _handleAddInvoiceWithAutoLightningAddress(event);
         }
         break;

@@ -114,6 +114,13 @@ class OrderState {
       return copyWith(cantDo: message.getPayload<CantDo>());
     }
 
+    // The taker-reputation notice is informational too: it reuses a flow
+    // action but carries no order state, and it can arrive out of order.
+    // Take only the snapshot so it can never move the order backwards.
+    if (message.isTakerReputationNotice) {
+      return copyWith(peerReputation: message.getPayload<Peer>()?.reputation);
+    }
+
     // Track whether fiat was sent at any point in this order's lifecycle
     final bool newFiatWasSent = fiatWasSent ||
         message.action == Action.fiatSent ||

@@ -5,6 +5,7 @@ import 'package:dart_nostr/nostr/core/key_pairs.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
+import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/features/mostro/transport.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
@@ -99,6 +100,15 @@ class MostroMessage<T extends Payload> {
       return payload as R;
     }
     return null;
+  }
+
+  /// True for the daemon's taker-reputation notice: a [Peer] payload whose
+  /// pubkey is empty on purpose, sent to the maker riding the same flow action
+  /// (`pay-invoice` / `add-invoice`) as the real message. It carries no order
+  /// state, only the counterpart's reputation snapshot.
+  bool get isTakerReputationNotice {
+    final peer = getPayload<Peer>();
+    return peer != null && peer.publicKey.isEmpty;
   }
 
   /// Wrapper key for the message envelope: 'restore' for restore and

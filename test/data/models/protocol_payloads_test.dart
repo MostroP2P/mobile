@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/last_trade_index_response.dart';
 import 'package:mostro_mobile/data/models/next_trade.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
@@ -470,6 +472,45 @@ void main() {
 
     test('SecureStorageKeys rejects an unknown key', () {
       expect(() => SecureStorageKeys.fromString('nope'), throwsArgumentError);
+    });
+  });
+
+  group('MostroMessage.isTakerReputationNotice', () {
+    MostroMessage<Peer> peerMessage(Action action, Peer peer) =>
+        MostroMessage<Peer>(action: action, id: 'order-1', payload: peer);
+
+    test('recognises the empty-pubkey notice on either flow action', () {
+      final peer = Peer(
+        publicKey: '',
+        reputation:
+            const UserInfo(rating: 4.375, reviews: 4, operatingDays: 64),
+      );
+
+      expect(peerMessage(Action.payInvoice, peer).isTakerReputationNotice,
+          isTrue);
+      expect(peerMessage(Action.addInvoice, peer).isTakerReputationNotice,
+          isTrue);
+    });
+
+    test('a Peer carrying a real pubkey is a normal flow message', () {
+      expect(
+        peerMessage(Action.fiatSentOk, Peer(publicKey: _pubkey))
+            .isTakerReputationNotice,
+        isFalse,
+      );
+      expect(
+        peerMessage(Action.addInvoice, Peer(publicKey: _pubkey))
+            .isTakerReputationNotice,
+        isFalse,
+      );
+    });
+
+    test('a message without a Peer payload is never the notice', () {
+      expect(
+        MostroMessage(action: Action.payInvoice, id: 'order-1')
+            .isTakerReputationNotice,
+        isFalse,
+      );
     });
   });
 }
