@@ -2,7 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/features/mostro/transport.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -144,3 +148,31 @@ class ProtocolVersionStore {
 final protocolVersionStoreProvider = Provider<ProtocolVersionStore>((ref) {
   return ProtocolVersionStore(ref.watch(sharedPreferencesProvider));
 });
+
+/// The protocol version to use when talking to the currently connected node:
+/// what it advertises now, anchored against the highest version it has ever
+/// been verified to advertise.
+///
+/// Single resolution point on purpose. The send path and the receive
+/// subscription must never disagree about which transport is in play — a
+/// client listening on kind 14 while publishing kind 1059 is partitioned from
+/// the node, and the attacker-controlled half of that split is the forgeable
+/// one. Every caller reads this instead of reaching for
+/// `mostroInstance?.protocolVersion` directly.
+///
+/// Returns null only when the node has never been heard from and nothing is
+/// remembered; [resolveTransport] maps that to [kDefaultTransport].
+int? anchoredProtocolVersionFor(Ref ref) {
+  try {
+    final infoEvent = ref.read(orderRepositoryProvider).mostroInstance;
+    final mostroPubkey = ref.read(settingsProvider).mostroPublicKey;
+    final remembered =
+        ref.read(protocolVersionStoreProvider).versionFor(mostroPubkey);
+    return anchoredProtocolVersion(infoEvent?.protocolVersion, remembered);
+  } catch (e) {
+    // Null resolves to the safe default rather than to v1, so failing to read
+    // the node's state cannot be turned into a downgrade.
+    logger.w('Failed to resolve anchored protocol version: $e');
+    return null;
+  }
+}

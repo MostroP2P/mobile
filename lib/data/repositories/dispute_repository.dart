@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/features/mostro/protocol_version_store.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
@@ -56,7 +57,7 @@ class DisputeRepository {
       }
       final mostroPow = mostroInstance?.pow ?? 0;
       final event = await disputeMessage.wrapForTransport(
-        protocolVersion: mostroInstance?.protocolVersion,
+        protocolVersion: anchoredProtocolVersionFor(_ref),
         tradeKey: session.tradeKey,
         recipientPubKey: _mostroPubkey,
         masterKey: session.fullPrivacy ? null : session.masterKey,
