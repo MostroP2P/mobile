@@ -4,6 +4,7 @@ import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/mostro/mostro_nodes_provider.dart';
+import 'package:mostro_mobile/features/mostro/protocol_version_store.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/relays/relay_health_monitor.dart';
 import 'package:mostro_mobile/features/restore/restore_manager.dart';
@@ -33,9 +34,14 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   await mostroNodes.init();
   unawaited(mostroNodes.fetchAllNodeMetadata());
 
+  // Must load before SubscriptionManager builds its first orders filter: the
+  // ratchet only protects a cold start if the persisted versions are already
+  // in memory when the transport is resolved.
+  await ref.read(protocolVersionStoreProvider).init();
+
   final sessionManager = ref.read(sessionNotifierProvider.notifier);
   await sessionManager.init();
-  
+
   ref.read(subscriptionManagerProvider);
 
   // Start the relay health watchdog: re-engages bootstrap relays and
