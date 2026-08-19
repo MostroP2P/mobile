@@ -155,16 +155,19 @@ class DeepLinkService {
       }
 
       // Helper to build the candidate list from a set of raw events.
-      // When mostroPubkey is present only events authored by that node are
-      // accepted. isVerified() failures are logged but not treated as hard
-      // rejections due to a known dart_nostr limitation (consistent with
-      // how mostro_nodes_notifier.dart handles kind-0 events).
+      //
+      // `NostrUtils.isValidEventSignature` rather than `isVerified()`: the
+      // latter checks the signature against the event's self-declared id and
+      // never recomputes it from the serialized event, so a genuine
+      // (id, sig, pubkey) triple lifted onto attacker-chosen tags still
+      // passes — and the order type this link opens is read straight out of
+      // those tags.
       List<NostrEvent> buildCandidates(List<NostrEvent> raw) {
         if (mostroPubkey == null) return raw;
         return raw.where((e) {
-          if (!e.isVerified()) {
+          if (!NostrUtils.isValidEventSignature(e)) {
             logger.w(
-              'Event \${e.id} from pubkey \${e.pubkey} failed signature '
+              'Event ${e.id} from pubkey ${e.pubkey} failed signature '
               'verification — rejecting to prevent spoofing.',
             );
             return false;

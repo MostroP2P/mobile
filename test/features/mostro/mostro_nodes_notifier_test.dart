@@ -571,9 +571,16 @@ void main() {
         expect(notifier.state.length, stateBefore.length);
       });
 
-      test('fetchAllNodeMetadata applies unverified events with warning', () async {
+      // The author filter is a request, not a guarantee — the relay decides
+      // what it answers with. This metadata is the name and avatar shown when
+      // the user picks a node to trade against, so applying an unverified one
+      // hands out free impersonation of a trusted node.
+      test('fetchAllNodeMetadata rejects an unverified event', () async {
         final notifier = createNotifier();
         await notifier.init();
+        final nameBefore = notifier.state
+            .firstWhere((n) => n.pubkey == trustedPubkey)
+            .name;
 
         when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
             .thenAnswer((_) async => [
@@ -590,11 +597,39 @@ void main() {
 
         await notifier.fetchAllNodeMetadata();
 
-        // Metadata is applied even if signature verification fails,
-        // since events are fetched by author filter
         final node =
             notifier.state.firstWhere((n) => n.pubkey == trustedPubkey);
-        expect(node.name, 'Unverified Name');
+        expect(node.name, nameBefore);
+      });
+
+      // What `isVerified()` lets through: the signature and id are genuinely
+      // the node's, but the id was never recomputed over this content.
+      test('fetchAllNodeMetadata rejects a content swap under a real signature',
+          () async {
+        final notifier = await createNotifierWithTestNode();
+        final genuine = makeKind0Event({'name': 'Real Node'});
+        final nameBefore = notifier.state
+            .firstWhere((n) => n.pubkey == genuine.pubkey)
+            .name;
+
+        when(mockNostrService.fetchEvents(any, specificRelays: anyNamed('specificRelays')))
+            .thenAnswer((_) async => [
+                  NostrEvent(
+                    id: genuine.id,
+                    sig: genuine.sig,
+                    pubkey: genuine.pubkey,
+                    kind: genuine.kind,
+                    content: jsonEncode({'name': 'Mostro Official'}),
+                    createdAt: genuine.createdAt,
+                    tags: genuine.tags,
+                  ),
+                ]);
+
+        await notifier.fetchAllNodeMetadata();
+
+        final node =
+            notifier.state.firstWhere((n) => n.pubkey == genuine.pubkey);
+        expect(node.name, nameBefore);
       });
 
       test('fetchNodeMetadata deduplicates keeping latest when relays return multiple events',
