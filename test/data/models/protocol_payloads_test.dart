@@ -505,6 +505,32 @@ void main() {
       );
     });
 
+    // Empty pubkey is mostrod's only marker for this notice: notify_taker_
+    // reputation is the sole emitter, so unknown shapes stay informational
+    test('an empty pubkey is the notice even without a reputation', () {
+      expect(
+        peerMessage(Action.addInvoice, Peer(publicKey: ''))
+            .isTakerReputationNotice,
+        isTrue,
+      );
+    });
+
+    // Requiring the action instead would send a future third call site into
+    // the status machine, which is what keying on the pubkey prevents
+    test('an empty pubkey is the notice on any other action', () {
+      expect(
+        peerMessage(
+          Action.fiatSentOk,
+          Peer(
+            publicKey: '',
+            reputation:
+                const UserInfo(rating: 5.0, reviews: 9, operatingDays: 30),
+          ),
+        ).isTakerReputationNotice,
+        isTrue,
+      );
+    });
+
     test('a message without a Peer payload is never the notice', () {
       expect(
         MostroMessage(action: Action.payInvoice, id: 'order-1')
