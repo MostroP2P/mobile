@@ -300,4 +300,71 @@ void main() {
       expect(orderFilter.kinds, [orderEventKind]);
     });
   });
+
+  // NIP-01 orders addressable events by created_at, and settles a tie on the
+  // lower id. Without the tie-break, whichever relay answers first pins the
+  // config for the session and two clients can disagree about what the node
+  // said.
+  group('OpenOrdersRepository info event created_at ties', () {
+    /// Two distinct info events sharing a timestamp, returned lower id first.
+    List<NostrEvent> tiedPair(DateTime at) {
+      final pair = <NostrEvent>[];
+      var protocolVersion = 2;
+      while (pair.length < 2) {
+        final candidate = _signedInfoEvent(
+          nodeKeys,
+          createdAt: at,
+          protocolVersion: '${protocolVersion++}',
+        );
+        if (!pair.any((e) => e.id == candidate.id)) pair.add(candidate);
+      }
+      pair.sort((a, b) => a.id!.compareTo(b.id!));
+      return pair;
+    }
+
+    test('a tie is won by the lower id, whichever arrives first', () async {
+      final repository = buildRepository();
+      final pair = tiedPair(DateTime.now());
+      final lower = pair.first;
+      final higher = pair.last;
+
+      eventController.add(higher);
+      await pumpEventQueue();
+      expect(repository.mostroInstance!.id, higher.id);
+
+      eventController.add(lower);
+      await pumpEventQueue();
+      expect(repository.mostroInstance!.id, lower.id);
+    });
+
+    test('the higher id does not displace the lower one', () async {
+      final repository = buildRepository();
+      final pair = tiedPair(DateTime.now());
+      final lower = pair.first;
+      final higher = pair.last;
+
+      eventController.add(lower);
+      await pumpEventQueue();
+
+      eventController.add(higher);
+      await pumpEventQueue();
+      expect(repository.mostroInstance!.id, lower.id);
+    });
+
+    test('an exact re-delivery is still ignored', () async {
+      final repository = buildRepository();
+      final info = _signedInfoEvent(nodeKeys, createdAt: DateTime.now());
+
+      final emitted = <NostrEvent>[];
+      final sub = repository.mostroInstanceStream.listen(emitted.add);
+
+      eventController.add(info);
+      await pumpEventQueue();
+      eventController.add(info);
+      await pumpEventQueue();
+
+      expect(emitted.length, 1);
+      await sub.cancel();
+    });
+  });
 }
