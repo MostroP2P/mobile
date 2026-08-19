@@ -269,6 +269,11 @@ class NostrService {
     );
   }
 
+  /// [expectedAuthor] defaults to the configured node, which is the sender for
+  /// every Mostro message on this path. It is resolved and checked here rather
+  /// than passed through: an empty `mostroPublicKey` would otherwise reach the
+  /// author pin as a valid-looking argument, fail the comparison, and report
+  /// "unexpected seal author" for what is really unconfigured settings.
   Future<NostrEvent> decryptNIP59Event(
     NostrEvent event,
     String privateKey, {
@@ -278,10 +283,17 @@ class NostrService {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
+    final author = expectedAuthor ?? settings.mostroPublicKey;
+    if (author.isEmpty) {
+      throw StateError(
+        'Cannot authenticate the sender: no Mostro public key configured',
+      );
+    }
+
     return NostrUtils.decryptNIP59Event(
       event,
       privateKey,
-      expectedAuthor: expectedAuthor ?? settings.mostroPublicKey,
+      expectedAuthor: author,
     );
   }
 

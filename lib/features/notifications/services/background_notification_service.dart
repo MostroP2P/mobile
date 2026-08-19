@@ -305,7 +305,7 @@ Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) a
   // signer. Without it neither path can tell the node apart from any relay
   // that can reach this trade key.
   final mostroPubkey = await _loadMostroPubkey();
-  if (mostroPubkey == null) {
+  if (mostroPubkey == null || mostroPubkey.isEmpty) {
     logger.w('No Mostro pubkey available, cannot decrypt event');
     return null;
   }

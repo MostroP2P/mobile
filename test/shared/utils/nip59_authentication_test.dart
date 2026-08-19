@@ -52,14 +52,21 @@ void main() {
         recipientPubKey: recipient.public,
       );
 
-      // It decrypts perfectly — nothing about the encryption is broken.
+      // It decrypts perfectly — nothing about the encryption is broken, so the
+      // rejection must come from the author pin and nowhere else.
       await expectLater(
         NostrUtils.decryptNIP59Event(
           forged,
           recipient.private,
           expectedAuthor: node.public,
         ),
-        throwsA(isA<Exception>()),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('Unexpected seal author'),
+          ),
+        ),
       );
     });
 
@@ -80,11 +87,17 @@ void main() {
       ) as Map<String, dynamic>;
       sealJson['sig'] = 'f' * 128;
 
+      // One ephemeral keypair for both the encryption and the wrap author:
+      // NIP-44 derives its key by ECDH, so the recipient decrypts using
+      // `tamperedWrap.pubkey`. Two different keypairs here would make the
+      // *outer* decryption fail, and the test would pass without ever reaching
+      // the seal-signature check it exists to cover.
+      final wrapperKeys = NostrUtils.generateKeyPair();
       final tamperedWrap = await NostrUtils.createWrap(
-        NostrUtils.generateKeyPair(),
+        wrapperKeys,
         await NostrUtils.encryptNIP44(
           jsonEncode(sealJson),
-          NostrUtils.generateKeyPair().private,
+          wrapperKeys.private,
           recipient.public,
         ),
         recipient.public,
@@ -96,7 +109,13 @@ void main() {
           recipient.private,
           expectedAuthor: node.public,
         ),
-        throwsA(isA<Exception>()),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            'Invalid seal signature',
+          ),
+        ),
       );
     });
 
@@ -144,7 +163,13 @@ void main() {
 
       await expectLater(
         forged.unWrap(recipient.private, expectedAuthor: node.public),
-        throwsA(isA<Exception>()),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('Unexpected seal author'),
+          ),
+        ),
       );
     });
   });

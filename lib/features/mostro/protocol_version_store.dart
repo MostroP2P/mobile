@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,7 +39,36 @@ class ProtocolVersionStore {
 
   bool _initialized = false;
 
+  /// Tail of the write chain. Every mutation of the persisted key is appended
+  /// here so writes land in call order.
+  ///
+  /// `SharedPreferencesAsync` holds no Dart-side cache: each call goes
+  /// straight to platform storage and concurrent calls complete in whatever
+  /// order the platform picks. Without this chain a `setString` issued before
+  /// a `clear()` could land after it and resurrect the cleared map, or an
+  /// older snapshot could overwrite a newer one — the ratchet is monotonic in
+  /// memory, but its disk mirror would not be.
+  Future<void> _writes = Future<void>.value();
+
   ProtocolVersionStore(this._prefs);
+
+  /// Completes when every write queued so far has finished. Useful to flush
+  /// before shutdown, and the only way a caller can observe durability —
+  /// [record] returns as soon as memory is updated.
+  Future<void> get pendingWrites => _writes;
+
+  /// Appends [op] to the write chain and returns when it has run. Failures are
+  /// logged and swallowed so one bad write cannot poison every later one.
+  Future<void> _enqueueWrite(
+    Future<void> Function() op,
+    String description,
+  ) {
+    final queued = _writes.then((_) => op()).catchError(
+      (Object e) => logger.e('Failed to $description: $e'),
+    );
+    _writes = queued;
+    return queued;
+  }
 
   /// Loads persisted versions into memory. Must complete before the first
   /// [versionFor] call for the ratchet to apply on a cold start; a store that
@@ -90,26 +120,31 @@ class ProtocolVersionStore {
   /// Drops everything this store knows. Intended for an explicit "forget this
   /// device's history" action, not for routine flows — clearing it reopens the
   /// downgrade window the ratchet exists to close.
-  Future<void> clear() async {
+  Future<void> clear() {
     _versions = {};
-    try {
-      await _prefs.remove(SharedPreferencesKeys.nodeProtocolVersions.value);
-    } catch (e) {
-      logger.e('Failed to clear protocol versions: $e');
-    }
+    return _enqueueWrite(
+      () => _prefs.remove(SharedPreferencesKeys.nodeProtocolVersions.value),
+      'clear protocol versions',
+    );
   }
 
   /// Memory is authoritative, so a failed write costs at most the ratchet's
   /// memory of this node across a restart — never a wrong value.
+  ///
+  /// The snapshot is encoded here, at call time, and the write is queued: what
+  /// reaches disk is the map as it stood when the caller asked, applied in the
+  /// order the callers asked.
   void _persist() {
-    _prefs
-        .setString(
+    final snapshot = jsonEncode(_versions);
+    unawaited(
+      _enqueueWrite(
+        () => _prefs.setString(
           SharedPreferencesKeys.nodeProtocolVersions.value,
-          jsonEncode(_versions),
-        )
-        .catchError(
-          (e) => logger.e('Failed to persist protocol versions: $e'),
-        );
+          snapshot,
+        ),
+        'persist protocol versions',
+      ),
+    );
   }
 
   Future<Map<String, int>> _load() async {
@@ -162,13 +197,20 @@ final protocolVersionStoreProvider = Provider<ProtocolVersionStore>((ref) {
 ///
 /// Returns null only when the node has never been heard from and nothing is
 /// remembered; [resolveTransport] maps that to [kDefaultTransport].
+///
+/// A verified info event that carries no `protocol_version` tag reads as
+/// [kLegacyProtocolVersion], not as "unknown" — see that constant for why the
+/// two cases must stay distinct.
 int? anchoredProtocolVersionFor(Ref ref) {
   try {
     final infoEvent = ref.read(orderRepositoryProvider).mostroInstance;
     final mostroPubkey = ref.read(settingsProvider).mostroPublicKey;
     final remembered =
         ref.read(protocolVersionStoreProvider).versionFor(mostroPubkey);
-    return anchoredProtocolVersion(infoEvent?.protocolVersion, remembered);
+    final advertised = infoEvent == null
+        ? null
+        : (infoEvent.protocolVersion ?? kLegacyProtocolVersion);
+    return anchoredProtocolVersion(advertised, remembered);
   } catch (e) {
     // Null resolves to the safe default rather than to v1, so failing to read
     // the node's state cannot be turned into a downgrade.

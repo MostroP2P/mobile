@@ -33,6 +33,50 @@ class _FakeSharedPreferencesAsync implements SharedPreferencesAsync {
       throw UnimplementedError('${invocation.memberName}');
 }
 
+
+class _Countdown {
+  int _micros;
+  _Countdown(this._micros);
+
+  Duration next() {
+    final current = Duration(microseconds: _micros);
+    _micros = _micros > 500 ? _micros - 500 : 0;
+    return current;
+  }
+}
+
+/// Completes its writes in reverse call order, so a store that fires them
+/// concurrently loses the race and a store that queues them does not.
+class _ReorderingSharedPreferencesAsync implements SharedPreferencesAsync {
+  final Map<String, String> strings = {};
+
+  /// Longest delay first: each successive call waits less than the one before
+  /// it, so without serialisation the last call lands first. Held in a box
+  /// because `SharedPreferencesAsync` is `@immutable`.
+  final _Countdown _delay = _Countdown(5000);
+
+  @override
+  Future<String?> getString(String key) async => strings[key];
+
+  @override
+  Future<void> setString(String key, String value) async {
+    await _stagger();
+    strings[key] = value;
+  }
+
+  @override
+  Future<void> remove(String key) async {
+    await _stagger();
+    strings.remove(key);
+  }
+
+  Future<void> _stagger() => Future.delayed(_delay.next());
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
+}
+
 const _nodeA =
     '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980';
 const _nodeB =
@@ -117,6 +161,7 @@ void main() {
   group('ProtocolVersionStore persistence', () {
     test('survives a restart', () async {
       store.record(_nodeA, 2);
+      await store.pendingWrites;
 
       final reopened = ProtocolVersionStore(prefs);
       await reopened.init();
@@ -126,6 +171,7 @@ void main() {
 
     test('the ratchet holds across a restart', () async {
       store.record(_nodeA, 2);
+      await store.pendingWrites;
 
       final reopened = ProtocolVersionStore(prefs);
       await reopened.init();
@@ -137,6 +183,7 @@ void main() {
     test('writes the whole snapshot, not just the last change', () async {
       store.record(_nodeA, 2);
       store.record(_nodeB, 1);
+      await store.pendingWrites;
 
       expect(
         jsonDecode(prefs.strings[_key]!),
@@ -200,6 +247,35 @@ void main() {
     test('accepts a numeric string version', () async {
       final s = await storeWith(jsonEncode({_nodeA: '2'}));
       expect(s.versionFor(_nodeA), 2);
+    });
+  });
+
+  group('ProtocolVersionStore write ordering', () {
+    late _ReorderingSharedPreferencesAsync slowPrefs;
+    late ProtocolVersionStore orderedStore;
+
+    setUp(() async {
+      slowPrefs = _ReorderingSharedPreferencesAsync();
+      orderedStore = ProtocolVersionStore(slowPrefs);
+      await orderedStore.init();
+    });
+
+    test('the newest snapshot is the one that lands', () async {
+      orderedStore.record(_nodeA, 1);
+      orderedStore.record(_nodeA, 2);
+      await orderedStore.pendingWrites;
+
+      // Unserialised, the second (faster) write would land first and the first
+      // would overwrite it with the stale {_nodeA: 1}.
+      expect(jsonDecode(slowPrefs.strings[_key]!), {_nodeA: 2});
+    });
+
+    test('a write issued before clear() does not resurrect the map', () async {
+      orderedStore.record(_nodeA, 2);
+      await orderedStore.clear();
+
+      expect(slowPrefs.strings[_key], isNull);
+      expect(orderedStore.versionFor(_nodeA), isNull);
     });
   });
 }

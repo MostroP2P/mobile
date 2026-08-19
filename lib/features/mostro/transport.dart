@@ -27,6 +27,18 @@ enum Transport { giftWrap, nip44 }
 /// downgrade.
 const Transport kDefaultTransport = Transport.nip44;
 
+/// The version a node states by *omitting* the `protocol_version` tag from an
+/// otherwise valid info event.
+///
+/// Legacy daemons (pre-v0.18.0) never emit the tag, so on a verified,
+/// non-superseded info event an absent tag is v1 asserted by omission. That is
+/// a different fact from having no info event at all, and the two must not
+/// collapse into the same `null`: the first is evidence about the node, the
+/// second is the absence of evidence. Reading a legacy node's silence as
+/// [kDefaultTransport] would pin the client to kind 14 against a node that only
+/// ever listens on kind 1059 — a permanent, self-inflicted partition.
+const int kLegacyProtocolVersion = 1;
+
 /// Resolves the wire transport for a node from its advertised
 /// `protocol_version` (§2, §4.1).
 ///
