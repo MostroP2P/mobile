@@ -264,4 +264,40 @@ void main() {
       expect(repository.mostroInstance!.id, nextInfo.id);
     });
   });
+
+  group('OpenOrdersRepository subscription filters', () {
+    // The order history window is a UI concern; the info event is a protocol
+    // one. Kind 38385 is addressable, so a relay holds exactly one copy per
+    // node and a `since` bound simply hides it once the node has been up
+    // longer than the window. With the safe default now resolving to v2, an
+    // unseen info event strands the client on kind 14 against a v1 node.
+    test('requests the info event without the order history cutoff', () {
+      buildRepository();
+
+      final request =
+          verify(mockNostrService.subscribeToEvents(captureAny)).captured.single
+              as NostrRequest;
+
+      final infoFilter = request.filters.singleWhere(
+        (f) => f.kinds!.contains(infoEventKind),
+      );
+      expect(infoFilter.since, isNull);
+      expect(infoFilter.authors, [nodeKeys.public]);
+      expect(infoFilter.kinds, [infoEventKind]);
+    });
+
+    test('still bounds the order history', () {
+      buildRepository();
+
+      final request =
+          verify(mockNostrService.subscribeToEvents(captureAny)).captured.single
+              as NostrRequest;
+
+      final orderFilter = request.filters.singleWhere(
+        (f) => f.kinds!.contains(orderEventKind),
+      );
+      expect(orderFilter.since, isNotNull);
+      expect(orderFilter.kinds, [orderEventKind]);
+    });
+  });
 }
