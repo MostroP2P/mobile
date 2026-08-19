@@ -317,6 +317,22 @@ extension NostrEventExtensions on NostrEvent {
   /// Mostro chat envelope (kind 14): default subscription event limit.
   static const chatDefaultLimit = 100;
 
+  /// Mostro chat: subscription filter for one or more conversations, matched
+  /// by their K_sign authors (never by `#p`, which a third party could flood).
+  /// Shared by the foreground subscriptions and the background isolate so the
+  /// two cannot drift into different backlog bounds.
+  static NostrFilter chatSubscriptionFilter({
+    required List<String> signPubkeys,
+    required DateTime since,
+  }) {
+    return NostrFilter(
+      kinds: [14],
+      authors: signPubkeys,
+      since: since,
+      limit: chatDefaultLimit,
+    );
+  }
+
   /// Mostro chat: build the signed kind 1 inner event for a chat message.
   /// A random `u` nonce tag keeps same-second identical texts from
   /// colliding into one inner id, which dedup would drop as a replay.

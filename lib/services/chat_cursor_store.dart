@@ -18,6 +18,14 @@ class ChatCursorStore {
   /// Overlap window subtracted from the cursor when subscribing.
   static const cursorOverlap = Duration(minutes: 10);
 
+  /// Dispute chat namespace, keyed by disputeId. The prefix predates the
+  /// generalization; keeping it preserves cursors stored by older builds.
+  static const disputeKeyPrefix = 'dispute_chat_since_';
+
+  /// Peer (buyer-seller) chat namespace, keyed by orderId. Shared with the
+  /// background isolate, which builds its own store without Riverpod.
+  static const peerKeyPrefix = 'chat_since_';
+
   final String _keyPrefix;
   final SharedPreferencesAsync _prefs;
   final Map<String, DateTime> _cache = {};
@@ -97,12 +105,11 @@ class ChatCursorStore {
   }
 }
 
-/// Dispute chat cursors, keyed by disputeId. The prefix predates the
-/// generalization; keeping it preserves cursors stored by older builds.
+/// Dispute chat cursors, keyed by disputeId.
 final disputeChatCursorStoreProvider = Provider<ChatCursorStore>(
   (ref) => ChatCursorStore(
     ref.watch(sharedPreferencesProvider),
-    keyPrefix: 'dispute_chat_since_',
+    keyPrefix: ChatCursorStore.disputeKeyPrefix,
   ),
 );
 
@@ -110,6 +117,6 @@ final disputeChatCursorStoreProvider = Provider<ChatCursorStore>(
 final chatCursorStoreProvider = Provider<ChatCursorStore>(
   (ref) => ChatCursorStore(
     ref.watch(sharedPreferencesProvider),
-    keyPrefix: 'chat_since_',
+    keyPrefix: ChatCursorStore.peerKeyPrefix,
   ),
 );

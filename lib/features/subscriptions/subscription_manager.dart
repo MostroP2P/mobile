@@ -234,11 +234,9 @@ class SubscriptionManager {
                 : (chatCursorStore.cachedSinceFor(s.orderId!) ??
                     chatDefaultSince))
             .reduce((a, b) => a.isBefore(b) ? a : b);
-        return NostrFilter(
-          kinds: [14],
-          authors: chatSignKeys,
+        return NostrEventExtensions.chatSubscriptionFilter(
+          signPubkeys: chatSignKeys,
           since: chatSince,
-          limit: NostrEventExtensions.chatDefaultLimit,
         );
       case SubscriptionType.disputeChat:
         // Kind 14 chat envelope: filter by the K_sign authors derived from
@@ -259,11 +257,9 @@ class SubscriptionManager {
                 ? defaultSince
                 : (cursorStore.cachedSinceFor(s.disputeId!) ?? defaultSince))
             .reduce((a, b) => a.isBefore(b) ? a : b);
-        return NostrFilter(
-          kinds: [14],
-          authors: signKeys,
+        return NostrEventExtensions.chatSubscriptionFilter(
+          signPubkeys: signKeys,
           since: since,
-          limit: NostrEventExtensions.chatDefaultLimit,
         );
       case SubscriptionType.relayList:
         // Relay list subscriptions are handled separately via subscribeToMostroRelayList

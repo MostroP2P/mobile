@@ -7,10 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:logger/logger.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/data/repositories/event_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart' as notification_service;
+import 'package:mostro_mobile/services/chat_cursor_store.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/services/logger_service.dart' as logger_service;
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
@@ -38,11 +40,15 @@ String currentLanguage = 'en';
 /// otherwise DMs that arrive while the app stays in background would
 /// never trigger a notification until the user reopens the app.
 ///
+/// `orderId` identifies the conversation so the subscription can reuse its
+/// persisted `since` cursor; a null id falls back to a short lookback.
+///
 /// The callback is set inside `serviceMain` (background isolate) so it
 /// has access to the local `activeSubscriptions` map, `nostrService`,
 /// `eventStore`, and the `logger`. It is `null` in the foreground
 /// isolate and any call there is a no-op.
-void Function(String signPubkey)? addChatSubscriptionFromBackground;
+void Function(String signPubkey, String? orderId)?
+    addChatSubscriptionFromBackground;
 
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
@@ -155,7 +161,8 @@ Future<void> serviceMain(ServiceInstance service) async {
       // Expose a hook that `background_notification_service` can call after
       // it has persisted a peer update to add a live chat subscription
       // without waiting for the foreground app to come back.
-      addChatSubscriptionFromBackground = (String signPubkey) async {
+      addChatSubscriptionFromBackground =
+          (String signPubkey, String? orderId) async {
         try {
           // Avoid creating duplicate subscriptions for the same conversation
           // (identified by its K_sign author).
@@ -173,10 +180,22 @@ Future<void> serviceMain(ServiceInstance service) async {
             return;
           }
 
-          // Kind 14 chat envelope authored by K_sign (never #p — flooding)
-          final filter = NostrFilter(
-            kinds: [14],
-            authors: [signPubkey],
+          // Same cursor-backed filter the foreground builds, so a restored
+          // subscription replays a bounded backlog instead of everything.
+          // The cursor is only read here: the background never persists
+          // events, so advancing it would move `since` past a message that
+          // was never stored anywhere.
+          final cursorStore = ChatCursorStore(
+            SharedPreferencesAsync(),
+            keyPrefix: ChatCursorStore.peerKeyPrefix,
+          );
+          final since =
+              (orderId != null ? await cursorStore.sinceFor(orderId) : null) ??
+                  DateTime.now().subtract(ChatCursorStore.cursorOverlap);
+
+          final filter = NostrEventExtensions.chatSubscriptionFilter(
+            signPubkeys: [signPubkey],
+            since: since,
           );
           final request = NostrRequest(filters: [filter]);
           final subscription = nostrService.subscribeToEvents(request);

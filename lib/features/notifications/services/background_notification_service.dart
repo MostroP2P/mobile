@@ -402,11 +402,14 @@ Future<void> _maybeUpdateSessionWithPeer(
 
     logger.i('Background persisted peer for order ${session.orderId}');
 
-    // The live chat subscription filters by the conversation's K_sign author
+    // The live chat subscription filters by the conversation's K_sign author;
+    // the order id lets it pick up this conversation's persisted since cursor
     final shared = session.sharedKey;
     if (shared != null) {
-      bg.addChatSubscriptionFromBackground
-          ?.call(ChatKeys.fromSharedKey(shared).sign.public);
+      bg.addChatSubscriptionFromBackground?.call(
+        ChatKeys.fromSharedKey(shared).sign.public,
+        session.orderId,
+      );
     }
   } catch (e, stackTrace) {
     logger.e(

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
@@ -370,6 +371,40 @@ void main() {
           predicate((e) => e.toString().contains('timestamps disagree')),
         ),
       );
+    });
+  });
+
+  group('chatSubscriptionFilter', () {
+    final since = DateTime.fromMillisecondsSinceEpoch(1700000000 * 1000);
+
+    test('matches by author and bounds the backlog', () {
+      final filter = NostrEventExtensions.chatSubscriptionFilter(
+        signPubkeys: [chatKeys.sign.public],
+        since: since,
+      );
+
+      expect(filter.kinds, [14]);
+      expect(filter.authors, [chatKeys.sign.public]);
+      expect(filter.since, since);
+      expect(filter.limit, NostrEventExtensions.chatDefaultLimit);
+      // Filtering by #p would let any third party flood the subscription
+      expect(filter.p, isNull);
+    });
+
+    test('survives the background persist/restore round-trip', () {
+      final filter = NostrEventExtensions.chatSubscriptionFilter(
+        signPubkeys: [chatKeys.sign.public],
+        since: since,
+      );
+
+      final restored = NostrFilterX.fromJsonSafe(
+        jsonDecode(jsonEncode(filter.toMap())) as Map<String, dynamic>,
+      );
+
+      expect(restored.kinds, filter.kinds);
+      expect(restored.authors, filter.authors);
+      expect(restored.since, filter.since);
+      expect(restored.limit, filter.limit);
     });
   });
 }
