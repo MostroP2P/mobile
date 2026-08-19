@@ -192,7 +192,10 @@ void main() {
   group('NostrEventExtensions.mostroUnWrap', () {
     test('rejects an event that is not a gift wrap', () async {
       await expectLater(
-        orderEvent().mostroUnWrap(NostrKeyPairs(private: '1' * 64)),
+        orderEvent().mostroUnWrap(
+          NostrKeyPairs(private: '1' * 64),
+          expectedAuthor: 'b' * 64,
+        ),
         throwsArgumentError,
       );
     });
@@ -209,7 +212,10 @@ void main() {
       );
 
       await expectLater(
-        event.mostroUnWrap(NostrKeyPairs(private: '1' * 64)),
+        event.mostroUnWrap(
+          NostrKeyPairs(private: '1' * 64),
+          expectedAuthor: 'b' * 64,
+        ),
         throwsArgumentError,
       );
     });

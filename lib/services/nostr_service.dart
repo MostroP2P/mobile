@@ -271,13 +271,18 @@ class NostrService {
 
   Future<NostrEvent> decryptNIP59Event(
     NostrEvent event,
-    String privateKey,
-  ) async {
+    String privateKey, {
+    String? expectedAuthor,
+  }) async {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
-    return NostrUtils.decryptNIP59Event(event, privateKey);
+    return NostrUtils.decryptNIP59Event(
+      event,
+      privateKey,
+      expectedAuthor: expectedAuthor ?? settings.mostroPublicKey,
+    );
   }
 
   Future<String> createRumor(

@@ -140,7 +140,10 @@ class MostroService {
           expectedAuthor: _settings.mostroPublicKey,
         );
       } else {
-        final decryptedEvent = await event.unWrap(privateKey);
+        final decryptedEvent = await event.unWrap(
+          privateKey,
+          expectedAuthor: _settings.mostroPublicKey,
+        );
         content = decryptedEvent.content;
         decryptedId = decryptedEvent.id;
       }

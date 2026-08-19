@@ -301,20 +301,28 @@ Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) a
   // Transport branch (§5 Phase A): v1 gift wrap (kind 1059) yields an inner
   // rumor whose content is the message tuple; v2 NIP-44 direct (kind 14)
   // decrypts straight to the tuple. Both converge on jsonDecode below.
+  // Needed by both transports: v2 pins the kind-14 author, v1 pins the seal
+  // signer. Without it neither path can tell the node apart from any relay
+  // that can reach this trade key.
+  final mostroPubkey = await _loadMostroPubkey();
+  if (mostroPubkey == null) {
+    logger.w('No Mostro pubkey available, cannot decrypt event');
+    return null;
+  }
+
   final String? content;
   if (event.kind == 14) {
-    final mostroPubkey = await _loadMostroPubkey();
-    if (mostroPubkey == null) {
-      logger.w('No Mostro pubkey available, cannot decrypt kind-14 event');
-      return null;
-    }
     content = await NostrUtils.decryptNIP44DirectEvent(
       event,
       session.tradeKey.private,
       expectedAuthor: mostroPubkey,
     );
   } else {
-    content = (await event.unWrap(session.tradeKey.private)).content;
+    content = (await event.unWrap(
+      session.tradeKey.private,
+      expectedAuthor: mostroPubkey,
+    ))
+        .content;
   }
   if (content == null) {
     return null;
