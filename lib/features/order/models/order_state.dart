@@ -91,6 +91,7 @@ class OrderState {
     PaymentFailed? paymentFailed,
     bool? fiatWasSent,
     UserInfo? peerReputation,
+    bool clearPeerReputation = false,
   }) {
     return OrderState(
       status: status ?? this.status,
@@ -102,7 +103,9 @@ class OrderState {
       peer: peer ?? this.peer,
       paymentFailed: paymentFailed ?? this.paymentFailed,
       fiatWasSent: fiatWasSent ?? this.fiatWasSent,
-      peerReputation: peerReputation ?? this.peerReputation,
+      peerReputation: clearPeerReputation
+          ? null
+          : peerReputation ?? this.peerReputation,
     );
   }
 
@@ -147,6 +150,14 @@ class OrderState {
 
     // DEBUG: Log status mapping
     logger.i('Status mapping: $effectiveAction → $newStatus');
+
+    // A pending order has no counterpart: when Mostro republishes it after the
+    // taker times out, the previous taker's snapshot must not be carried into
+    // the next take and shown as if it belonged to whoever takes it next.
+    final bool orderReactivated = newStatus == Status.pending;
+    if (orderReactivated && peerReputation != null) {
+      logger.i('Order returned to pending: dropping the taker reputation');
+    }
 
     // Preserve PaymentRequest correctly
     PaymentRequest? newPaymentRequest;
@@ -284,6 +295,7 @@ class OrderState {
       // Preserve the last non-null snapshot: later Peers (e.g. fiat-sent-ok)
       // carry reputation: null and must not clear it
       peerReputation: message.getPayload<Peer>()?.reputation ?? peerReputation,
+      clearPeerReputation: orderReactivated,
     );
 
     logger.i('New state: ${newState.status} - ${newState.action}');

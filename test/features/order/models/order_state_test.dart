@@ -248,6 +248,73 @@ void main() {
       expect(afterLateNotice.peerReputation, reputation);
     });
 
+    test('a republish after the taker times out drops the snapshot', () {
+      var state = baseState()
+          .updateWith(
+            message<Peer>(
+              Action.payInvoice,
+              payload: Peer(publicKey: '', reputation: reputation),
+            ),
+          )
+          .updateWith(
+            message<Order>(
+              Action.waitingBuyerInvoice,
+              payload: order(status: Status.waitingBuyerInvoice),
+            ),
+          );
+      expect(state.peerReputation, reputation);
+
+      // Mostro returns the maker's order to the book: there is no taker now
+      state = state.updateWith(
+        message<Order>(Action.newOrder, payload: order(status: Status.pending)),
+      );
+
+      expect(state.status, Status.pending);
+      expect(state.peerReputation, isNull);
+    });
+
+    test('the next taker snapshot replaces the one that was dropped', () {
+      const nextTaker = UserInfo(rating: 2.0, reviews: 1, operatingDays: 3);
+
+      var state = baseState()
+          .updateWith(
+            message<Peer>(
+              Action.payInvoice,
+              payload: Peer(publicKey: '', reputation: reputation),
+            ),
+          )
+          .updateWith(
+            message<Order>(
+              Action.waitingBuyerInvoice,
+              payload: order(status: Status.waitingBuyerInvoice),
+            ),
+          )
+          .updateWith(
+            message<Order>(
+              Action.newOrder,
+              payload: order(status: Status.pending),
+            ),
+          );
+      expect(state.peerReputation, isNull);
+
+      state = state.updateWith(
+        message<Peer>(
+          Action.payInvoice,
+          payload: Peer(publicKey: '', reputation: nextTaker),
+        ),
+      );
+
+      expect(state.peerReputation, nextTaker);
+    });
+
+    test('copyWith clears the snapshot only when asked to', () {
+      final state = baseState().copyWith(peerReputation: reputation);
+
+      // A bare null preserves, like every other copyWith field
+      expect(state.copyWith(peerReputation: null).peerReputation, reputation);
+      expect(state.copyWith(clearPeerReputation: true).peerReputation, isNull);
+    });
+
     test('fromMostroMessage picks the snapshot up without setting a peer', () {
       final state = OrderState.fromMostroMessage(
         message<Peer>(

@@ -88,8 +88,11 @@ class TradeDetailScreen extends ConsumerWidget {
                   MostroMessageDetail(orderId: orderId),
                 ],
                 // Counterpart reputation, from the daemon's taker notice
-                // (only ever received by the maker)
-                if (tradeState.peerReputation != null) ...[
+                // (only ever received by the maker). A pending order has no
+                // counterpart, so a notice that outlived its take cycle and
+                // landed late is never shown as the next taker's.
+                if (tradeState.peerReputation != null &&
+                    tradeState.status != Status.pending) ...[
                   const SizedBox(height: 16),
                   PeerReputationCard(
                     reputation: tradeState.peerReputation!,
