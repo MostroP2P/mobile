@@ -756,8 +756,13 @@ class RestoreService {
               disputeId: restoredDispute.disputeId,
               orderId: restoredDispute.orderId,
               status: restoredDispute.status,
+              // Order.createdAt is the protocol's `created_at`: seconds, per
+              // the Nostr convention. Reading it as milliseconds dated every
+              // restored dispute to January 1970.
               createdAt: orderDetail.createdAt != null
-                  ? DateTime.fromMillisecondsSinceEpoch(orderDetail.createdAt!)
+                  ? DateTime.fromMillisecondsSinceEpoch(
+                      orderDetail.createdAt! * 1000,
+                    )
                   : DateTime.now(),
               action: userInitiated
                   ? 'dispute-initiated-by-you'
@@ -802,9 +807,10 @@ class RestoreService {
               id: orderDetail.id,
               action: action,
               payload: dispute,
-              timestamp:
-                  orderDetail.createdAt ??
-                  DateTime.now().millisecondsSinceEpoch,
+              // Seconds on the wire, milliseconds in MostroMessage.
+              timestamp: orderDetail.createdAt != null
+                  ? orderDetail.createdAt! * 1000
+                  : DateTime.now().millisecondsSinceEpoch,
             );
 
             // Save dispute message to storage

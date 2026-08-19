@@ -15,6 +15,15 @@ class MostroMessage<T extends Payload> {
   final Action action;
   int? tradeIndex;
   T? _payload;
+
+  /// Milliseconds since the Unix epoch.
+  ///
+  /// One unit for this field, everywhere. It is read back from two sources
+  /// that do not agree natively — the local store writes milliseconds, while
+  /// anything arriving over the wire follows the Nostr convention of seconds —
+  /// and mixing them silently corrupted dispute ordering in both directions
+  /// (see [_toMillis]). Every producer normalises here rather than at each
+  /// consumer.
   int? timestamp;
 
   MostroMessage({
@@ -45,8 +54,20 @@ class MostroMessage<T extends Payload> {
     return json;
   }
 
+  /// Normalises an epoch value to milliseconds.
+  ///
+  /// `fromJson` deserialises both the local store (milliseconds) and wire
+  /// payloads (seconds), so the unit has to be inferred. The threshold is not
+  /// a guess: 1e12 milliseconds is 2001-09-09, and 1e12 seconds is far beyond
+  /// any date this app will see, so no real timestamp is ambiguous.
+  static int? _toMillis(dynamic raw) {
+    final value = raw is int ? raw : (raw is num ? raw.toInt() : null);
+    if (value == null) return null;
+    return value.abs() < 1000000000000 ? value * 1000 : value;
+  }
+
   factory MostroMessage.fromJson(Map<String, dynamic> json) {
-    final timestamp = json['timestamp'];
+    final timestamp = _toMillis(json['timestamp']);
     // IMPORTANT : Use 'order', 'restore' or 'cant-do' key as per protocol
     json = json['order'] ?? json['restore'] ?? json['cant-do'] ?? json;
     final num requestId = json['request_id'] ?? 0;

@@ -289,10 +289,13 @@ class OrderState {
     // If we got a dispute from the message payload, ensure it has the message timestamp
     // This is critical for correct sorting in the dispute list
     if (updatedDispute != null && payloadDisputeAccepted) {
-      // Use message timestamp if dispute doesn't have a createdAt or if message has a timestamp
-      // Note: Nostr timestamps are in seconds, so convert to milliseconds
+      // MostroMessage.timestamp is already milliseconds (normalised at the
+      // model boundary). It used to be multiplied by 1000 here under a comment
+      // claiming it was seconds, which pushed every live dispute's createdAt
+      // tens of thousands of years into the future and pinned it to the top of
+      // the dispute list for good.
       if (message.timestamp != null) {
-        final tsMs = message.timestamp! * 1000;
+        final tsMs = message.timestamp!;
         if (updatedDispute.createdAt == null || 
             updatedDispute.createdAt!.millisecondsSinceEpoch != tsMs) {
           updatedDispute = updatedDispute.copyWith(
