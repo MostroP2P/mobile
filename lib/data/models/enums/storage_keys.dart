@@ -6,7 +6,8 @@ enum SharedPreferencesKeys {
   mostroCustomNodes('mostro_custom_nodes'),
   trustedNodeMetadata('trusted_node_metadata'),
   backgroundFilters('background_filters'),
-  communitySelected('community_selected');
+  communitySelected('community_selected'),
+  nodeProtocolVersions('node_protocol_versions');
 
   final String value;
 
