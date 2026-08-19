@@ -380,10 +380,28 @@ class NostrUtils {
     return wrapEvent;
   }
 
+  /// Decrypts a protocol-v1 (NIP-59 gift wrap) Mostro event and authenticates
+  /// its sender.
+  ///
+  /// The outer wrap (kind 1059) is signed by a throwaway ephemeral key and
+  /// proves nothing — anyone can encrypt to a public trade key. The rumor
+  /// inside carries a `pubkey` field but is unsigned by design, so that field
+  /// is a claim, not evidence. The authentication in NIP-59 lives in the
+  /// middle layer: the seal (kind 13) is signed by the sender's real identity
+  /// key. mostrod builds it exactly that way — `EventBuilder::seal(...)
+  /// .sign(identity_keys)` in mostro-core's `nip59.rs` — and the node uses a
+  /// single keypair for identity and trade, so the seal's author is the
+  /// configured node pubkey.
+  ///
+  /// [expectedAuthor] is checked against the seal's author and the seal's
+  /// signature is verified, which is what makes this path forgery-resistant.
+  /// Without both, any party able to reach the victim's trade key could inject
+  /// arbitrary Mostro messages.
   static Future<NostrEvent> decryptNIP59Event(
     NostrEvent event,
-    String privateKey,
-  ) async {
+    String privateKey, {
+    required String expectedAuthor,
+  }) async {
     if (event.kind != 1059) {
       throw ArgumentError('Wrong kind: ${event.kind}');
     }
@@ -402,14 +420,26 @@ class NostrUtils {
         event.pubkey,
       );
 
-      final rumorEvent = NostrEvent.deserialized(
+      // This is the seal (kind 13), not the rumor: the rumor is one layer
+      // further in, inside the seal's encrypted content.
+      final sealEvent = NostrEvent.deserialized(
         '["EVENT", "", $decryptedContent]',
       );
 
+      if (sealEvent.pubkey != expectedAuthor) {
+        throw ArgumentError(
+          'Unexpected seal author: expected $expectedAuthor, '
+          'got ${sealEvent.pubkey}',
+        );
+      }
+      if (!isValidEventSignature(sealEvent)) {
+        throw ArgumentError('Invalid seal signature');
+      }
+
       final finalDecryptedContent = await decryptNIP44(
-        rumorEvent.content!,
+        sealEvent.content!,
         privateKey,
-        rumorEvent.pubkey,
+        sealEvent.pubkey,
       );
 
       final wrap = jsonDecode(finalDecryptedContent) as Map<String, dynamic>;

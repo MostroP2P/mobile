@@ -68,10 +68,14 @@ extension NostrEventExtensions on NostrEvent {
     return timeago.format(createdAt!, allowFromNow: true, locale: locale);
   }
 
-  Future<NostrEvent> unWrap(String privateKey) async {
+  Future<NostrEvent> unWrap(
+    String privateKey, {
+    required String expectedAuthor,
+  }) async {
     return await NostrUtils.decryptNIP59Event(
       this,
       privateKey,
+      expectedAuthor: expectedAuthor,
     );
   }
 
@@ -104,7 +108,10 @@ extension NostrEventExtensions on NostrEvent {
     }
   }
 
-  Future<NostrEvent> mostroUnWrap(NostrKeyPairs receiver) async {
+  Future<NostrEvent> mostroUnWrap(
+    NostrKeyPairs receiver, {
+    required String expectedAuthor,
+  }) async {
     if (kind != 1059) {
       throw ArgumentError('Expected kind 1059 (Gift Wrap), got: $kind');
     }
@@ -137,6 +144,21 @@ extension NostrEventExtensions on NostrEvent {
 
         if (sealEvent.content == null || sealEvent.content!.isEmpty) {
           throw Exception('SEAL content is empty');
+        }
+
+        // STEP 2b: Authenticate the sender. The seal is the only signed
+        // layer that names them: the outer wrap is signed by a throwaway
+        // ephemeral key, and the rumor is unsigned by design, so its pubkey
+        // field is a claim. Pin the author and verify the signature before
+        // trusting anything inside.
+        if (sealEvent.pubkey != expectedAuthor) {
+          throw Exception(
+            'Unexpected seal author: expected $expectedAuthor, '
+            'got ${sealEvent.pubkey}',
+          );
+        }
+        if (!NostrUtils.isValidEventSignature(sealEvent)) {
+          throw Exception('Invalid seal signature');
         }
 
         // STEP 3: Decrypt SEAL with sender's pubkey (from SEAL)

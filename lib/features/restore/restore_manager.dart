@@ -1157,7 +1157,10 @@ Future<Map<String, dynamic>> decodeRestoreMessage(
       expectedAuthor: mostroPubkey,
     );
   } else {
-    final rumor = await event.mostroUnWrap(tempTradeKey);
+    final rumor = await event.mostroUnWrap(
+      tempTradeKey,
+      expectedAuthor: mostroPubkey,
+    );
     content = rumor.content ?? '';
   }
 
