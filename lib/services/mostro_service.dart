@@ -15,6 +15,8 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/data/repositories/event_storage.dart';
+import 'package:mostro_mobile/shared/utils/in_flight_events.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class MostroService {
@@ -23,14 +25,9 @@ class MostroService {
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
 
-  /// Event ids currently being decrypted, claimed synchronously.
-  ///
-  /// The durable dedup store cannot serve this purpose: `hasItem` is async, so
-  /// two relays delivering the same event can both observe it as unseen and
-  /// process it twice. A `Set.add` in the event-loop turn closes that window
-  /// without committing anything durable about an event nobody has
-  /// authenticated yet.
-  final Set<String> _inFlightEventIds = <String>{};
+  /// Guards against concurrent re-delivery while the durable dedup write waits
+  /// for authentication. See [InFlightEvents].
+  final InFlightEvents _inFlight = InFlightEvents();
 
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
@@ -135,11 +132,14 @@ class MostroService {
     final eventStore = ref.read(eventStorageProvider);
     if (await eventStore.hasItem(eventId)) return;
 
-    // Claim the id for this turn only. Released in the finally below, so a
-    // rejected event leaves no trace and a later genuine event with the same
-    // id is still processed.
-    if (!_inFlightEventIds.add(eventId)) return;
+    await _inFlight.guard(eventId, () => _process(event, eventId, eventStore));
+  }
 
+  Future<void> _process(
+    NostrEvent event,
+    String eventId,
+    EventStorage eventStore,
+  ) async {
     try {
       final sessions = ref.read(sessionNotifierProvider);
       final matchingSession = sessions.firstWhereOrNull(
@@ -220,8 +220,6 @@ class MostroService {
       await _maybeLinkChildOrder(msg, matchingSession);
     } catch (e) {
       logger.e('Error processing event', error: e);
-    } finally {
-      _inFlightEventIds.remove(eventId);
     }
   }
 
