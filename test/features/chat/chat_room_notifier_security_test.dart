@@ -164,6 +164,28 @@ void main() {
       expect(container.read(chatRoomProvider).messages, hasLength(1));
     });
 
+    test(
+        'an event the background already persisted still reaches the UI',
+        () async {
+      final rumor = NostrEventExtensions.createChatRumor(
+        senderKeys: peerKey,
+        content: 'stored while the app slept',
+      );
+      final valid = await rumor.chatWrap(chatKeys);
+
+      // The background service persists accepted envelopes but cannot touch
+      // the foreground state, so the record is on disk before the notifier
+      // ever sees the event
+      await eventStorage.putItem(valid.id!, valid.peerChatRecord(orderId));
+
+      await notifier.handleChatEvent(valid);
+
+      final messages = container.read(chatRoomProvider).messages;
+      expect(messages, hasLength(1),
+          reason: 'a stored-but-unseen event must not be dropped by dedup');
+      expect(messages.single.content, equals('stored while the app slept'));
+    });
+
     test('an event from a stranger author is ignored and not persisted',
         () async {
       final stranger = _forgerKey;

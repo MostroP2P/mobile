@@ -216,8 +216,11 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       // Check for duplicate outer events (relay re-deliveries)
       final wrapperEventId = event.id;
       if (wrapperEventId == null) return;
+      // Already on disk means a relay re-delivery, an own echo, or an event
+      // the background service stored while the app slept. Keep processing:
+      // state is keyed by inner id, so only the write is redundant.
       final eventStore = ref.read(eventStorageProvider);
-      if (await eventStore.hasItem(wrapperEventId)) return;
+      final alreadyStored = await eventStore.hasItem(wrapperEventId);
 
       // Unwrap and authenticate BEFORE persisting: the signature is not part
       // of the event id, so storing an unverified copy would let a corrupted
@@ -228,20 +231,12 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       );
 
       // Store the outer event (encrypted) to disk — same pattern as P2P chat
-      await eventStore.putItem(
-        wrapperEventId,
-        {
-          'id': wrapperEventId,
-          'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
-          'kind': event.kind,
-          'content': event.content,
-          'pubkey': event.pubkey,
-          'sig': event.sig,
-          'tags': event.tags,
-          'type': 'dispute_chat',
-          'dispute_id': disputeId,
-        },
-      );
+      if (!alreadyStored) {
+        await eventStore.putItem(
+          wrapperEventId,
+          event.disputeChatRecord(disputeId),
+        );
+      }
       if (!mounted) return;
 
       // Advance the persisted since cursor only after the event is accepted
@@ -452,17 +447,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       final eventStore = ref.read(eventStorageProvider);
       await eventStore.putItem(
         wrappedEvent.id!,
-        {
-          'id': wrappedEvent.id,
-          'created_at': wrappedEvent.createdAt!.millisecondsSinceEpoch ~/ 1000,
-          'kind': wrappedEvent.kind,
-          'content': wrappedEvent.content,
-          'pubkey': wrappedEvent.pubkey,
-          'sig': wrappedEvent.sig,
-          'tags': wrappedEvent.tags,
-          'type': 'dispute_chat',
-          'dispute_id': disputeId,
-        },
+        wrappedEvent.disputeChatRecord(disputeId),
       );
       if (!mounted) return;
 

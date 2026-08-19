@@ -264,6 +264,18 @@ Future<MostroMessage?> _processAdminDm(
       chatKeys,
       session.disputeChatAllowedSigners,
     );
+
+    // Durable accepted-event marker, written only after chatUnwrap accepts:
+    // dedups across background-service restarts and lets the foreground load
+    // the message from disk instead of depending on a relay refetch
+    final disputeId = session.disputeId;
+    if (disputeId != null && event.id != null) {
+      await bg.persistChatEventFromBackground?.call(
+        event.id!,
+        event.disputeChatRecord(disputeId),
+      );
+    }
+
     if (unwrapped.content == null || unwrapped.content!.isEmpty) {
       return null;
     }
@@ -430,6 +442,18 @@ Future<MostroMessage?> _processPeerChat(
       chatKeys,
       session.peerChatAllowedSigners,
     );
+
+    // Durable accepted-event marker, written only after chatUnwrap accepts:
+    // dedups across background-service restarts and lets the foreground load
+    // the message from disk instead of depending on a relay refetch
+    final orderId = session.orderId;
+    if (orderId != null && event.id != null) {
+      await bg.persistChatEventFromBackground?.call(
+        event.id!,
+        event.peerChatRecord(orderId),
+      );
+    }
+
     if (decryptedEvent.content == null || decryptedEvent.content!.isEmpty) {
       return null;
     }

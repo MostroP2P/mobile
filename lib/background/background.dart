@@ -50,6 +50,20 @@ String currentLanguage = 'en';
 void Function(String signPubkey, String? orderId)?
     addChatSubscriptionFromBackground;
 
+/// Callback set by `serviceMain` so `background_notification_service` can
+/// persist an authenticated chat envelope through the isolate's already-open
+/// event store, instead of opening a second handle on the same database.
+///
+/// Without this durable marker the background notifies but stores nothing, so
+/// a service restart restores the same filter, refetches the event and
+/// notifies again — and the foreground can only recover the message by
+/// refetching it from a relay. Only accepted (chatUnwrap-verified) events are
+/// passed here; rejected ones must leave storage untouched.
+///
+/// It is `null` in the foreground isolate and any call there is a no-op.
+Future<void> Function(String id, Map<String, dynamic> record)?
+    persistChatEventFromBackground;
+
 @pragma('vm:entry-point')
 Future<void> serviceMain(ServiceInstance service) async {
   SendPort? loggerSendPort;
@@ -157,6 +171,17 @@ Future<void> serviceMain(ServiceInstance service) async {
       } catch (e) {
         logger?.e('Failed to restore background filters: $e');
       }
+
+      // Expose a hook so accepted chat envelopes get a durable marker,
+      // reusing the event store this isolate already opened.
+      persistChatEventFromBackground =
+          (String id, Map<String, dynamic> record) async {
+        try {
+          await eventStore?.putItem(id, record);
+        } catch (e) {
+          logger?.e('Failed to persist chat event in background: $e');
+        }
+      };
 
       // Expose a hook that `background_notification_service` can call after
       // it has persisted a peer update to add a live chat subscription

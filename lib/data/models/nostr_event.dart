@@ -317,6 +317,32 @@ extension NostrEventExtensions on NostrEvent {
   /// Mostro chat envelope (kind 14): default subscription event limit.
   static const chatDefaultLimit = 100;
 
+  /// Mostro chat: on-disk record for a peer chat envelope, keyed by order.
+  /// Shared by the foreground notifier and the background isolate so both
+  /// write the shape `_loadHistoricalMessages` expects.
+  Map<String, dynamic> peerChatRecord(String orderId) => {
+        ..._chatRecordFields(),
+        'type': 'chat',
+        'order_id': orderId,
+      };
+
+  /// Mostro chat: on-disk record for a dispute chat envelope, keyed by dispute.
+  Map<String, dynamic> disputeChatRecord(String disputeId) => {
+        ..._chatRecordFields(),
+        'type': 'dispute_chat',
+        'dispute_id': disputeId,
+      };
+
+  Map<String, dynamic> _chatRecordFields() => {
+        'id': id,
+        'created_at': createdAt!.millisecondsSinceEpoch ~/ 1000,
+        'kind': kind,
+        'content': content,
+        'pubkey': pubkey,
+        'sig': sig,
+        'tags': tags,
+      };
+
   /// Mostro chat: subscription filter for one or more conversations, matched
   /// by their K_sign authors (never by `#p`, which a third party could flood).
   /// Shared by the foreground subscriptions and the background isolate so the

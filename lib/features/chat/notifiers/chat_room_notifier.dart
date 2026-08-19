@@ -161,11 +161,11 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         return;
       }
 
-      // Cheap duplicate fast-path (relay re-deliveries, own sent echoes)
+      // Already on disk means a relay re-delivery, an own echo, or an event
+      // the background service stored while the app slept. Keep processing:
+      // state is keyed by inner id, so only the write is redundant.
       final eventStore = ref.read(eventStorageProvider);
-      if (await eventStore.hasItem(event.id!)) {
-        return;
-      }
+      final alreadyStored = await eventStore.hasItem(event.id!);
 
       // Unwrap and authenticate BEFORE persisting: the signature is not part
       // of the event id, so storing an unverified copy would let a corrupted
@@ -175,20 +175,9 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         session.peerChatAllowedSigners,
       );
 
-      await eventStore.putItem(
-        event.id!,
-        {
-          'id': event.id,
-          'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
-          'kind': event.kind,
-          'content': event.content,
-          'pubkey': event.pubkey,
-          'sig': event.sig,
-          'tags': event.tags,
-          'type': 'chat',
-          'order_id': orderId,
-        },
-      );
+      if (!alreadyStored) {
+        await eventStore.putItem(event.id!, event.peerChatRecord(orderId));
+      }
 
       // Advance the persisted since cursor only after the event is accepted
       // (clamped to the local clock inside the store)
@@ -274,18 +263,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         final eventStore = ref.read(eventStorageProvider);
         await eventStore.putItem(
           wrappedEvent.id!,
-          {
-            'id': wrappedEvent.id,
-            'created_at':
-                wrappedEvent.createdAt!.millisecondsSinceEpoch ~/ 1000,
-            'kind': wrappedEvent.kind,
-            'content': wrappedEvent.content,
-            'pubkey': wrappedEvent.pubkey,
-            'sig': wrappedEvent.sig,
-            'tags': wrappedEvent.tags,
-            'type': 'chat',
-            'order_id': orderId,
-          },
+          wrappedEvent.peerChatRecord(orderId),
         );
         logger.d('Wrapped event persisted to storage for orderId: $orderId');
       } catch (storageError) {
