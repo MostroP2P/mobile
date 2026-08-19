@@ -7,8 +7,11 @@ import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/add_lightning_invoice_widget.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_invoice_widget.dart';
+import 'package:mostro_mobile/shared/widgets/invoice_header.dart';
 import 'package:mostro_mobile/shared/widgets/ln_address_confirmation_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
@@ -56,6 +59,26 @@ class _AddLightningInvoiceScreenState
         final fiatAmount = orderPayload?.fiatAmount.toString() ?? '0';
         final fiatCode = orderPayload?.fiatCode ?? '';
         final orderIdValue = orderPayload?.id ?? orderId;
+        // Trade summary shown by every flow: trade type, who took the order,
+        // amounts, order id and the counterpart reputation (when received).
+        // Adding an invoice always means the user is the buyer, but not always
+        // the maker: taking a sell order and retrying after a failed payout
+        // land here too.
+        final session = ref.watch(sessionProvider(orderId));
+        final orderState = ref.watch(orderNotifierProvider(orderId));
+        final header = InvoiceHeader(
+          userIsSeller: session?.role == Role.seller,
+          sats: amount ?? 0,
+          fiatAmount: fiatAmount,
+          fiatCode: fiatCode,
+          orderId: orderIdValue,
+          takenByCounterpart: counterpartTookYourOrder(
+            kind: orderState.order?.kind ?? orderPayload?.kind,
+            role: session?.role,
+            status: orderState.status,
+          ),
+          reputation: orderState.peerReputation,
+        );
 
         final nwcState = ref.watch(nwcProvider);
         final isNwcConnected = nwcState.status == NwcStatus.connected;
@@ -77,16 +100,9 @@ class _AddLightningInvoiceScreenState
               16 + MediaQuery.of(context).viewPadding.bottom,
             ),
             child: showLnAddressConfirmation
-                ? _buildLnAddressConfirmation(
-                    orderIdValue: orderIdValue,
-                  )
+                ? _buildLnAddressConfirmation(header: header)
                 : showNwcInvoice
-                    ? _buildNwcInvoiceFlow(
-                        amount: amount ?? 0,
-                        fiatAmount: fiatAmount,
-                        fiatCode: fiatCode,
-                        orderIdValue: orderIdValue,
-                      )
+                    ? _buildNwcInvoiceFlow(header: header)
                     : AddLightningInvoiceWidget(
                         controller: invoiceController,
                         onSubmit: () async {
@@ -102,6 +118,7 @@ class _AddLightningInvoiceScreenState
                         fiatAmount: fiatAmount,
                         fiatCode: fiatCode,
                         orderId: orderIdValue,
+                        header: header,
                       ),
           ),
         );
@@ -111,20 +128,11 @@ class _AddLightningInvoiceScreenState
     );
   }
 
-  Widget _buildLnAddressConfirmation({
-    required String orderIdValue,
-  }) {
+  Widget _buildLnAddressConfirmation({required Widget header}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          S.of(context)!.lnAddressConfirmHeader(orderIdValue),
-          style: const TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        header,
         const SizedBox(height: 24),
         LnAddressConfirmationWidget(
           lightningAddress: widget.lnAddress!,
@@ -160,28 +168,13 @@ class _AddLightningInvoiceScreenState
     }
   }
 
-  Widget _buildNwcInvoiceFlow({
-    required int amount,
-    required String fiatAmount,
-    required String fiatCode,
-    required String orderIdValue,
-  }) {
+  Widget _buildNwcInvoiceFlow({required InvoiceHeader header}) {
+    final amount = header.sats;
+    final orderIdValue = header.orderId;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          S.of(context)!.pleaseEnterLightningInvoiceFor(
-                amount.toString(),
-                fiatCode,
-                fiatAmount,
-                orderIdValue,
-              ),
-          style: const TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        header,
         const SizedBox(height: 24),
         NwcInvoiceWidget(
           sats: amount,

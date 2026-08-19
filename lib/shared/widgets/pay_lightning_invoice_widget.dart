@@ -17,6 +17,9 @@ class PayLightningInvoiceWidget extends StatefulWidget {
   final String fiatCode;
   final String orderId;
 
+  /// Replaces the built-in heading text when provided (see [InvoiceHeader]).
+  final Widget? header;
+
   const PayLightningInvoiceWidget({
     super.key,
     required this.onSubmit,
@@ -26,6 +29,7 @@ class PayLightningInvoiceWidget extends StatefulWidget {
     required this.fiatAmount,
     required this.fiatCode,
     required this.orderId,
+    this.header,
   });
 
   @override
@@ -39,16 +43,19 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          S.of(context)!.payInvoiceToContinue(
-            widget.sats.toString(),
-            widget.fiatCode,
-            widget.fiatAmount,
-            widget.orderId,
+        if (widget.header != null)
+          SizedBox(width: double.infinity, child: widget.header!)
+        else
+          Text(
+            S.of(context)!.payInvoiceToContinue(
+                  widget.sats.toString(),
+                  widget.fiatCode,
+                  widget.fiatAmount,
+                  widget.orderId,
+                ),
+            style: const TextStyle(color: AppTheme.cream1, fontSize: 18),
+            textAlign: TextAlign.center,
           ),
-          style: const TextStyle(color: AppTheme.cream1, fontSize: 18),
-          textAlign: TextAlign.center,
-        ),
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.all(8.0),
@@ -100,12 +107,14 @@ class _PayLightningInvoiceWidgetState extends State<PayLightningInvoiceWidget> {
                   final uri = Uri.parse('lightning:${widget.lnInvoice}');
                   if (await canLaunchUrl(uri)) {
                     await launchUrl(uri);
-                    logger.i('Launched Lightning wallet with invoice: ${widget.lnInvoice}');
+                    logger.i(
+                        'Launched Lightning wallet with invoice: ${widget.lnInvoice}');
                   } else {
                     // Fallback to generic share if no Lightning apps available
                     // lightning: URL scheme is not necessary then
                     await Share.share(widget.lnInvoice);
-                    logger.i('Shared LN Invoice via share sheet: ${widget.lnInvoice}');
+                    logger.i(
+                        'Shared LN Invoice via share sheet: ${widget.lnInvoice}');
                   }
                 } catch (e) {
                   logger.e('Failed to share LN Invoice: $e');

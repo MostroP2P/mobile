@@ -87,6 +87,18 @@ class TradeDetailScreen extends ConsumerWidget {
                   // Detailed info: includes the last Mostro message action text
                   MostroMessageDetail(orderId: orderId),
                 ],
+                // Counterpart reputation, from the daemon's taker notice
+                // (only ever received by the maker). A pending order has no
+                // counterpart, so a notice that outlived its take cycle and
+                // landed late is never shown as the next taker's.
+                if (tradeState.peerReputation != null &&
+                    tradeState.status != Status.pending) ...[
+                  const SizedBox(height: 16),
+                  PeerReputationCard(
+                    reputation: tradeState.peerReputation!,
+                    counterpartIsBuyer: session?.role == Role.seller,
+                  ),
+                ],
                 const SizedBox(height: 24),
                 // Show countdown timer only for specific statuses
                 _CountdownWidget(

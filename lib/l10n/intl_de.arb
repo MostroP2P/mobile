@@ -305,6 +305,54 @@
     "createdOnLabel": "Erstellt am",
     "orderIdLabel": "Order-ID",
     "creatorReputationLabel": "Reputation des Erstellers",
+    "buyerReputationLabel": "Reputation des Käufers",
+    "sellerReputationLabel": "Reputation des Verkäufers",
+    "buyerTookYourSellOrder": "Ein Käufer hat deine Verkaufsorder angenommen.",
+    "sellerTookYourBuyOrder": "Ein Verkäufer hat deine Kauforder angenommen.",
+    "payInvoiceExchangeInstruction": "Wenn du mit dem Austausch fortfahren möchtest, bezahle diese Lightning-Rechnung über {sats} Sats, entsprechend {fiat_amount} {fiat_code}.",
+    "@payInvoiceExchangeInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "addInvoiceExchangeInstruction": "Wenn du mit dem Austausch fortfahren möchtest, füge eine Lightning-Rechnung über {sats} Sats hinzu, entsprechend {fiat_amount} {fiat_code}.",
+    "@addInvoiceExchangeInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "reputationReviewsCount": "{count, plural, =1{1 Bewertung} other{{count} Bewertungen}}",
+    "@reputationReviewsCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "reputationDaysCount": "{count, plural, =1{1 Tag} other{{count} Tage}}",
+    "@reputationDaysCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "ratingTitleLabel": "Bewertung",
     "reviewsLabel": "Bewertungen",
     "daysLabel": "Tage",

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/data/models/user_info.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
@@ -274,116 +275,238 @@ class CreatorReputationCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // Rating section
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.star,
-                            color: AppTheme.mostroGreen,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            rating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        S.of(context)!.ratingTitleLabel,
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Reviews section
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.person_outline,
-                            color: Colors.white70,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            reviews.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        S.of(context)!.reviewsLabel,
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Days section
-                Expanded(
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.calendar_today_outlined,
-                            color: Colors.white70,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            days.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        S.of(context)!.daysLabel,
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            _ReputationMetricsRow(
+              rating: rating,
+              reviews: reviews,
+              days: days,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Card that displays the counterpart's reputation, from the daemon's
+/// taker-reputation notice. Keeps the same shape when there is no history
+/// (new user or full-privacy taker), showing zeros in every metric.
+class PeerReputationCard extends StatelessWidget {
+  final UserInfo reputation;
+  final bool counterpartIsBuyer;
+
+  const PeerReputationCard({
+    super.key,
+    required this.reputation,
+    required this.counterpartIsBuyer,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomCard(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              counterpartIsBuyer
+                  ? S.of(context)!.buyerReputationLabel
+                  : S.of(context)!.sellerReputationLabel,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _ReputationMetricsRow(
+              rating: reputation.rating,
+              reviews: reputation.reviews,
+              days: reputation.operatingDays,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact, cardless counterpart reputation for dense layouts (invoice
+/// screens): a title line plus "★ 4.4 / 5 · 4 reviews · 64 days". A
+/// counterpart with no history reads as zeros, same as [PeerReputationCard].
+class PeerReputationInline extends StatelessWidget {
+  final UserInfo reputation;
+  final bool counterpartIsBuyer;
+
+  const PeerReputationInline({
+    super.key,
+    required this.reputation,
+    required this.counterpartIsBuyer,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          counterpartIsBuyer
+              ? S.of(context)!.buyerReputationLabel
+              : S.of(context)!.sellerReputationLabel,
+          style: const TextStyle(
+            color: AppTheme.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.star,
+              color: AppTheme.mostroGreen,
+              size: 18,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                '${reputation.rating.toStringAsFixed(1)} / 5 · '
+                '${S.of(context)!.reputationReviewsCount(reputation.reviews)} · '
+                '${S.of(context)!.reputationDaysCount(reputation.operatingDays)}',
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Shared rating / reviews / days row used by the reputation cards
+class _ReputationMetricsRow extends StatelessWidget {
+  final double rating;
+  final int reviews;
+  final int days;
+
+  const _ReputationMetricsRow({
+    required this.rating,
+    required this.reviews,
+    required this.days,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        // Rating section
+        Expanded(
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.star,
+                    color: AppTheme.mostroGreen,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    rating.toStringAsFixed(1),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                S.of(context)!.ratingTitleLabel,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Reviews section
+        Expanded(
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.person_outline,
+                    color: Colors.white70,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    reviews.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                S.of(context)!.reviewsLabel,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Days section
+        Expanded(
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    color: Colors.white70,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    days.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                S.of(context)!.daysLabel,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

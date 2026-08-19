@@ -6,6 +6,7 @@ import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/payment_failed.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
+import 'package:mostro_mobile/data/models/user_info.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 
 const _buyerPubkey =
@@ -154,6 +155,176 @@ void main() {
       expect(updated.cantDo?.cantDoReason, CantDoReason.notFound);
       expect(updated.peer?.publicKey, _buyerPubkey);
       expect(updated.paymentFailed?.paymentAttempts, 1);
+    });
+  });
+
+  group('OrderState peerReputation', () {
+    const reputation = UserInfo(rating: 4.375, reviews: 4, operatingDays: 64);
+
+    test('updateWith stores the snapshot from a reputation-only Peer', () {
+      final state = baseState().updateWith(
+        message<Peer>(
+          Action.payInvoice,
+          payload: Peer(publicKey: '', reputation: reputation),
+        ),
+      );
+
+      expect(state.peerReputation, reputation);
+      // An empty pubkey must never become the tracked counterpart
+      expect(state.peer, isNull);
+    });
+
+    test('is preserved across later messages without reputation', () {
+      var state = baseState().updateWith(
+        message<Peer>(
+          Action.addInvoice,
+          payload: Peer(publicKey: '', reputation: reputation),
+        ),
+      );
+
+      // fiat-sent-ok shape: real pubkey, reputation absent
+      state = state.updateWith(
+        message<Peer>(
+          Action.fiatSentOk,
+          payload: Peer(publicKey: _buyerPubkey),
+        ),
+      );
+      expect(state.peerReputation, reputation);
+      expect(state.peer?.publicKey, _buyerPubkey);
+
+      state = state.updateWith(message(Action.rate));
+      expect(state.peerReputation, reputation);
+    });
+
+    test('the notice never moves the order it rides on', () {
+      final state = baseState(
+        status: Status.waitingTakerBond,
+        action: Action.payBondInvoice,
+      ).updateWith(
+        message<Peer>(
+          Action.addInvoice,
+          payload: Peer(publicKey: '', reputation: reputation),
+        ),
+      );
+
+      // addInvoice would normally map to waiting-buyer-invoice
+      expect(state.status, Status.waitingTakerBond);
+      expect(state.action, Action.payBondInvoice);
+      expect(state.peerReputation, reputation);
+    });
+
+    test('a late notice cannot roll back an order that already advanced', () {
+      var state = baseState()
+          .updateWith(
+            message<Peer>(
+              Action.payInvoice,
+              payload: Peer(publicKey: '', reputation: reputation),
+            ),
+          )
+          .updateWith(
+            message<Order>(
+              Action.fiatSentOk,
+              payload: order(
+                status: Status.fiatSent,
+                buyerTradePubkey: _buyerPubkey,
+              ),
+            ),
+          );
+      expect(state.status, Status.fiatSent);
+
+      // Redelivered by a slow relay long after the trade moved on
+      final afterLateNotice = state.updateWith(
+        message<Peer>(
+          Action.payInvoice,
+          payload: Peer(publicKey: '', reputation: reputation),
+        ),
+      );
+
+      expect(afterLateNotice.status, Status.fiatSent);
+      expect(afterLateNotice.action, Action.fiatSentOk);
+      expect(afterLateNotice.order, state.order);
+      expect(afterLateNotice.peer?.publicKey, _buyerPubkey);
+      expect(afterLateNotice.fiatWasSent, isTrue);
+      expect(afterLateNotice.peerReputation, reputation);
+    });
+
+    test('a republish after the taker times out drops the snapshot', () {
+      var state = baseState()
+          .updateWith(
+            message<Peer>(
+              Action.payInvoice,
+              payload: Peer(publicKey: '', reputation: reputation),
+            ),
+          )
+          .updateWith(
+            message<Order>(
+              Action.waitingBuyerInvoice,
+              payload: order(status: Status.waitingBuyerInvoice),
+            ),
+          );
+      expect(state.peerReputation, reputation);
+
+      // Mostro returns the maker's order to the book: there is no taker now
+      state = state.updateWith(
+        message<Order>(Action.newOrder, payload: order(status: Status.pending)),
+      );
+
+      expect(state.status, Status.pending);
+      expect(state.peerReputation, isNull);
+    });
+
+    test('the next taker snapshot replaces the one that was dropped', () {
+      const nextTaker = UserInfo(rating: 2.0, reviews: 1, operatingDays: 3);
+
+      var state = baseState()
+          .updateWith(
+            message<Peer>(
+              Action.payInvoice,
+              payload: Peer(publicKey: '', reputation: reputation),
+            ),
+          )
+          .updateWith(
+            message<Order>(
+              Action.waitingBuyerInvoice,
+              payload: order(status: Status.waitingBuyerInvoice),
+            ),
+          )
+          .updateWith(
+            message<Order>(
+              Action.newOrder,
+              payload: order(status: Status.pending),
+            ),
+          );
+      expect(state.peerReputation, isNull);
+
+      state = state.updateWith(
+        message<Peer>(
+          Action.payInvoice,
+          payload: Peer(publicKey: '', reputation: nextTaker),
+        ),
+      );
+
+      expect(state.peerReputation, nextTaker);
+    });
+
+    test('copyWith clears the snapshot only when asked to', () {
+      final state = baseState().copyWith(peerReputation: reputation);
+
+      // A bare null preserves, like every other copyWith field
+      expect(state.copyWith(peerReputation: null).peerReputation, reputation);
+      expect(state.copyWith(clearPeerReputation: true).peerReputation, isNull);
+    });
+
+    test('fromMostroMessage picks the snapshot up without setting a peer', () {
+      final state = OrderState.fromMostroMessage(
+        message<Peer>(
+          Action.addInvoice,
+          payload: Peer(publicKey: '', reputation: reputation),
+        ),
+      );
+
+      expect(state.peerReputation, reputation);
+      expect(state.peer, isNull);
     });
   });
 

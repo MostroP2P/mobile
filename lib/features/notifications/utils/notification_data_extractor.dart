@@ -12,6 +12,11 @@ class NotificationDataExtractor {
   /// Extract notification data from MostroMessage
   /// If ref is null, will use fallback methods for nickname resolution
   static Future<NotificationData?> extractFromMostroMessage(MostroMessage event, Ref? ref, {Session? session, Status? previousStatus, bool wasUserInitiatedCancel = false}) async {
+    // The taker-reputation notice reuses the flow action, so the real message
+    // already notifies for it. Suppressed here rather than at the call sites so
+    // the background service stays silent too.
+    if (event.isTakerReputationNotice) return null;
+
     Map<String, dynamic> values = {};
     bool isTemporary = false;
     

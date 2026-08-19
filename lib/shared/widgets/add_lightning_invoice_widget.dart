@@ -13,6 +13,9 @@ class AddLightningInvoiceWidget extends StatefulWidget {
   final String fiatCode;
   final String orderId;
 
+  /// Replaces the built-in heading text when provided (see [InvoiceHeader]).
+  final Widget? header;
+
   const AddLightningInvoiceWidget({
     super.key,
     required this.controller,
@@ -22,6 +25,7 @@ class AddLightningInvoiceWidget extends StatefulWidget {
     required this.fiatAmount,
     required this.fiatCode,
     required this.orderId,
+    this.header,
   });
 
   @override
@@ -36,19 +40,20 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            S.of(context)!.pleaseEnterLightningInvoiceFor(
-                  widget.amount.toString(),
-                  widget.fiatCode,
-                  widget.fiatAmount,
-                  widget.orderId,
+          widget.header ??
+              Text(
+                S.of(context)!.pleaseEnterLightningInvoiceFor(
+                      widget.amount.toString(),
+                      widget.fiatCode,
+                      widget.fiatAmount,
+                      widget.orderId,
+                    ),
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
-            style: const TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+              ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

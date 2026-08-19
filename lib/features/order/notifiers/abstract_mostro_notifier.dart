@@ -186,7 +186,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                 .subtract(const Duration(seconds: 60))
                 .millisecondsSinceEpoch;
 
-    // Extract notification data using the centralized extractor
+    // Extract notification data using the centralized extractor, which also
+    // filters out the taker-reputation notice
     final notificationData =
         await NotificationDataExtractor.extractFromMostroMessage(event, ref,
             session: session,
@@ -354,7 +355,10 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
       case Action.addInvoice:
         final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
         sessionNotifier.saveSession(session);
-        await _handleAddInvoiceWithAutoLightningAddress(event);
+        // The reputation notice must not (re-)navigate to the invoice screen
+        if (!event.isTakerReputationNotice) {
+          await _handleAddInvoiceWithAutoLightningAddress(event);
+        }
         break;
 
       case Action.addBondInvoice:
