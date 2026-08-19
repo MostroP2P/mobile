@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
+import 'package:mostro_mobile/data/models/nostr_filter.dart';
 import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
@@ -35,6 +36,41 @@ void main() {
       createdAt: createdAt,
     );
   }
+
+  group('createChatRumor', () {
+    test('builds a signed kind 1 event with a single u nonce tag', () {
+      final rumor = NostrEventExtensions.createChatRumor(
+        senderKeys: alice,
+        content: 'hello with nonce',
+      );
+
+      expect(rumor.kind, equals(1));
+      expect(rumor.pubkey, equals(alice.public));
+      expect(rumor.id, isNotNull);
+      expect(rumor.sig, isNotNull);
+
+      final uTags = rumor.tags!.where((t) => t[0] == 'u').toList();
+      expect(rumor.tags!.length, equals(1));
+      expect(uTags.length, equals(1));
+      expect(uTags[0][1], matches(RegExp(r'^[0-9a-f]{16}$')));
+    });
+
+    test('identical content at the same timestamp yields distinct ids', () {
+      final createdAt = DateTime.now();
+      final first = NostrEventExtensions.createChatRumor(
+        senderKeys: alice,
+        content: 'ok',
+        createdAt: createdAt,
+      );
+      final second = NostrEventExtensions.createChatRumor(
+        senderKeys: alice,
+        content: 'ok',
+        createdAt: createdAt,
+      );
+
+      expect(first.id, isNot(equals(second.id)));
+    });
+  });
 
   group('chatWrap', () {
     test('produces a kind 14 envelope with the expected shape', () async {
@@ -72,6 +108,20 @@ void main() {
       expect(unwrapped.pubkey, equals(alice.public));
       expect(unwrapped.kind, equals(1));
       expect(unwrapped.id, equals(inner.id));
+    });
+
+    test('accepts a rumor carrying the u nonce tag', () async {
+      final rumor = NostrEventExtensions.createChatRumor(
+        senderKeys: alice,
+        content: 'nonce round-trip',
+      );
+      final wrapped = await rumor.chatWrap(chatKeys);
+
+      final unwrapped = await wrapped.chatUnwrap(chatKeys, allowedSigners);
+
+      expect(unwrapped.content, equals('nonce round-trip'));
+      expect(unwrapped.id, equals(rumor.id));
+      expect(unwrapped.tags!.where((t) => t[0] == 'u').length, equals(1));
     });
 
     test('works in both directions with the same derived keys', () async {
@@ -321,6 +371,40 @@ void main() {
           predicate((e) => e.toString().contains('timestamps disagree')),
         ),
       );
+    });
+  });
+
+  group('chatSubscriptionFilter', () {
+    final since = DateTime.fromMillisecondsSinceEpoch(1700000000 * 1000);
+
+    test('matches by author and bounds the backlog', () {
+      final filter = NostrEventExtensions.chatSubscriptionFilter(
+        signPubkeys: [chatKeys.sign.public],
+        since: since,
+      );
+
+      expect(filter.kinds, [14]);
+      expect(filter.authors, [chatKeys.sign.public]);
+      expect(filter.since, since);
+      expect(filter.limit, NostrEventExtensions.chatDefaultLimit);
+      // Filtering by #p would let any third party flood the subscription
+      expect(filter.p, isNull);
+    });
+
+    test('survives the background persist/restore round-trip', () {
+      final filter = NostrEventExtensions.chatSubscriptionFilter(
+        signPubkeys: [chatKeys.sign.public],
+        since: since,
+      );
+
+      final restored = NostrFilterX.fromJsonSafe(
+        jsonDecode(jsonEncode(filter.toMap())) as Map<String, dynamic>,
+      );
+
+      expect(restored.kinds, filter.kinds);
+      expect(restored.authors, filter.authors);
+      expect(restored.since, filter.since);
+      expect(restored.limit, filter.limit);
     });
   });
 }

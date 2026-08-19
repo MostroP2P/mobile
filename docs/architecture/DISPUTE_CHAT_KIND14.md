@@ -73,7 +73,7 @@ The spec requires filtering by `authors`, **never by `#p`**: a `#p` filter would
 third party flood the subscription with junk events tagged to the conversation pubkey.
 
 The backlog is bounded by a **durable per-conversation `since` cursor**
-(`DisputeChatCursorStore`, persisted in SharedPreferences), as the spec mandates:
+(`ChatCursorStore`, persisted in SharedPreferences), as the spec mandates:
 
 - The cursor advances **only after `chatUnwrap` accepts an event**, clamped to
   `min(accepted_timestamp, local_now)` so a future-dated event within the skew tolerance
@@ -123,7 +123,7 @@ event id (`eventStore.hasItem`) and UI state by inner event id.
 | Envelope (`chatWrap`/`chatUnwrap`) | `lib/data/models/nostr_event.dart` |
 | Dispute chat notifier (subscribe/send/receive/history) | `lib/features/disputes/notifiers/dispute_chat_notifier.dart` |
 | Centralized `disputeChat` filter (also reused by background) | `lib/features/subscriptions/subscription_manager.dart` |
-| Durable `since` cursor (`DisputeChatCursorStore`) | `lib/services/dispute_chat_cursor_store.dart` |
+| Durable `since` cursor (`ChatCursorStore`) | `lib/services/chat_cursor_store.dart` |
 | Background push routing (`author == pub(K_sign)`) | `lib/features/notifications/services/background_notification_service.dart` |
 | Derivation + envelope tests (incl. official test vector) | `test/shared/utils/chat_keys_test.dart`, `test/data/models/nostr_event_chat_test.dart` |
 
@@ -136,9 +136,10 @@ event id (`eventStore.hasItem`) and UI state by inner event id.
   kind (14 → `chatUnwrap`, 1059 → `p2pUnwrap`), so existing history stays visible.
 - **Known accepted gap:** legacy 1059 chat events still sitting on relays but never
   received before the app update are not fetched after it.
-- **P2P peer chat (buyer↔seller) is unchanged** and still uses the legacy 1-layer gift
-  wrap (`p2pWrap`/`p2pUnwrap`). Its migration to this same envelope is future work and
-  should reuse `ChatKeys` + `chatWrap`/`chatUnwrap` as-is.
+- **P2P peer chat (buyer↔seller) uses this same envelope** (`ChatKeys` +
+  `chatWrap`/`chatUnwrap`), with the conversation keys derived from the peer shared key
+  instead of the admin one. See `P2P_CHAT_SYSTEM.md`. `p2pUnwrap` remains only for
+  pre-migration history stored on disk (both chats).
 - **Multimedia is unaffected.** Attachment encryption (ChaCha20-Poly1305) keys off the raw
   ECDH secret bytes (`NostrUtils.sharedKeyToBytes(adminSharedKey)`), not K_conv/K_sign, so
   Blossom attachments remain compatible in both directions.

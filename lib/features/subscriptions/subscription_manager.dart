@@ -12,7 +12,7 @@ import 'package:mostro_mobile/features/mostro/transport.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
-import 'package:mostro_mobile/services/dispute_chat_cursor_store.dart';
+import 'package:mostro_mobile/services/chat_cursor_store.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -159,15 +159,22 @@ class SubscriptionManager {
     }
 
     try {
-      // Pre-warm persisted cursors so the dispute chat filter — built
+      // Pre-warm persisted cursors so the chat filters — built
       // synchronously and later persisted for the background service —
-      // sees durable state even on a cold start
+      // see durable state even on a cold start
       if (type == SubscriptionType.disputeChat) {
         final disputeIds = sessions
             .where((s) => s.adminSharedKey != null)
             .map((s) => s.disputeId)
             .whereType<String>();
         await ref.read(disputeChatCursorStoreProvider).warmUp(disputeIds);
+      }
+      if (type == SubscriptionType.chat) {
+        final orderIds = sessions
+            .where((s) => s.sharedKey != null)
+            .map((s) => s.orderId)
+            .whereType<String>();
+        await ref.read(chatCursorStoreProvider).warmUp(orderIds);
       }
 
       final filter = _createFilterForType(type, sessions);
@@ -208,18 +215,28 @@ class SubscriptionManager {
           ref.read(settingsProvider).mostroPublicKey,
         );
       case SubscriptionType.chat:
-        if (sessions.isEmpty) {
-          return null;
-        }
-        if (sessions.where((s) => s.sharedKey?.public != null).isEmpty) {
-          return null;
-        }
-        return NostrFilter(
-          kinds: [1059],
-          p: sessions
-              .where((s) => s.sharedKey?.public != null)
-              .map((s) => s.sharedKey!.public)
-              .toList(),
+        // Kind 14 chat envelope: filter by the K_sign authors derived from
+        // each peer shared key (never by #p — third-party flooding)
+        final chatSessions =
+            sessions.where((s) => s.sharedKey != null).toList();
+        if (chatSessions.isEmpty) return null;
+        final chatSignKeys = chatSessions
+            .map((s) => ChatKeys.fromSharedKey(s.sharedKey!).sign.public)
+            .toList();
+        // Shared filter across conversations: earliest persisted cursor,
+        // falling back to the default lookback (wider window; dedup absorbs)
+        final chatCursorStore = ref.read(chatCursorStoreProvider);
+        final chatDefaultSince = DateTime.now()
+            .subtract(NostrEventExtensions.chatDefaultLookback);
+        final chatSince = chatSessions
+            .map((s) => s.orderId == null
+                ? chatDefaultSince
+                : (chatCursorStore.cachedSinceFor(s.orderId!) ??
+                    chatDefaultSince))
+            .reduce((a, b) => a.isBefore(b) ? a : b);
+        return NostrEventExtensions.chatSubscriptionFilter(
+          signPubkeys: chatSignKeys,
+          since: chatSince,
         );
       case SubscriptionType.disputeChat:
         // Kind 14 chat envelope: filter by the K_sign authors derived from
@@ -240,11 +257,9 @@ class SubscriptionManager {
                 ? defaultSince
                 : (cursorStore.cachedSinceFor(s.disputeId!) ?? defaultSince))
             .reduce((a, b) => a.isBefore(b) ? a : b);
-        return NostrFilter(
-          kinds: [14],
-          authors: signKeys,
+        return NostrEventExtensions.chatSubscriptionFilter(
+          signPubkeys: signKeys,
           since: since,
-          limit: NostrEventExtensions.chatDefaultLimit,
         );
       case SubscriptionType.relayList:
         // Relay list subscriptions are handled separately via subscribeToMostroRelayList

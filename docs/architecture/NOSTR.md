@@ -235,9 +235,11 @@ The app implements a three-layer encryption system for all private communication
 - **Market Discovery**: Browse available trades
 - **Order Metadata**: Trade parameters and requirements
 
-#### P2P Chat Messages (Kind 1059)
+#### P2P Chat Messages (Kind 14)
 - **Peer-to-Peer**: Direct communication between traders
-- **Envelope**: Legacy 1-layer gift wrap (`p2pWrap`/`p2pUnwrap`) addressed to the ECDH shared pubkey
+- **Envelope**: Kind-14 chat envelope signed by `K_sign`, NIP-44 encrypted under `K_conv`
+  (both HKDF-derived from the peer ECDH shared secret); legacy kind-1059 gift wraps are
+  read from local storage only
 - **Real-time**: Live chat during active trades
 
 #### Dispute Chat Messages (Kind 14)

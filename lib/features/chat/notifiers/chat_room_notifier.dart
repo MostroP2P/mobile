@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/services/chat_cursor_store.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:sembast/sembast.dart';
@@ -22,6 +23,7 @@ import 'package:mostro_mobile/shared/providers/push_notification_service_provide
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
 import 'package:mostro_mobile/shared/mixins/media_cache_mixin.dart';
+import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
@@ -50,11 +52,24 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
   @override
   bool get mounted => super.mounted;
 
+  ChatKeys? _chatKeys;
+  String? _chatKeysSource;
+
   ChatRoomNotifier(
     super.state,
     this.orderId,
     this.ref,
   );
+
+  /// Derive (and cache) the K_conv/K_sign pair from the peer shared key.
+  ChatKeys _getChatKeys(Session session) {
+    final shared = session.sharedKey!;
+    if (_chatKeys == null || _chatKeysSource != shared.public) {
+      _chatKeys = ChatKeys.fromSharedKey(shared);
+      _chatKeysSource = shared.public;
+    }
+    return _chatKeys!;
+  }
 
   /// Initialize the chat room by loading historical messages and subscribing to new events
   Future<void> initialize() async {
@@ -120,10 +135,13 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
     );
   }
 
-  void _onChatEvent(NostrEvent event) async {
+  /// Test hook for the private stream handler.
+  @visibleForTesting
+  Future<void> handleChatEvent(NostrEvent event) => _onChatEvent(event);
+
+  Future<void> _onChatEvent(NostrEvent event) async {
     try {
-      if (event.kind != 1059) {
-        logger.w('Ignoring non-chat event kind: ${event.kind}');
+      if (event.kind != 14) {
         return;
       }
 
@@ -131,46 +149,41 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       // events for ALL chats to every ChatRoomNotifier. Without this early
       // check, multiple notifiers race to store the same event with their own
       // orderId, causing messages to be stored under the wrong order and
-      // disappear after app restart.
+      // disappear after app restart. Ownership is the outer author: the
+      // K_sign key derived from this conversation's shared key.
       final session = ref.read(sessionProvider(orderId));
       if (session == null || session.sharedKey == null) {
         return;
       }
 
-      final pTag = event.tags?.firstWhere(
-            (tag) => tag.isNotEmpty && tag[0] == 'p',
-            orElse: () => [],
-          ) ??
-          [];
-
-      if (pTag.isEmpty ||
-          pTag.length < 2 ||
-          pTag[1] != session.sharedKey!.public) {
+      final chatKeys = _getChatKeys(session);
+      if (event.pubkey != chatKeys.sign.public) {
         return;
       }
 
-      // Event belongs to this chat — now check for duplicates and store
+      // Already on disk means a relay re-delivery, an own echo, or an event
+      // the background service stored while the app slept. Keep processing:
+      // state is keyed by inner id, so only the write is redundant.
       final eventStore = ref.read(eventStorageProvider);
-      if (await eventStore.hasItem(event.id!)) {
-        return;
-      }
+      final alreadyStored = await eventStore.hasItem(event.id!);
 
-      await eventStore.putItem(
-        event.id!,
-        {
-          'id': event.id,
-          'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
-          'kind': event.kind,
-          'content': event.content,
-          'pubkey': event.pubkey,
-          'sig': event.sig,
-          'tags': event.tags,
-          'type': 'chat',
-          'order_id': orderId,
-        },
+      // Unwrap and authenticate BEFORE persisting: the signature is not part
+      // of the event id, so storing an unverified copy would let a corrupted
+      // duplicate occupy the id and dedup away the valid one for good
+      final chat = await event.chatUnwrap(
+        chatKeys,
+        session.peerChatAllowedSigners,
       );
 
-      final chat = await event.p2pUnwrap(session.sharedKey!);
+      if (!alreadyStored) {
+        await eventStore.putItem(event.id!, event.peerChatRecord(orderId));
+      }
+
+      // Advance the persisted since cursor only after the event is accepted
+      // (clamped to the local clock inside the store)
+      unawaited(
+        ref.read(chatCursorStoreProvider).advance(orderId, event.createdAt!),
+      );
 
       // Check if message already exists to prevent duplicates
       final messageExists = state.messages.any((m) => m.id == chat.id);
@@ -212,20 +225,16 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       return;
     }
 
-    final innerEvent = NostrEvent.fromPartialData(
-      keyPairs: session.tradeKey,
+    // Inner event (kind 1 with a `u` nonce tag) signed by the trade key;
+    // its real id drives optimistic UI and relay echo deduplication
+    final innerEvent = NostrEventExtensions.createChatRumor(
+      senderKeys: session.tradeKey,
       content: text,
-      kind: 1,
-      tags: [
-        ["p", session.sharedKey!.public],
-      ],
     );
 
     try {
-      final wrappedEvent = await innerEvent.p2pWrap(
-        session.tradeKey,
-        session.sharedKey!.public,
-      );
+      // Wrap into the kind-14 envelope (signed by K_sign, encrypted with K_conv)
+      final wrappedEvent = await innerEvent.chatWrap(_getChatKeys(session));
 
       // Publish to network - await to catch network/initialization errors
       try {
@@ -237,9 +246,9 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       }
 
       // Wake the peer's device via the push server (fire-and-forget).
-      // Required for P2P chat because the server's Nostr listener only matches
-      // kind 1059 events on the recipient's tradeKey.public, and P2P chat
-      // events use sharedKey.public.
+      // Required for P2P chat because the server's Nostr listener matches
+      // events addressed to the recipient's tradeKey.public, and the chat
+      // envelope is authored by K_sign and tagged to pub(K_conv) instead.
       final peerPubkey = session.peer?.publicKey;
       if (peerPubkey != null) {
         unawaited(
@@ -254,18 +263,7 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         final eventStore = ref.read(eventStorageProvider);
         await eventStore.putItem(
           wrappedEvent.id!,
-          {
-            'id': wrappedEvent.id,
-            'created_at':
-                wrappedEvent.createdAt!.millisecondsSinceEpoch ~/ 1000,
-            'kind': wrappedEvent.kind,
-            'content': wrappedEvent.content,
-            'pubkey': wrappedEvent.pubkey,
-            'sig': wrappedEvent.sig,
-            'tags': wrappedEvent.tags,
-            'type': 'chat',
-            'order_id': orderId,
-          },
+          wrappedEvent.peerChatRecord(orderId),
         );
         logger.d('Wrapped event persisted to storage for orderId: $orderId');
       } catch (storageError) {
@@ -391,22 +389,23 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
             'tags': eventData['tags'],
           });
 
-          logger.i(
-              'Reconstructed event: ${storedEvent.id}, recipient: ${storedEvent.recipient}');
-
-          // Check if this event belongs to our chat (shared key)
-          if (session.sharedKey?.public == storedEvent.recipient) {
-            logger.i('Event belongs to our chat, unwrapping...');
-            // Decrypt and unwrap the message
-            final unwrappedMessage =
-                await storedEvent.p2pUnwrap(session.sharedKey!);
-            historicalMessages.add(unwrappedMessage);
-            logger.i(
-                'Successfully unwrapped message: ${unwrappedMessage.content}');
+          // Decrypt and unwrap: kind 14 envelope, or legacy gift wrap
+          // stored before the kind-14 migration
+          final NostrEvent unwrappedMessage;
+          if (storedEvent.kind == 14) {
+            unwrappedMessage = await storedEvent.chatUnwrap(
+              _getChatKeys(session),
+              session.peerChatAllowedSigners,
+            );
           } else {
-            logger.i(
-                'Event does not belong to our chat. Expected: ${session.sharedKey?.public}, Got: ${storedEvent.recipient}');
+            if (session.sharedKey?.public != storedEvent.recipient) {
+              logger.i(
+                  'Legacy event does not belong to our chat. Expected: ${session.sharedKey?.public}, Got: ${storedEvent.recipient}');
+              continue;
+            }
+            unwrappedMessage = await storedEvent.p2pUnwrap(session.sharedKey!);
           }
+          historicalMessages.add(unwrappedMessage);
         } catch (e) {
           logger
               .e('Failed to process historical event ${eventData['id']}: $e');

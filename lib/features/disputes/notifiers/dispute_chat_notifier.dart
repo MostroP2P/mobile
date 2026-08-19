@@ -10,7 +10,7 @@ import 'package:mostro_mobile/features/chat/providers/active_chat_screens_provid
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/chat/utils/message_type_helpers.dart';
-import 'package:mostro_mobile/services/dispute_chat_cursor_store.dart';
+import 'package:mostro_mobile/services/chat_cursor_store.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/shared/mixins/media_cache_mixin.dart';
@@ -216,32 +216,27 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       // Check for duplicate outer events (relay re-deliveries)
       final wrapperEventId = event.id;
       if (wrapperEventId == null) return;
+      // Already on disk means a relay re-delivery, an own echo, or an event
+      // the background service stored while the app slept. Keep processing:
+      // state is keyed by inner id, so only the write is redundant.
       final eventStore = ref.read(eventStorageProvider);
-      if (await eventStore.hasItem(wrapperEventId)) return;
+      final alreadyStored = await eventStore.hasItem(wrapperEventId);
 
-      // Store the outer event (encrypted) to disk — same pattern as P2P chat
-      await eventStore.putItem(
-        wrapperEventId,
-        {
-          'id': wrapperEventId,
-          'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
-          'kind': event.kind,
-          'content': event.content,
-          'pubkey': event.pubkey,
-          'sig': event.sig,
-          'tags': event.tags,
-          'type': 'dispute_chat',
-          'dispute_id': disputeId,
-        },
-      );
-      if (!mounted) return;
-
-      // Unwrap and authenticate: the inner event must be signed by a
-      // conversation party (trade key or admin pubkey)
+      // Unwrap and authenticate BEFORE persisting: the signature is not part
+      // of the event id, so storing an unverified copy would let a corrupted
+      // duplicate occupy the id and dedup away the valid one for good
       final unwrappedEvent = await event.chatUnwrap(
         chatKeys,
         session.disputeChatAllowedSigners,
       );
+
+      // Store the outer event (encrypted) to disk — same pattern as P2P chat
+      if (!alreadyStored) {
+        await eventStore.putItem(
+          wrapperEventId,
+          event.disputeChatRecord(disputeId),
+        );
+      }
       if (!mounted) return;
 
       // Advance the persisted since cursor only after the event is accepted
@@ -408,12 +403,11 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       return;
     }
 
-    // Create the inner event (kind 1, no tags per the chat spec) FIRST to
-    // get the real event ID used for optimistic UI and echo deduplication
-    final rumor = NostrEvent.fromPartialData(
-      keyPairs: session.tradeKey,
+    // Create the inner event (kind 1 with a `u` nonce tag) FIRST to get
+    // the real event ID used for optimistic UI and echo deduplication
+    final rumor = NostrEventExtensions.createChatRumor(
+      senderKeys: session.tradeKey,
       content: text,
-      kind: 1,
     );
 
     final rumorId = rumor.id;
@@ -453,17 +447,7 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       final eventStore = ref.read(eventStorageProvider);
       await eventStore.putItem(
         wrappedEvent.id!,
-        {
-          'id': wrappedEvent.id,
-          'created_at': wrappedEvent.createdAt!.millisecondsSinceEpoch ~/ 1000,
-          'kind': wrappedEvent.kind,
-          'content': wrappedEvent.content,
-          'pubkey': wrappedEvent.pubkey,
-          'sig': wrappedEvent.sig,
-          'tags': wrappedEvent.tags,
-          'type': 'dispute_chat',
-          'dispute_id': disputeId,
-        },
+        wrappedEvent.disputeChatRecord(disputeId),
       );
       if (!mounted) return;
 

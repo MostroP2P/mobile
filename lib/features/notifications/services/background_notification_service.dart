@@ -214,8 +214,10 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
 
     final sessions = await _loadSessionsFromDatabase();
 
-    // Dispute chat (kind 14 envelope): the outer author is the K_sign key
-    // derived from the admin shared key, so match by author, not recipient.
+    // Chat (kind 14 envelope): the outer author is the K_sign key derived
+    // from the conversation's shared key, so match by author, not recipient.
+    // These branches must run before the tradeKey match: Mostro protocol
+    // events are also kind 14 but authored by the node.
     if (event.kind == 14) {
       for (final session in sessions) {
         final adminShared = session.adminSharedKey;
@@ -223,6 +225,14 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
         final chatKeys = ChatKeys.fromSharedKey(adminShared);
         if (event.pubkey == chatKeys.sign.public) {
           return _processAdminDm(event, session, chatKeys);
+        }
+      }
+      for (final session in sessions) {
+        final shared = session.sharedKey;
+        if (shared == null) continue;
+        final chatKeys = ChatKeys.fromSharedKey(shared);
+        if (event.pubkey == chatKeys.sign.public) {
+          return _processPeerChat(event, session, chatKeys);
         }
       }
     }
@@ -235,20 +245,6 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
 
     if (matchingSession != null) {
       return _handleTradeKeyEvent(event, matchingSession);
-    }
-
-    // P2P chat: match by sharedKey.public.
-    // Require non-null on both sides to prevent spurious null == null matches.
-    final chatMatch = sessions.cast<Session?>().firstWhere(
-      (s) {
-        final sharedPub = s?.sharedKey?.public;
-        return sharedPub != null && sharedPub == recipient;
-      },
-      orElse: () => null,
-    );
-
-    if (chatMatch != null) {
-      return _handleP2PChatEvent(event, chatMatch);
     }
 
     return null;
@@ -268,6 +264,18 @@ Future<MostroMessage?> _processAdminDm(
       chatKeys,
       session.disputeChatAllowedSigners,
     );
+
+    // Durable accepted-event marker, written only after chatUnwrap accepts:
+    // dedups across background-service restarts and lets the foreground load
+    // the message from disk instead of depending on a relay refetch
+    final disputeId = session.disputeId;
+    if (disputeId != null && event.id != null) {
+      await bg.persistChatEventFromBackground?.call(
+        event.id!,
+        event.disputeChatRecord(disputeId),
+      );
+    }
+
     if (unwrapped.content == null || unwrapped.content!.isEmpty) {
       return null;
     }
@@ -406,9 +414,14 @@ Future<void> _maybeUpdateSessionWithPeer(
 
     logger.i('Background persisted peer for order ${session.orderId}');
 
-    final sharedKeyPublic = session.sharedKey?.public;
-    if (sharedKeyPublic != null) {
-      bg.addChatSubscriptionFromBackground?.call(sharedKeyPublic);
+    // The live chat subscription filters by the conversation's K_sign author;
+    // the order id lets it pick up this conversation's persisted since cursor
+    final shared = session.sharedKey;
+    if (shared != null) {
+      bg.addChatSubscriptionFromBackground?.call(
+        ChatKeys.fromSharedKey(shared).sign.public,
+        session.orderId,
+      );
     }
   } catch (e, stackTrace) {
     logger.e(
@@ -418,14 +431,29 @@ Future<void> _maybeUpdateSessionWithPeer(
   }
 }
 
-/// Handle P2P chat events matched by sharedKey
-Future<MostroMessage?> _handleP2PChatEvent(NostrEvent event, Session session) async {
+/// Handle P2P chat events matched by the peer conversation's K_sign author
+Future<MostroMessage?> _processPeerChat(
+  NostrEvent event,
+  Session session,
+  ChatKeys chatKeys,
+) async {
   try {
-    final sharedKey = session.sharedKey;
-    if (sharedKey == null) {
-      return null;
+    final decryptedEvent = await event.chatUnwrap(
+      chatKeys,
+      session.peerChatAllowedSigners,
+    );
+
+    // Durable accepted-event marker, written only after chatUnwrap accepts:
+    // dedups across background-service restarts and lets the foreground load
+    // the message from disk instead of depending on a relay refetch
+    final orderId = session.orderId;
+    if (orderId != null && event.id != null) {
+      await bg.persistChatEventFromBackground?.call(
+        event.id!,
+        event.peerChatRecord(orderId),
+      );
     }
-    final decryptedEvent = await event.p2pUnwrap(sharedKey);
+
     if (decryptedEvent.content == null || decryptedEvent.content!.isEmpty) {
       return null;
     }
@@ -438,7 +466,7 @@ Future<MostroMessage?> _handleP2PChatEvent(NostrEvent event, Session session) as
     }
 
     if (session.orderId == null) {
-      logger.w('P2P chat received but session has no orderId (recipient: ${event.recipient}), skipping notification');
+      logger.w('P2P chat received but session has no orderId, skipping notification');
       return null;
     }
 

@@ -5,6 +5,7 @@ import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/avatar_provider.dart';
 import 'package:mostro_mobile/shared/providers/legible_handle_provider.dart';
+import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 import 'package:mostro_mobile/shared/widgets/clickable_text_widget.dart';
 
 class UserInformationTab extends ConsumerWidget {
@@ -21,7 +22,10 @@ class UserInformationTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final handle = ref.read(nickNameProvider(peerPubkey));
     final you = ref.read(nickNameProvider(session.tradeKey.public));
-    final sharedKey = session.sharedKey?.private;
+    // Disclose K_conv, never the raw ECDH secret: that one also derives
+    // K_sign, which would let a reader forge messages in this conversation
+    final sharedKey = session.sharedKey;
+    final chatKeys = sharedKey != null ? ChatKeys.fromSharedKey(sharedKey) : null;
 
     return Container(
       color: AppTheme.backgroundDark,
@@ -123,7 +127,8 @@ class UserInformationTab extends ConsumerWidget {
                 ),
                 ClickableText(
                   leftText: '',
-                  clickableText: sharedKey ?? S.of(context)!.notAvailable,
+                  clickableText:
+                      chatKeys?.conv.private ?? S.of(context)!.notAvailable,
                 ),
               ],
             ),

@@ -211,6 +211,13 @@ class Session {
         if (_adminPubkey != null) _adminPubkey!,
       ];
 
+  /// Inner event signers accepted in the peer chat conversation.
+  /// The peer is always set when sharedKey is (see the peer setter).
+  List<String> get peerChatAllowedSigners => [
+        tradeKey.public,
+        if (_peer != null) _peer!.publicKey,
+      ];
+
   /// Compute and store the admin shared key via ECDH
   void setAdminPeer(String adminPubkey) {
     if (adminPubkey.isEmpty || adminPubkey.length != 64) {
