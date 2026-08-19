@@ -7,6 +7,7 @@ import 'package:mostro_mobile/data/repositories/order_repository_interface.dart'
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 const orderEventKind = 38383;
 const infoEventKind = 38385;
@@ -82,6 +83,17 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
         _eventStreamController.add(_events.values.toList());
       } else if (event.kind == infoEventKind &&
           event.pubkey == _settings.mostroPublicKey) {
+        // The author field alone proves nothing: any relay can hand us an
+        // event that merely *claims* the node's pubkey. The info event
+        // configures the wire transport (`protocol_version`), the bond policy
+        // and the PoW target, so an unsigned forgery is a downgrade primitive.
+        if (!NostrUtils.isValidEventSignature(event)) {
+          logger.w(
+            'Rejecting kind-$infoEventKind info event claiming to be from '
+            '${event.pubkey}: signature verification failed',
+          );
+          return;
+        }
         logger.i('Mostro instance info loaded: $event');
         _mostroInstance = event;
         if (!_mostroInstanceController.isClosed) {
