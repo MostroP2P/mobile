@@ -67,14 +67,28 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     final filterTime =
         DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
 
-    final filter = NostrFilter(
-      kinds: [orderEventKind, infoEventKind],
-      since: filterTime,
-      authors: [_settings.mostroPublicKey],
-    );
-
+    // Two filters, not one. The order history is deliberately bounded to a
+    // recent window, but the info event must not inherit that bound: kind
+    // 38385 is addressable, so the node publishes it once at startup and the
+    // relay keeps only that copy. A node that has been up longer than the
+    // window has an info event older than `since`, and a combined filter would
+    // make the relay withhold it — leaving `protocol_version` unknown for the
+    // whole session. That used to be harmless because unknown meant v1; now
+    // that unknown resolves to v2 it would strand the client on kind 14
+    // against a node that only listens on kind 1059.
     final request = NostrRequest(
-      filters: [filter],
+      filters: [
+        NostrFilter(
+          kinds: [orderEventKind],
+          since: filterTime,
+          authors: [_settings.mostroPublicKey],
+        ),
+        NostrFilter(
+          kinds: [infoEventKind],
+          authors: [_settings.mostroPublicKey],
+          limit: 1,
+        ),
+      ],
     );
 
     _subscription = _nostrService.subscribeToEvents(request).listen((event) {
