@@ -475,7 +475,7 @@ class NostrUtils {
         'Unexpected author: expected $expectedAuthor, got ${event.pubkey}',
       );
     }
-    if (!_isValidEventSignature(event)) {
+    if (!isValidEventSignature(event)) {
       throw ArgumentError('Invalid kind-14 event signature');
     }
 
@@ -492,7 +492,14 @@ class NostrUtils {
 
   /// Verifies a Nostr event's id and Schnorr signature (NIP-01): recomputes the
   /// id from the serialized event and checks the signature over it.
-  static bool _isValidEventSignature(NostrEvent event) {
+  ///
+  /// Prefer this over `NostrEvent.isVerified()` for any event whose *content*
+  /// is trusted. `isVerified()` only checks the Schnorr signature against the
+  /// event's self-declared `id`, so a genuine `(id, sig, pubkey)` triple lifted
+  /// from one event and pasted onto arbitrary content and tags still passes it.
+  /// Recomputing the id from the serialized event is what binds the signature
+  /// to what the event actually says.
+  static bool isValidEventSignature(NostrEvent event) {
     final id = event.id;
     final sig = event.sig;
     final createdAt = event.createdAt;
