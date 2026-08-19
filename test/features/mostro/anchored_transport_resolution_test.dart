@@ -166,4 +166,40 @@ void main() {
       expect(resolveTransport(anchored()), Transport.giftWrap);
     });
   });
+
+  // Three states, not two. `protocolVersion` returns null for an absent tag
+  // and for an unusable one, and only the first is the node asserting v1.
+  group('a malformed protocol_version tag', () {
+    test('an unparseable value falls back to the safe default', () async {
+      await deliver(_infoEvent(nodeKeys, protocolVersion: 'abc'));
+
+      expect(anchored(), isNull);
+      expect(resolveTransport(anchored()), kDefaultTransport);
+    });
+
+    test('an empty value falls back to the safe default', () async {
+      await deliver(_infoEvent(nodeKeys, protocolVersion: ''));
+
+      expect(anchored(), isNull);
+      expect(resolveTransport(anchored()), kDefaultTransport);
+    });
+
+    test('does not lower a node already verified at v2', () async {
+      container.read(protocolVersionStoreProvider).record(nodeKeys.public, 2);
+
+      await deliver(_infoEvent(nodeKeys, protocolVersion: 'abc'));
+
+      expect(anchored(), 2);
+      expect(resolveTransport(anchored()), Transport.nip44);
+    });
+
+    test('a version this client does not speak is not read as legacy',
+        () async {
+      await deliver(_infoEvent(nodeKeys, protocolVersion: '99'));
+
+      // Parseable, so it reaches resolveTransport, which degrades upwards.
+      expect(anchored(), 99);
+      expect(resolveTransport(anchored()), kDefaultTransport);
+    });
+  });
 }

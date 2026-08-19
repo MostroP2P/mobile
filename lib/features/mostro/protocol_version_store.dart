@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
@@ -207,14 +208,39 @@ int? anchoredProtocolVersionFor(Ref ref) {
     final mostroPubkey = ref.read(settingsProvider).mostroPublicKey;
     final remembered =
         ref.read(protocolVersionStoreProvider).versionFor(mostroPubkey);
-    final advertised = infoEvent == null
-        ? null
-        : (infoEvent.protocolVersion ?? kLegacyProtocolVersion);
-    return anchoredProtocolVersion(advertised, remembered);
+    return anchoredProtocolVersion(_advertisedBy(infoEvent), remembered);
   } catch (e) {
     // Null resolves to the safe default rather than to v1, so failing to read
     // the node's state cannot be turned into a downgrade.
     logger.w('Failed to resolve anchored protocol version: $e');
     return null;
   }
+}
+
+/// What [infoEvent] actually asserts about its transport, in the three states
+/// the tag can be in.
+///
+/// - No info event, or a tag that is present but unusable → null. Both are an
+///   absence of evidence, and [resolveTransport] maps null to the safe
+///   default. A malformed value must land here rather than in the legacy
+///   branch: reading `protocol_version=abc` as v1 would pair the client with
+///   gift wrap against a node that may well be speaking NIP-44.
+/// - Tag absent entirely → [kLegacyProtocolVersion]. Silence from a verified
+///   event is a legacy daemon asserting v1.
+/// - Tag present and parseable → that version, whatever it is;
+///   [resolveTransport] decides what to do with one it does not speak.
+int? _advertisedBy(NostrEvent? infoEvent) {
+  if (infoEvent == null) return null;
+
+  final parsed = infoEvent.protocolVersion;
+  if (parsed != null) return parsed;
+
+  if (infoEvent.advertisesProtocolVersion) {
+    logger.w(
+      'Node ${infoEvent.pubkey} advertises an unparseable protocol_version; '
+      'treating the transport as unknown rather than legacy',
+    );
+    return null;
+  }
+  return kLegacyProtocolVersion;
 }
