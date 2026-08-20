@@ -85,6 +85,20 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     if (incoming == null || applied == null) return true;
     return incoming >= applied;
   }
+
+  /// Moves the freshness mark forward to [appliedAt], never backwards.
+  ///
+  /// For state applied from something other than a streamed message — a
+  /// restored snapshot, whose own message is dated with the order's creation
+  /// time rather than the moment the state it carries describes.
+  @protected
+  void anchorAppliedTimestamp(int? appliedAt) {
+    if (appliedAt == null) return;
+    final applied = lastAppliedTimestamp;
+    if (applied == null || appliedAt > applied) {
+      lastAppliedTimestamp = appliedAt;
+    }
+  }
   final Set<String> _processedEventIds = <String>{};
 
   // Timer storage for orphan session cleanup
