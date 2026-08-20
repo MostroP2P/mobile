@@ -42,7 +42,10 @@ extension NostrEventExtensions on NostrEvent {
   DateTime get expirationDate => _getTimeStamp(_getTagValue('expiration')!);
   String? get expiresAt => _getTagValue('expires_at');
   String? get platform => _getTagValue('y');
-  String get type => _getTagValue('z')!;
+  /// The NIP-69 `z` tag. Nullable on purpose: this is read off relay-supplied
+  /// events before anything about them has been established, so a missing tag
+  /// has to be something the intake can reject rather than crash on.
+  String? get type => _getTagValue('z');
 
   String? _getTagValue(String key) {
     final tag = tags?.firstWhere((t) => t[0] == key, orElse: () => []);

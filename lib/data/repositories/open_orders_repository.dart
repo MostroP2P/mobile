@@ -98,8 +98,39 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     );
 
     _subscription = _nostrService.subscribeToEvents(request).listen((event) {
-      if (event.type == 'order') {
-        _events[event.orderId!] = event;
+      if (event.kind == orderEventKind &&
+          event.pubkey == _settings.mostroPublicKey) {
+        // The filter above states what was asked for, never what arrives. The
+        // pinned dart_nostr fork parses relay EVENT frames straight into a
+        // NostrEvent: it neither verifies the signature nor matches the frame
+        // against the subscription's filter. So `authors` constrains the
+        // request, and the author field on the way back is the relay's claim —
+        // the signature is what turns it into the node's.
+        //
+        // The order book is what this feeds: amounts, premiums and the maker
+        // rating a user reads before deciding to trade.
+        if (!NostrUtils.isValidEventSignature(event)) {
+          logger.w(
+            'Rejecting kind-$orderEventKind order event claiming to be from '
+            '${event.pubkey}: signature verification failed',
+          );
+          return;
+        }
+
+        // Both tags are read off the event itself — one to key the cache, one
+        // to classify it — so neither can be taken for granted, and a missing
+        // one used to throw inside this callback rather than be rejected.
+        final orderId = event.orderId;
+        if (orderId == null || event.type != 'order') {
+          logger.w(
+            'Ignoring kind-$orderEventKind event ${event.id} from '
+            '${event.pubkey}: expected a d tag and z=order, got d=$orderId '
+            'and z=${event.type}',
+          );
+          return;
+        }
+
+        _events[orderId] = event;
         _eventStreamController.add(_events.values.toList());
       } else if (event.kind == infoEventKind &&
           event.pubkey == _settings.mostroPublicKey) {
