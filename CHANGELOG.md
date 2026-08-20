@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.3] - 2026-08-20
+
+### Added
+- feat(ui): show the taker reputation to the maker (e803e41b)
+- feat(order): track taker reputation in order state (432a8c10)
+- feat(chat): migrate P2P peer chat to the kind-14 chat envelope (9a30ccbb)
+- feat(chat): add nonce tag to chat rumor construction (fbb1e9d7)
+- feat: show when order book filters are active (24009dff)
+- feat: add BBVA and QR Santander payment methods for EUR (#648) (d9852bfc)
+- feat: Mortsom automation contract (#650) (d651ed2a)
+
+### Fixed
+- fix(chat): persist accepted chat envelopes from the background (cfefb993)
+- fix(chat): bound the background peer-chat subscription backlog (a359a6dc)
+- fix(chat): disclose K_conv instead of the raw ECDH secret (5538c7b2)
+- fix(ui): only tell the maker that someone took their order (0d2a758e)
+- fix(order): drop the taker reputation when the order goes back to pending (1ffe0d73)
+- fix(order): treat the taker-reputation notice as informational only (f9b6cf28)
+- fix(ui): show zeros instead of a no-history message (ba58810c)
+- fix(models): parse the daemon's taker-reputation Peer payload (d0c8d302)
+- fix(chat): authenticate envelopes before persisting their outer id (66978e0b)
+- fix: reset the days field to the shared default (768a858a)
+
+### Documentation
+- docs: correct the localization locale set (a8f718b0)
+
+### Changed
+- test(models): pin the reputation-notice predicate to the empty pubkey (abc9b587)
+- refactor: derive filter activity from a single predicate (80e36027)
+- refactor(chat): generalize the dispute chat cursor store (7f2739d2)
+- test: raise line coverage from 12.6% to 33.0% (#651) (2a7a558f)
+
+
 ## [v1.3.2] - 2026-08-13
 
 ### Added
