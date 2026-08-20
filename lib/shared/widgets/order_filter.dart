@@ -250,12 +250,13 @@ class OrderFilter extends ConsumerStatefulWidget {
 class OrderFilterState extends ConsumerState<OrderFilter> {
   List<String> selectedFiatCurrencies = [];
   List<String> selectedPaymentMethods = [];
-  double ratingMin = 0.0;
-  double ratingMax = 5.0;
-  double premiumMin = -10.0;
-  double premiumMax = 10.0;
-  int minDays = 0;
-  final TextEditingController _daysController = TextEditingController(text: '0');
+  double ratingMin = kDefaultRatingMin;
+  double ratingMax = kDefaultRatingMax;
+  double premiumMin = kDefaultPremiumMin;
+  double premiumMax = kDefaultPremiumMax;
+  int minDays = kDefaultMinDays;
+  final TextEditingController _daysController =
+      TextEditingController(text: kDefaultMinDays.toString());
 
   // Options for the multi-select fields.
   
@@ -571,8 +572,8 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                 ),
                 child: RangeSlider(
                   values: RangeValues(premiumMin, premiumMax),
-                  min: -10.0,
-                  max: 10.0,
+                  min: kDefaultPremiumMin,
+                  max: kDefaultPremiumMax,
                   divisions: 20,
                   labels: RangeLabels(
                     "${premiumMin.toInt()}%",
@@ -651,8 +652,8 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                 ),
                 child: RangeSlider(
                   values: RangeValues(ratingMin, ratingMax),
-                  min: 0.0,
-                  max: 5.0,
+                  min: kDefaultRatingMin,
+                  max: kDefaultRatingMax,
                   divisions: 5,
                   labels: RangeLabels(
                     ratingMin.toInt().toString(),
@@ -800,7 +801,9 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                     onChanged: (text) {
                       final parsed = int.tryParse(text);
                       setState(() {
-                        minDays = parsed == null ? 0 : parsed.clamp(0, 9999);
+                        minDays = parsed == null
+                            ? kDefaultMinDays
+                            : parsed.clamp(0, 9999);
                       });
                     },
                   ),
@@ -827,20 +830,17 @@ class OrderFilterState extends ConsumerState<OrderFilter> {
                       setState(() {
                         selectedFiatCurrencies.clear();
                         selectedPaymentMethods.clear();
-                        ratingMin = 0.0;
-                        ratingMax = 5.0;
-                        premiumMin = -10.0;
-                        premiumMax = 10.0;
-                        minDays = 0;
-                        _daysController.text = '0';
+                        ratingMin = kDefaultRatingMin;
+                        ratingMax = kDefaultRatingMax;
+                        premiumMin = kDefaultPremiumMin;
+                        premiumMax = kDefaultPremiumMax;
+                        minDays = kDefaultMinDays;
+                        _daysController.text = kDefaultMinDays.toString();
                       });
 
-                      ref.read(currencyFilterProvider.notifier).state = [];
-                      ref.read(paymentMethodFilterProvider.notifier).state = [];
-                      ref.read(ratingFilterProvider.notifier).state = (min: 0.0, max: 5.0);
-                      ref.read(premiumRangeFilterProvider.notifier).state = (min: -10.0, max: 10.0);
-                      ref.read(minDaysFilterProvider.notifier).state = 0;
-                      
+                      clearAllOrderFilters(ref.read);
+
+
                       Navigator.of(context).pop();
                     },
                     style: OutlinedButton.styleFrom(

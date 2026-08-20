@@ -217,6 +217,15 @@
             }
         }
     },
+    "filterWithCount": "FILTRAR ({count})",
+    "@filterWithCount": {
+        "placeholders": {
+            "count": {
+                "type": "String"
+            }
+        }
+    },
+    "clearFilters": "Limpar filtros",
     "creatingNewOrder": "CRIANDO NOVA ORDEM",
     "enterSatsAmountBuy": "Digite a quantidade de Sats que você quer Comprar",
     "enterSatsAmountSell": "Digite a quantidade de Sats que você quer Vender",
