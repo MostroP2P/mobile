@@ -1,7 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/services/nwc/nwc_client.dart';
 import 'package:mostro_mobile/services/nwc/nwc_connection.dart';
+import 'package:mostro_mobile/services/nwc/nwc_crypto.dart';
+import 'package:mostro_mobile/services/nwc/nwc_models.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 import '../../mocks.mocks.dart';
@@ -20,6 +25,7 @@ NostrEvent _reTagged(NostrEvent source, List<List<String>> tags) => NostrEvent(
 
 void main() {
   late NostrKeyPairs walletKeys;
+  late NostrKeyPairs clientKeys;
   late NwcClient client;
 
   NostrEvent walletEvent({
@@ -37,11 +43,12 @@ void main() {
 
   setUp(() {
     walletKeys = NostrUtils.generateKeyPair();
+    clientKeys = NostrUtils.generateKeyPair();
     client = NwcClient(
       connection: NwcConnection(
         walletPubkey: walletKeys.public,
         relayUrls: const ['wss://wallet.relay.example'],
-        secret: NostrUtils.generateKeyPair().private,
+        secret: clientKeys.private,
       ),
       nostrService: MockNostrService(),
     );
@@ -116,6 +123,167 @@ void main() {
         client.isFromWallet(walletEvent(kind: 23196, keyPair: impostor), 23196),
         isFalse,
       );
+    });
+  });
+
+  group('NwcClient.handleResponseEvent', () {
+    const requestId = 'aaaabbbbccccddddeeeeffff00001111';
+
+    /// A response the wallet really sent: NIP-44 to the client's key, signed
+    /// by the wallet, tagged with the request it answers.
+    Future<NostrEvent> genuineResponse({
+      String resultType = 'pay_invoice',
+      Map<String, dynamic> result = const {'preimage': 'deadbeef'},
+      String eTag = requestId,
+    }) async {
+      final payload = jsonEncode({
+        'result_type': resultType,
+        'result': result,
+      });
+      final encrypted = await NwcCrypto.encrypt(
+        payload,
+        walletKeys.private,
+        clientKeys.public,
+        NwcEncryption.nip44,
+      );
+      return NostrEvent.fromPartialData(
+        kind: 23195,
+        content: encrypted,
+        keyPairs: walletKeys,
+        tags: [
+          ['e', eTag],
+          ['p', clientKeys.public],
+        ],
+      );
+    }
+
+    test('completes the request with a genuine wallet response', () async {
+      final completer = Completer<NwcResponse>();
+
+      await client.handleResponseEvent(
+          await genuineResponse(), requestId, completer);
+
+      expect(completer.isCompleted, isTrue);
+      final response = await completer.future;
+      expect(response.isSuccess, isTrue);
+      expect(response.result!['preimage'], 'deadbeef');
+    });
+
+    // The core of the finding. The request id travels in the clear on the
+    // relay carrying it, so anything reaching this stream can address a reply
+    // to this request. Failing here reported "payment failed" before the
+    // wallet's real response arrived, and the retry is what costs money.
+    test('an undecryptable event does not fail the request', () async {
+      final completer = Completer<NwcResponse>();
+      final garbage = NostrEvent.fromPartialData(
+        kind: 23195,
+        content: 'not-ciphertext',
+        keyPairs: walletKeys,
+        tags: const [
+          ['e', requestId],
+        ],
+      );
+
+      await client.handleResponseEvent(garbage, requestId, completer);
+
+      expect(completer.isCompleted, isFalse);
+    });
+
+    test('the genuine response still lands after an injected one', () async {
+      final completer = Completer<NwcResponse>();
+      final garbage = NostrEvent.fromPartialData(
+        kind: 23195,
+        content: 'not-ciphertext',
+        keyPairs: walletKeys,
+        tags: const [
+          ['e', requestId],
+        ],
+      );
+
+      await client.handleResponseEvent(garbage, requestId, completer);
+      await client.handleResponseEvent(
+          await genuineResponse(), requestId, completer);
+
+      expect(completer.isCompleted, isTrue);
+      expect((await completer.future).result!['preimage'], 'deadbeef');
+    });
+
+    test('a forged event claiming the wallet key does not fail the request',
+        () async {
+      final completer = Completer<NwcResponse>();
+      final forged = NostrEvent(
+        id: 'a' * 64,
+        sig: 'b' * 128,
+        pubkey: walletKeys.public,
+        kind: 23195,
+        content: 'garbage',
+        createdAt: DateTime.now(),
+        tags: const [
+          ['e', requestId],
+        ],
+      );
+
+      await client.handleResponseEvent(forged, requestId, completer);
+
+      expect(completer.isCompleted, isFalse);
+    });
+
+    test('a response to a different request is ignored', () async {
+      final completer = Completer<NwcResponse>();
+
+      await client.handleResponseEvent(
+        await genuineResponse(eTag: 'a-different-request'),
+        requestId,
+        completer,
+      );
+
+      expect(completer.isCompleted, isFalse);
+    });
+
+    test('an event with no content is ignored', () async {
+      final completer = Completer<NwcResponse>();
+      final empty = NostrEvent.fromPartialData(
+        kind: 23195,
+        content: '',
+        keyPairs: walletKeys,
+        tags: const [
+          ['e', requestId],
+        ],
+      );
+
+      await client.handleResponseEvent(empty, requestId, completer);
+
+      expect(completer.isCompleted, isFalse);
+    });
+
+    test('an error response from the wallet still completes the request',
+        () async {
+      // Only the wallet's own errors reach the caller; a relay cannot
+      // manufacture one.
+      final completer = Completer<NwcResponse>();
+      final payload = jsonEncode({
+        'result_type': 'pay_invoice',
+        'error': {'code': 'INSUFFICIENT_BALANCE', 'message': 'no funds'},
+      });
+      final encrypted = await NwcCrypto.encrypt(
+        payload,
+        walletKeys.private,
+        clientKeys.public,
+        NwcEncryption.nip44,
+      );
+      final event = NostrEvent.fromPartialData(
+        kind: 23195,
+        content: encrypted,
+        keyPairs: walletKeys,
+        tags: const [
+          ['e', requestId],
+        ],
+      );
+
+      await client.handleResponseEvent(event, requestId, completer);
+
+      expect(completer.isCompleted, isTrue);
+      expect((await completer.future).isSuccess, isFalse);
     });
   });
 }
