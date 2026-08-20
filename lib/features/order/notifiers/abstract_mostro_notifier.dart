@@ -154,6 +154,19 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               logger.i('Received message with action: ${msg?.action}');
             }
             if (msg != null) {
+              // Freshness first, before anything is consumed. Everything below
+              // mutates state a stale message must not be able to spend: the
+              // orphan session timer, and the user-initiated cancel marker — a
+              // superseded `canceled` that took that marker would leave a
+              // genuine cancel in flight to be read as a counterparty timeout.
+              if (!supersedesAppliedState(msg)) {
+                logger.w(
+                  'Ignoring stale ${msg.action} for order $orderId: dated '
+                  '${msg.timestamp}, state already at $lastAppliedTimestamp',
+                );
+                return;
+              }
+
               // Cancel timer on ANY response from Mostro for this order
               cancelSessionTimeoutCleanup(orderId);
 
@@ -167,14 +180,6 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               // counterparty inactivity timeouts, which use the same action.
               final wasUserInitiatedCancel = msg.action == Action.canceled &&
                   _userInitiatedCancels.remove(orderId);
-
-              if (!supersedesAppliedState(msg)) {
-                logger.w(
-                  'Ignoring stale ${msg.action} for order $orderId: dated '
-                  '${msg.timestamp}, state already at $lastAppliedTimestamp',
-                );
-                return;
-              }
 
               if (mounted) {
                 state = state.updateWith(msg);
