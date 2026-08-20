@@ -7,7 +7,8 @@ enum SharedPreferencesKeys {
   trustedNodeMetadata('trusted_node_metadata'),
   backgroundFilters('background_filters'),
   communitySelected('community_selected'),
-  nodeProtocolVersions('node_protocol_versions');
+  nodeProtocolVersions('node_protocol_versions'),
+  orderFreshness('order_freshness');
 
   final String value;
 
