@@ -605,7 +605,8 @@ class RestoreService {
       final settings = ref.read(settingsProvider);
 
       // Set the next trade key index
-      await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
+      // From the daemon: raise only. See KeyManager.raiseCurrentKeyIndexTo.
+      await keyManager.raiseCurrentKeyIndexTo(lastTradeIndex + 1);
 
       // Enable restore mode to block all old message processing
       ref.read(isRestoringProvider.notifier).state = true;
@@ -971,7 +972,7 @@ class RestoreService {
           lastTradeIndexEvent,
         );
         final lastTradeIndex = lastTradeIndexResponse.tradeIndex;
-        await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
+        await keyManager.raiseCurrentKeyIndexTo(lastTradeIndex + 1);
         noHistoryFound = lastTradeIndexResponse.noHistoryFound;
         success = true;
         return true;
@@ -1107,10 +1108,9 @@ class RestoreService {
       );
       final response = await _extractLastTradeIndex(event);
 
-      await keyManager.setCurrentKeyIndex(response.tradeIndex + 1);
-      logger.i(
-        'syncTradeIndex: updated local trade index to ${response.tradeIndex + 1}',
-      );
+      final effective =
+          await keyManager.raiseCurrentKeyIndexTo(response.tradeIndex + 1);
+      logger.i('syncTradeIndex: local trade index is now $effective');
     } catch (e, stack) {
       logger.e('syncTradeIndex: failed', error: e, stackTrace: stack);
     } finally {

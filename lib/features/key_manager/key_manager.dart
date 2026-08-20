@@ -1,6 +1,7 @@
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/key_manager/key_storage.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_errors.dart';
 
 class KeyManager {
@@ -126,5 +127,38 @@ class KeyManager {
     }
     tradeKeyIndex = index;
     await _storage.storeTradeKeyIndex(index);
+  }
+
+  /// Moves the trade key index up to [index], and never down.
+  ///
+  /// Use this for any index derived from a value the daemon sent. The counter
+  /// records how many trade keys this device has already derived, so lowering
+  /// it hands the next trade a keypair that has been used before: past and
+  /// future trades become linkable by a shared pubkey, and a live session can
+  /// find its key reissued underneath it.
+  ///
+  /// Refusing to go down is also simply correct, attack or no attack. The
+  /// daemon only knows the indexes that reached an order, so a device that
+  /// derived keys without trading legitimately sits ahead of it, and a restore
+  /// must not undo that.
+  ///
+  /// Returns the index in effect afterwards.
+  Future<int> raiseCurrentKeyIndexTo(int index) async {
+    if (index < 1) {
+      throw InvalidTradeKeyIndexException(
+        'Trade key index must be greater than 0',
+      );
+    }
+
+    final current = await getCurrentKeyIndex();
+    if (index <= current) {
+      logger.w(
+        'Refusing to lower trade key index from $current to $index',
+      );
+      return current;
+    }
+
+    await setCurrentKeyIndex(index);
+    return index;
   }
 }
