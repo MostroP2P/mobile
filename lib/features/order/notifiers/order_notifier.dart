@@ -64,6 +64,14 @@ class OrderNotifier extends AbstractMostroNotifier {
 
       state = currentState;
 
+      // Re-arm the high-water mark from the folded history, so a restart does
+      // not reset it and let an archived message back in. The list is sorted
+      // by signed timestamp above, so the last entry is the newest.
+      final newest = messages.last.timestamp;
+      if (newest != null) {
+        lastAppliedTimestamp = newest;
+      }
+
       logger.i(
           'Synced order $orderId to state: ${state.status} - ${state.action}');
 
