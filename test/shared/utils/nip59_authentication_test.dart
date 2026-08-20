@@ -173,4 +173,112 @@ void main() {
       );
     });
   });
+
+  // MM-021: the kind-14 created_at is inside the signature, so past
+  // verification it is the node's own statement of when it spoke. Bounding it
+  // is cheap and rules out the impossible; it is not the replay defence, since
+  // a replayed message carries its real, in-range timestamp.
+  group('decryptNIP44DirectEvent temporal bounds', () {
+    Future<NostrEvent> directMessage({DateTime? createdAt}) async {
+      return NostrEvent.fromPartialData(
+        kind: 14,
+        content: await NostrUtils.encryptNIP44(
+          '[{"order":{"action":"fiat-sent-ok"}}]',
+          node.private,
+          recipient.public,
+        ),
+        keyPairs: node,
+        createdAt: createdAt,
+        tags: [
+          ['p', recipient.public],
+        ],
+      );
+    }
+
+    test('accepts a message dated now', () async {
+      final event = await directMessage();
+
+      final content = await NostrUtils.decryptNIP44DirectEvent(
+        event,
+        recipient.private,
+        expectedAuthor: node.public,
+      );
+
+      expect(content, contains('fiat-sent-ok'));
+    });
+
+    test('rejects a message dated beyond the clock skew', () async {
+      final event = await directMessage(
+        createdAt: DateTime.now().add(const Duration(hours: 2)),
+      );
+
+      await expectLater(
+        NostrUtils.decryptNIP44DirectEvent(
+          event,
+          recipient.private,
+          expectedAuthor: node.public,
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('dated in the future'),
+          ),
+        ),
+      );
+    });
+
+    test('tolerates a small clock difference', () async {
+      final event = await directMessage(
+        createdAt: DateTime.now().add(const Duration(minutes: 2)),
+      );
+
+      await expectLater(
+        NostrUtils.decryptNIP44DirectEvent(
+          event,
+          recipient.private,
+          expectedAuthor: node.public,
+        ),
+        completes,
+      );
+    });
+
+    test('rejects a message older than the max age', () async {
+      final event = await directMessage(
+        createdAt: DateTime.now().subtract(const Duration(days: 120)),
+      );
+
+      await expectLater(
+        NostrUtils.decryptNIP44DirectEvent(
+          event,
+          recipient.private,
+          expectedAuthor: node.public,
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (e) => e.message,
+            'message',
+            contains('older than'),
+          ),
+        ),
+      );
+    });
+
+    // Trade history has to survive a reconnect: the orders subscription has no
+    // `since`, so refusing older messages would erase the user's own trades.
+    test('still accepts trade history from weeks ago', () async {
+      final event = await directMessage(
+        createdAt: DateTime.now().subtract(const Duration(days: 21)),
+      );
+
+      await expectLater(
+        NostrUtils.decryptNIP44DirectEvent(
+          event,
+          recipient.private,
+          expectedAuthor: node.public,
+        ),
+        completes,
+      );
+    });
+  });
 }
