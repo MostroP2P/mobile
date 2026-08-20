@@ -8,6 +8,30 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:elliptic/elliptic.dart';
 import 'package:nip44/nip44.dart';
 
+/// How far into the future a node-signed `created_at` may sit before the
+/// message is rejected.
+///
+/// Only the node can produce a future-dated message — the timestamp is inside
+/// the signature — so this is not a defence against relays. It bounds a
+/// misconfigured or hostile node that dates messages forward so they never
+/// age out. Deliberately loose: the cost of a false positive is a trade update
+/// silently refused, and phone clocks do drift.
+const Duration kMostroMessageMaxClockSkew = Duration(minutes: 15);
+
+/// How old a node-signed message may be before it is refused outright.
+///
+/// A sanity bound, not the replay defence. Replayed messages are authentic and
+/// carry their real (old) timestamp, so a relay serving a genuine message from
+/// last week passes this easily — what stops it acting on stale state is the
+/// per-session high-water mark, which refuses anything older than the newest
+/// message already accepted for that session.
+///
+/// The window has to stay wide because the orders subscription carries no
+/// `since`: reconnecting replays a trade's history, and that history is how
+/// state is rebuilt. Cutting it short would not block an attack, it would
+/// erase the user's own trades.
+const Duration kMostroMessageMaxAge = Duration(days: 90);
+
 class NostrUtils {
   static final Nostr _instance = Nostr.instance;
 
@@ -488,6 +512,9 @@ class NostrUtils {
     NostrEvent event,
     String privateKey, {
     required String expectedAuthor,
+    Duration maxAge = kMostroMessageMaxAge,
+    Duration maxClockSkew = kMostroMessageMaxClockSkew,
+    DateTime? now,
   }) async {
     if (event.kind != 14) {
       throw ArgumentError('Wrong kind: ${event.kind}');
@@ -505,6 +532,25 @@ class NostrUtils {
     }
     if (!isValidEventSignature(event)) {
       throw ArgumentError('Invalid kind-14 event signature');
+    }
+
+    // The signature covers `created_at`, so past this point it is the node
+    // saying when it spoke, and a relay can no longer move it. Bound it in
+    // both directions before the payload is trusted.
+    final createdAt = event.createdAt;
+    if (createdAt == null) {
+      throw ArgumentError('Kind-14 event has no created_at');
+    }
+    final clock = now ?? DateTime.now();
+    if (createdAt.isAfter(clock.add(maxClockSkew))) {
+      throw ArgumentError(
+        'Kind-14 event is dated in the future: $createdAt',
+      );
+    }
+    if (clock.difference(createdAt) > maxAge) {
+      throw ArgumentError(
+        'Kind-14 event is older than $maxAge: $createdAt',
+      );
     }
 
     try {
