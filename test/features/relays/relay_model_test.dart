@@ -2,28 +2,43 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/features/relays/relay.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 final _publishedAt = DateTime.utc(2026, 1, 1);
-final _authorPubkey = 'a' * 64;
+final _nodeKeys = NostrUtils.generateKeyPair();
+final _authorPubkey = _nodeKeys.public;
 
+/// Signed for real: `fromEvent` verifies the signature before it will hand
+/// back a relay list, so an event assembled with a placeholder id and sig no
+/// longer stands in for one the node published.
 NostrEvent relayListEvent({
   int kind = 10002,
   List<List<String>>? tags,
   DateTime? createdAt,
-  String? pubkey,
+  NostrKeyPairs? keyPair,
 }) =>
-    NostrEvent(
-      id: 'event-id',
+    NostrEvent.fromPartialData(
       kind: kind,
       content: '',
-      sig: 'sig',
-      pubkey: pubkey ?? _authorPubkey,
+      keyPairs: keyPair ?? _nodeKeys,
       createdAt: createdAt ?? _publishedAt,
       tags: tags ??
           const [
             ['r', 'wss://relay.one'],
             ['r', 'wss://relay.two'],
           ],
+    );
+
+/// Re-tags [source] while keeping its id, sig and pubkey — free for a relay,
+/// and the case `isVerified()` misses because it never recomputes the id.
+NostrEvent reTagged(NostrEvent source, List<List<String>> tags) => NostrEvent(
+      id: source.id,
+      sig: source.sig,
+      pubkey: source.pubkey,
+      kind: source.kind,
+      content: source.content,
+      createdAt: source.createdAt,
+      tags: tags,
     );
 
 RelayListEvent relayList(List<String> relays, {String author = 'author'}) =>
@@ -235,10 +250,82 @@ void main() {
       expect(parsed!.relays, isEmpty);
       expect(parsed.validRelays, isEmpty);
     });
+
+    // What this list names becomes the app's relay set, and that set is the
+    // position every other relay-sourced attack is launched from. The author
+    // field is the relay's claim about an event it chose to serve.
+    test('returns null when the signature does not verify', () {
+      final genuine = relayListEvent();
+      final tampered = reTagged(genuine, const [
+        ['r', 'wss://attacker.relay'],
+      ]);
+
+      expect(RelayListEvent.fromEvent(tampered), isNull);
+    });
+
+    test('returns null for an event assembled without a real signature', () {
+      final unsigned = NostrEvent(
+        id: 'event-id',
+        sig: 'sig',
+        pubkey: _authorPubkey,
+        kind: 10002,
+        content: '',
+        createdAt: _publishedAt,
+        tags: const [
+          ['r', 'wss://attacker.relay'],
+        ],
+      );
+
+      expect(RelayListEvent.fromEvent(unsigned), isNull);
+    });
+
+    test('accepts a list signed by any author — the caller pins which one', () {
+      // fromEvent establishes that the claimed author really signed it;
+      // deciding whether that author is the configured node is the relay
+      // notifier's job, and it still compares authorPubkey.
+      final otherNode = NostrUtils.generateKeyPair();
+      final parsed =
+          RelayListEvent.fromEvent(relayListEvent(keyPair: otherNode));
+
+      expect(parsed, isNotNull);
+      expect(parsed!.authorPubkey, otherNode.public);
+    });
+
+    test('bounds how many relays one event can contribute', () {
+      final tags = List.generate(
+        RelayListEvent.maxRelays + 10,
+        (i) => ['r', 'wss://relay-$i.example'],
+      );
+
+      final parsed = RelayListEvent.fromEvent(relayListEvent(tags: tags));
+
+      expect(parsed!.relays, hasLength(RelayListEvent.maxRelays));
+      expect(parsed.relays.first, 'wss://relay-0.example');
+    });
+
+    test('leaves a list at the bound untouched', () {
+      final tags = List.generate(
+        RelayListEvent.maxRelays,
+        (i) => ['r', 'wss://relay-$i.example'],
+      );
+
+      final parsed = RelayListEvent.fromEvent(relayListEvent(tags: tags));
+
+      expect(parsed!.relays, hasLength(RelayListEvent.maxRelays));
+    });
+
+    test('drops cleartext ws:// from a signed list', () {
+      final parsed = RelayListEvent.fromEvent(relayListEvent(tags: const [
+        ['r', 'wss://secure.relay'],
+        ['r', 'ws://plain.relay'],
+      ]));
+
+      expect(parsed!.validRelays, ['wss://secure.relay']);
+    });
   });
 
   group('RelayListEvent.validRelays', () {
-    test('keeps only websocket urls', () {
+    test('keeps only secure websocket urls', () {
       final event = relayList([
         'wss://secure.relay',
         'ws://plain.relay',
@@ -246,7 +333,11 @@ void main() {
         'relay.example',
       ]);
 
-      expect(event.validRelays, ['wss://secure.relay', 'ws://plain.relay']);
+      // Cleartext ws:// is refused on the same terms as the manual-entry
+      // path, which allows it only inside the Mortsom test environment.
+      // Accepting it here let a node's list downgrade the transport to
+      // plaintext without the user typing a URL.
+      expect(event.validRelays, ['wss://secure.relay']);
     });
 
     test('strips a single trailing slash', () {
