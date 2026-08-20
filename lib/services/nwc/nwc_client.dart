@@ -140,6 +140,67 @@ class NwcClient {
     }
   }
 
+  /// Decides what a single kind-23195 event means for the request [requestId]
+  /// is waiting on, completing [completer] only for a response that is
+  /// genuinely the wallet's and genuinely readable.
+  ///
+  /// Extracted from the subscription callback so the rule can be exercised
+  /// directly: the client's [Nostr] instance is built in place, so there is no
+  /// other way to drive an event through this path.
+  @visibleForTesting
+  Future<void> handleResponseEvent(
+    NostrEvent event,
+    String requestId,
+    Completer<NwcResponse> completer,
+  ) async {
+    try {
+      if (!isFromWallet(event, 23195)) return;
+
+      // Verify this response references our request via 'e' tag
+      final eTag = event.tags?.firstWhere(
+        (t) => t.isNotEmpty && t[0] == 'e',
+        orElse: () => [],
+      );
+
+      if (eTag == null || eTag.length < 2 || eTag[1] != requestId) {
+        logger.d('NWC: Ignoring event — e tag mismatch');
+        return; // Not our response
+      }
+
+      final content = event.content;
+      if (content == null || content.isEmpty) {
+        logger.w('NWC: ignoring response ${event.id} with no content');
+        return;
+      }
+
+      // Decrypt the response using the detected encryption mode.
+      // Auto-detect from content format as a safety fallback.
+      final responseMode = NwcCrypto.detectFromContent(content);
+      final decrypted = await NwcCrypto.decrypt(
+        content,
+        connection.secret,
+        connection.walletPubkey,
+        responseMode,
+      );
+
+      final response = NwcResponse.fromJson(decrypted);
+
+      if (!completer.isCompleted) {
+        completer.complete(response);
+      }
+    } catch (e) {
+      // Ignore the event; never fail the request on one.
+      //
+      // The request id travels in the clear on the relay carrying it, so
+      // addressing a reply to this request costs an attacker nothing. Failing
+      // here surfaced "payment failed" before the wallet's real response had
+      // a chance to arrive, and it is the user's retry that costs money. The
+      // genuine response is still coming; only the timeout ends this wait
+      // unsuccessfully.
+      logger.w('NWC: ignoring unusable response event ${event.id}: $e');
+    }
+  }
+
   /// Whether [event] is a kind-[kind] event the wallet itself signed.
   ///
   /// Every NWC subscription names a kind and an author in its filter, but the
@@ -447,57 +508,9 @@ class NwcClient {
         ),
       );
 
-      final subscription = stream.stream.listen((event) async {
-        try {
-          if (!isFromWallet(event, 23195)) return;
-
-          // Verify this response references our request via 'e' tag
-          final eTag = event.tags?.firstWhere(
-            (t) => t.isNotEmpty && t[0] == 'e',
-            orElse: () => [],
-          );
-
-          if (eTag == null || eTag.length < 2 || eTag[1] != requestId) {
-            logger.d(
-                'NWC: Ignoring event — e tag mismatch (expected: ${requestId.substring(0, 8)}..., got: ${eTag != null && eTag.length >= 2 ? eTag[1].substring(0, 8) : "none"}...)');
-            return; // Not our response
-          }
-
-          final content = event.content;
-          if (content == null || content.isEmpty) {
-            logger.w('NWC: ignoring response ${event.id} with no content');
-            return;
-          }
-
-          logger.d('NWC: Response matched for ${request.method}!');
-
-          // Decrypt the response using the detected encryption mode.
-          // Auto-detect from content format as a safety fallback.
-          final responseMode = NwcCrypto.detectFromContent(content);
-          final decrypted = await NwcCrypto.decrypt(
-            content,
-            connection.secret,
-            connection.walletPubkey,
-            responseMode,
-          );
-
-          final response = NwcResponse.fromJson(decrypted);
-
-          if (!completer.isCompleted) {
-            completer.complete(response);
-          }
-        } catch (e) {
-          // Ignore the event; never fail the request on one.
-          //
-          // The request id travels in the clear on the relay carrying it, so
-          // addressing a reply to this request costs an attacker nothing.
-          // Failing here surfaced "payment failed" before the wallet's real
-          // response had a chance to arrive, and it is the user's retry that
-          // costs money. The genuine response is still coming; only the
-          // timeout ends this wait unsuccessfully.
-          logger.w('NWC: ignoring unusable response event ${event.id}: $e');
-        }
-      });
+      final subscription = stream.stream.listen(
+        (event) => handleResponseEvent(event, requestId, completer),
+      );
 
       _subscriptions[subId] = subscription;
 
