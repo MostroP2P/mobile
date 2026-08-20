@@ -163,8 +163,13 @@ void main() {
       expect(() => orderEvent(tags: const []).status, throwsA(anything));
     });
 
-    test('throws when reading a type tag that is absent', () {
-      expect(() => orderEvent(tags: const []).type, throwsA(anything));
+    test('reads an absent type tag as null rather than throwing', () {
+      // `type` is read off relay-supplied events at the order-book intake,
+      // before anything about them has been established. Throwing there
+      // raised an uncaught async error from inside the stream callback on
+      // any event a relay chose to send without a z tag; the intake now
+      // rejects it instead.
+      expect(orderEvent(tags: const []).type, isNull);
     });
   });
 
