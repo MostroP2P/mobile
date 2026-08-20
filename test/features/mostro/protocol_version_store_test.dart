@@ -1,0 +1,387 @@
+import 'dart:convert';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
+import 'package:mostro_mobile/features/mostro/protocol_version_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Minimal in-memory double for the three methods the store uses.
+class _FakeSharedPreferencesAsync implements SharedPreferencesAsync {
+  final Map<String, String> strings = {};
+
+  /// When set, every write fails — used to prove memory stays authoritative.
+  final bool failWrites;
+
+  _FakeSharedPreferencesAsync({this.failWrites = false});
+
+  @override
+  Future<String?> getString(String key) async => strings[key];
+
+  @override
+  Future<void> setString(String key, String value) async {
+    if (failWrites) throw Exception('disk full');
+    strings[key] = value;
+  }
+
+  @override
+  Future<void> remove(String key) async {
+    strings.remove(key);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
+}
+
+
+class _Countdown {
+  int _micros;
+  _Countdown(this._micros);
+
+  Duration next() {
+    final current = Duration(microseconds: _micros);
+    _micros = _micros > 500 ? _micros - 500 : 0;
+    return current;
+  }
+}
+
+/// Completes its writes in reverse call order, so a store that fires them
+/// concurrently loses the race and a store that queues them does not.
+class _ReorderingSharedPreferencesAsync implements SharedPreferencesAsync {
+  final Map<String, String> strings = {};
+
+  /// Longest delay first: each successive call waits less than the one before
+  /// it, so without serialisation the last call lands first. Held in a box
+  /// because `SharedPreferencesAsync` is `@immutable`.
+  final _Countdown _delay = _Countdown(5000);
+
+  @override
+  Future<String?> getString(String key) async => strings[key];
+
+  @override
+  Future<void> setString(String key, String value) async {
+    await _stagger();
+    strings[key] = value;
+  }
+
+  @override
+  Future<void> remove(String key) async {
+    await _stagger();
+    strings.remove(key);
+  }
+
+  Future<void> _stagger() => Future.delayed(_delay.next());
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
+}
+
+/// Delays only the read, so `init()` is still awaiting `_load()` while a
+/// `record()` lands. Reproduces bootstrap order: `RelaysNotifier` builds a
+/// `SubscriptionManager` — and with it the info-event feed into `record()` —
+/// before `appInitializerProvider` gets to `init()`.
+class _SlowReadSharedPreferencesAsync implements SharedPreferencesAsync {
+  final Map<String, String> strings = {};
+
+  @override
+  Future<String?> getString(String key) async {
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    return strings[key];
+  }
+
+  @override
+  Future<void> setString(String key, String value) async {
+    strings[key] = value;
+  }
+
+  @override
+  Future<void> remove(String key) async {
+    strings.remove(key);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
+}
+
+const _nodeA =
+    '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980';
+const _nodeB =
+    '0000000000000000000000000000000000000000000000000000000000000001';
+
+final _key = SharedPreferencesKeys.nodeProtocolVersions.value;
+
+void main() {
+  late _FakeSharedPreferencesAsync prefs;
+  late ProtocolVersionStore store;
+
+  setUp(() async {
+    prefs = _FakeSharedPreferencesAsync();
+    store = ProtocolVersionStore(prefs);
+    await store.init();
+  });
+
+  group('ProtocolVersionStore basics', () {
+    test('knows nothing about a node it has never seen', () {
+      expect(store.versionFor(_nodeA), isNull);
+    });
+
+    test('records a version and reports it back', () {
+      expect(store.record(_nodeA, 2), isTrue);
+      expect(store.versionFor(_nodeA), 2);
+    });
+
+    test('keeps each node separate', () {
+      store.record(_nodeA, 2);
+      store.record(_nodeB, 1);
+
+      expect(store.versionFor(_nodeA), 2);
+      expect(store.versionFor(_nodeB), 1);
+    });
+
+    test('ignores an empty pubkey', () {
+      expect(store.record('', 2), isFalse);
+    });
+
+    test('ignores a non-positive version', () {
+      expect(store.record(_nodeA, 0), isFalse);
+      expect(store.record(_nodeA, -1), isFalse);
+      expect(store.versionFor(_nodeA), isNull);
+    });
+  });
+
+  group('ProtocolVersionStore ratchet', () {
+    // The whole point of the store: once a node has been verified speaking v2,
+    // nothing can make this client speak v1 to it again.
+    test('never lowers a recorded version', () {
+      store.record(_nodeA, 2);
+
+      expect(store.record(_nodeA, 1), isFalse);
+      expect(store.versionFor(_nodeA), 2);
+    });
+
+    test('raises a recorded version', () {
+      store.record(_nodeA, 1);
+
+      expect(store.record(_nodeA, 2), isTrue);
+      expect(store.versionFor(_nodeA), 2);
+    });
+
+    test('re-recording the same version is a no-op', () {
+      store.record(_nodeA, 2);
+
+      expect(store.record(_nodeA, 2), isFalse);
+      expect(store.versionFor(_nodeA), 2);
+    });
+
+    test('a downgrade attempt on one node does not touch another', () {
+      store.record(_nodeA, 2);
+      store.record(_nodeB, 2);
+
+      store.record(_nodeA, 1);
+
+      expect(store.versionFor(_nodeA), 2);
+      expect(store.versionFor(_nodeB), 2);
+    });
+  });
+
+  group('ProtocolVersionStore persistence', () {
+    test('survives a restart', () async {
+      store.record(_nodeA, 2);
+      await store.pendingWrites;
+
+      final reopened = ProtocolVersionStore(prefs);
+      await reopened.init();
+
+      expect(reopened.versionFor(_nodeA), 2);
+    });
+
+    test('the ratchet holds across a restart', () async {
+      store.record(_nodeA, 2);
+      await store.pendingWrites;
+
+      final reopened = ProtocolVersionStore(prefs);
+      await reopened.init();
+
+      expect(reopened.record(_nodeA, 1), isFalse);
+      expect(reopened.versionFor(_nodeA), 2);
+    });
+
+    test('writes the whole snapshot, not just the last change', () async {
+      store.record(_nodeA, 2);
+      store.record(_nodeB, 1);
+      await store.pendingWrites;
+
+      expect(
+        jsonDecode(prefs.strings[_key]!),
+        {_nodeA: 2, _nodeB: 1},
+      );
+    });
+
+    test('a failed write leaves memory authoritative', () async {
+      final failing = _FakeSharedPreferencesAsync(failWrites: true);
+      final s = ProtocolVersionStore(failing);
+      await s.init();
+
+      expect(s.record(_nodeA, 2), isTrue);
+      expect(s.versionFor(_nodeA), 2);
+    });
+
+    test('clear forgets everything', () async {
+      store.record(_nodeA, 2);
+      await store.clear();
+
+      expect(store.versionFor(_nodeA), isNull);
+      expect(prefs.strings[_key], isNull);
+    });
+  });
+
+  group('ProtocolVersionStore corrupt storage', () {
+    Future<ProtocolVersionStore> storeWith(String raw) async {
+      prefs.strings[_key] = raw;
+      final s = ProtocolVersionStore(prefs);
+      await s.init();
+      return s;
+    }
+
+    test('starts empty on unparseable JSON', () async {
+      final s = await storeWith('{not json');
+      expect(s.versionFor(_nodeA), isNull);
+      expect(s.isInitialized, isTrue);
+    });
+
+    test('starts empty when the payload is not a map', () async {
+      final s = await storeWith('[1, 2, 3]');
+      expect(s.versionFor(_nodeA), isNull);
+    });
+
+    // A single bad entry must not cost the ratchet its memory of every other
+    // node — that would be a downgrade window opened by a storage bug.
+    test('drops malformed entries but keeps the good ones', () async {
+      final s = await storeWith(jsonEncode({
+        _nodeA: 2,
+        _nodeB: 'garbage',
+        'another': null,
+        'negative': -5,
+      }));
+
+      expect(s.versionFor(_nodeA), 2);
+      expect(s.versionFor(_nodeB), isNull);
+      expect(s.versionFor('another'), isNull);
+      expect(s.versionFor('negative'), isNull);
+    });
+
+    test('accepts a numeric string version', () async {
+      final s = await storeWith(jsonEncode({_nodeA: '2'}));
+      expect(s.versionFor(_nodeA), 2);
+    });
+  });
+
+  group('ProtocolVersionStore write ordering', () {
+    late _ReorderingSharedPreferencesAsync slowPrefs;
+    late ProtocolVersionStore orderedStore;
+
+    setUp(() async {
+      slowPrefs = _ReorderingSharedPreferencesAsync();
+      orderedStore = ProtocolVersionStore(slowPrefs);
+      await orderedStore.init();
+    });
+
+    test('the newest snapshot is the one that lands', () async {
+      orderedStore.record(_nodeA, 1);
+      orderedStore.record(_nodeA, 2);
+      await orderedStore.pendingWrites;
+
+      // Unserialised, the second (faster) write would land first and the first
+      // would overwrite it with the stale {_nodeA: 1}.
+      expect(jsonDecode(slowPrefs.strings[_key]!), {_nodeA: 2});
+    });
+
+    test('a write issued before clear() does not resurrect the map', () async {
+      orderedStore.record(_nodeA, 2);
+      await orderedStore.clear();
+
+      expect(slowPrefs.strings[_key], isNull);
+      expect(orderedStore.versionFor(_nodeA), isNull);
+    });
+  });
+  group('ProtocolVersionStore records arriving before init', () {
+    late _SlowReadSharedPreferencesAsync slowRead;
+    late ProtocolVersionStore earlyStore;
+
+    setUp(() {
+      slowRead = _SlowReadSharedPreferencesAsync();
+      earlyStore = ProtocolVersionStore(slowRead);
+    });
+
+    test('a version recorded while loading is not dropped', () async {
+      final loading = earlyStore.init();
+      earlyStore.record(_nodeA, 2);
+      await loading;
+
+      expect(earlyStore.versionFor(_nodeA), 2);
+    });
+
+    test('and reaches disk instead of being erased by the next snapshot',
+        () async {
+      final loading = earlyStore.init();
+      earlyStore.record(_nodeA, 2);
+      await loading;
+
+      // A later record for a different node snapshots the whole map. If init()
+      // had dropped _nodeA, this write is what would carry the loss to disk.
+      earlyStore.record(_nodeB, 2);
+      await earlyStore.pendingWrites;
+
+      expect(jsonDecode(slowRead.strings[_key]!), {_nodeA: 2, _nodeB: 2});
+    });
+
+    test('the persisted value wins when it is the higher one', () async {
+      slowRead.strings[_key] = jsonEncode({_nodeA: 2});
+
+      final loading = earlyStore.init();
+      // A legacy info event racing the load must not walk the ratchet back.
+      earlyStore.record(_nodeA, 1);
+      await loading;
+
+      expect(earlyStore.versionFor(_nodeA), 2);
+    });
+
+    test('an early record for an unrelated node keeps the loaded ones',
+        () async {
+      slowRead.strings[_key] = jsonEncode({_nodeB: 2});
+
+      final loading = earlyStore.init();
+      earlyStore.record(_nodeA, 2);
+      await loading;
+
+      expect(earlyStore.versionFor(_nodeA), 2);
+      expect(earlyStore.versionFor(_nodeB), 2);
+    });
+
+    test('a record before init does not erase an earlier session', () async {
+      slowRead.strings[_key] = jsonEncode({_nodeB: 2});
+
+      // Bootstrap at its worst: the info event lands before init() is even
+      // called. A snapshot of the still-empty map would overwrite _nodeB.
+      earlyStore.record(_nodeA, 2);
+      await earlyStore.pendingWrites;
+      expect(jsonDecode(slowRead.strings[_key]!), {_nodeB: 2});
+
+      await earlyStore.init();
+      await earlyStore.pendingWrites;
+
+      expect(jsonDecode(slowRead.strings[_key]!), {_nodeB: 2, _nodeA: 2});
+      expect(earlyStore.versionFor(_nodeB), 2);
+    });
+
+    test('a plain cold start writes nothing', () async {
+      await earlyStore.init();
+      await earlyStore.pendingWrites;
+
+      expect(slowRead.strings[_key], isNull);
+    });
+  });
+
+}

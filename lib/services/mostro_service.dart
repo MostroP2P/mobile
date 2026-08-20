@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/features/mostro/protocol_version_store.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
@@ -139,7 +140,10 @@ class MostroService {
           expectedAuthor: _settings.mostroPublicKey,
         );
       } else {
-        final decryptedEvent = await event.unWrap(privateKey);
+        final decryptedEvent = await event.unWrap(
+          privateKey,
+          expectedAuthor: _settings.mostroPublicKey,
+        );
         content = decryptedEvent.content;
         decryptedId = decryptedEvent.id;
       }
@@ -363,10 +367,11 @@ class MostroService {
       );
     }
 
-    // Route through the transport advertised by the connected node (§5 Phase
-    // B). v1 nodes (default) keep the gift-wrap path byte-for-byte.
+    // Route through the transport the connected node speaks (§5 Phase B),
+    // anchored so a relay cannot steer the send path onto v1 independently of
+    // what the orders subscription is listening on.
     final event = await order.wrapForTransport(
-      protocolVersion: mostroInstance?.protocolVersion,
+      protocolVersion: anchoredProtocolVersionFor(ref),
       tradeKey: session.tradeKey,
       recipientPubKey: _settings.mostroPublicKey,
       masterKey: session.fullPrivacy ? null : session.masterKey,

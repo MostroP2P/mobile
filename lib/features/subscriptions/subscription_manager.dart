@@ -8,6 +8,7 @@ import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/features/mostro/protocol_version_store.dart';
 import 'package:mostro_mobile/features/mostro/transport.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription.dart';
@@ -59,13 +60,23 @@ class SubscriptionManager {
   /// switch to the v2 (kind 14) transport once the node advertises
   /// `protocol_version=2`. The info event arrives asynchronously after the
   /// initial subscription, so without this the orders filter would stay pinned
-  /// to the transport resolved at subscription time (typically v1 at cold
-  /// start). Re-subscribes only when the resolved transport actually changes.
+  /// to the transport resolved at subscription time. Re-subscribes only when
+  /// the resolved transport actually changes.
+  ///
+  /// Doubles as the feed for the downgrade ratchet: every event on this stream
+  /// has already had its signature verified and been checked for being newer
+  /// than the one in use (see [OpenOrdersRepository]), which is exactly the
+  /// precondition [ProtocolVersionStore.record] requires.
   void _initMostroInstanceListener() {
     try {
       _mostroInstanceListener =
           ref.read(orderRepositoryProvider).mostroInstanceStream.listen(
-        (_) {
+        (event) {
+          // Before the early returns below: a client with no open sessions
+          // still needs to learn the node's version, or the ratchet would only
+          // ever arm for users who happen to be mid-trade.
+          _recordAdvertisedProtocolVersion(event);
+
           final newTransport = _resolveOrdersTransport();
           if (newTransport == _appliedOrdersTransport) return;
           final sessions = ref.read(sessionNotifierProvider);
@@ -84,17 +95,41 @@ class SubscriptionManager {
     }
   }
 
-  /// Resolves the transport for the orders subscription from the connected
-  /// node's advertised `protocol_version` (§2, §4.1). Defaults to v1 gift wrap
-  /// when the node info is not yet available or unreadable.
-  Transport _resolveOrdersTransport() {
+  /// Records the version carried by a verified info [event] against its
+  /// author, so a later attempt to walk this node back to an older transport
+  /// has something to be measured against.
+  ///
+  /// Keyed by `event.pubkey` rather than the configured node pubkey: the
+  /// repository only emits events it has already matched to the connected
+  /// node, and using the event's own author keeps the store correct if that
+  /// ever changes.
+  ///
+  /// A missing tag is deliberately *not* recorded as [kLegacyProtocolVersion],
+  /// even though [anchoredProtocolVersionFor] reads it that way when resolving
+  /// a transport. Resolution can see that the info event is in hand; the store
+  /// outlives it. Persisting 1 would leave `remembered == 1` with no info
+  /// event after a restart, and a relay that then simply withholds the event
+  /// would resolve v1 off remembered state alone — turning the ratchet, whose
+  /// whole purpose is to block downgrades, into a durable downgrade primitive.
+  void _recordAdvertisedProtocolVersion(NostrEvent event) {
     try {
-      final infoEvent = ref.read(orderRepositoryProvider).mostroInstance;
-      return resolveTransport(infoEvent?.protocolVersion);
+      final version = event.protocolVersion;
+      if (version == null) return;
+      ref.read(protocolVersionStoreProvider).record(event.pubkey, version);
     } catch (e) {
-      logger.w('Failed to resolve orders transport, defaulting to v1: $e');
-      return Transport.giftWrap;
+      logger.w('Failed to record advertised protocol version: $e');
     }
+  }
+
+  /// Resolves the transport for the orders subscription, combining the node's
+  /// currently advertised `protocol_version` (§2, §4.1) with the highest
+  /// version it has previously been verified to speak.
+  ///
+  /// Falls back to [kDefaultTransport] rather than v1 when the node info is
+  /// unavailable or unreadable: a relay can produce that state at will by
+  /// simply not serving the info event, and v1's intake authenticates nothing.
+  Transport _resolveOrdersTransport() {
+    return resolveTransport(anchoredProtocolVersionFor(ref));
   }
 
   void _initSessionListener() {

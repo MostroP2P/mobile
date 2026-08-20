@@ -7,6 +7,7 @@ import 'package:mostro_mobile/data/repositories/order_repository_interface.dart'
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 const orderEventKind = 38383;
 const infoEventKind = 38385;
@@ -66,14 +67,28 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     final filterTime =
         DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
 
-    final filter = NostrFilter(
-      kinds: [orderEventKind, infoEventKind],
-      since: filterTime,
-      authors: [_settings.mostroPublicKey],
-    );
-
+    // Two filters, not one. The order history is deliberately bounded to a
+    // recent window, but the info event must not inherit that bound: kind
+    // 38385 is addressable, so the node publishes it once at startup and the
+    // relay keeps only that copy. A node that has been up longer than the
+    // window has an info event older than `since`, and a combined filter would
+    // make the relay withhold it — leaving `protocol_version` unknown for the
+    // whole session. That used to be harmless because unknown meant v1; now
+    // that unknown resolves to v2 it would strand the client on kind 14
+    // against a node that only listens on kind 1059.
     final request = NostrRequest(
-      filters: [filter],
+      filters: [
+        NostrFilter(
+          kinds: [orderEventKind],
+          since: filterTime,
+          authors: [_settings.mostroPublicKey],
+        ),
+        NostrFilter(
+          kinds: [infoEventKind],
+          authors: [_settings.mostroPublicKey],
+          limit: 1,
+        ),
+      ],
     );
 
     _subscription = _nostrService.subscribeToEvents(request).listen((event) {
@@ -82,6 +97,34 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
         _eventStreamController.add(_events.values.toList());
       } else if (event.kind == infoEventKind &&
           event.pubkey == _settings.mostroPublicKey) {
+        // The author field alone proves nothing: any relay can hand us an
+        // event that merely *claims* the node's pubkey. The info event
+        // configures the wire transport (`protocol_version`), the bond policy
+        // and the PoW target, so an unsigned forgery is a downgrade primitive.
+        if (!NostrUtils.isValidEventSignature(event)) {
+          logger.w(
+            'Rejecting kind-$infoEventKind info event claiming to be from '
+            '${event.pubkey}: signature verification failed',
+          );
+          return;
+        }
+        // A valid signature says the node authored this event, not that it
+        // still reflects the node's configuration. Relays pick which events
+        // they serve and in what order, so without a replacement rule the last
+        // one to arrive wins — letting a relay replay a genuinely signed but
+        // superseded info event to roll the advertised config back (most
+        // importantly `protocol_version` 2 -> 1).
+        //
+        // Reset to null on instance switch (see updateSettings), so this never
+        // blocks the newly selected node's own info event.
+        if (!_supersedesCurrentInfo(event)) {
+          logger.d(
+            'Ignoring kind-$infoEventKind info event ${event.id} from '
+            '${event.pubkey} dated ${event.createdAt}: does not supersede '
+            '${_mostroInstance?.id} dated ${_mostroInstance?.createdAt}',
+          );
+          return;
+        }
         logger.i('Mostro instance info loaded: $event');
         _mostroInstance = event;
         if (!_mostroInstanceController.isClosed) {
@@ -116,6 +159,35 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
         );
       }
     });
+  }
+
+  /// Whether [candidate] replaces the info event currently in use, under
+  /// NIP-01's ordering for addressable events: the higher `created_at` wins,
+  /// and a tie goes to the lower id.
+  ///
+  /// The tie-break is what makes this converge. Two events sharing a second
+  /// are both genuinely the node's — they cleared the signature check — but
+  /// only one of them is the copy every other client will settle on, and a
+  /// pure "strictly newer" rule silently keeps whichever the fastest relay
+  /// happened to deliver. An exact re-delivery compares equal on both fields
+  /// and is still rejected, so this does not reopen the replay window the
+  /// check exists to close.
+  bool _supersedesCurrentInfo(NostrEvent candidate) {
+    final current = _mostroInstance;
+    if (current == null) return true;
+
+    final candidateAt = candidate.createdAt;
+    if (candidateAt == null) return false;
+    final currentAt = current.createdAt;
+    if (currentAt == null) return true;
+
+    if (candidateAt.isAfter(currentAt)) return true;
+    if (currentAt.isAfter(candidateAt)) return false;
+
+    final candidateId = candidate.id;
+    final currentId = current.id;
+    if (candidateId == null || currentId == null) return false;
+    return candidateId.compareTo(currentId) < 0;
   }
 
   void _emitEvents() {

@@ -380,10 +380,28 @@ class NostrUtils {
     return wrapEvent;
   }
 
+  /// Decrypts a protocol-v1 (NIP-59 gift wrap) Mostro event and authenticates
+  /// its sender.
+  ///
+  /// The outer wrap (kind 1059) is signed by a throwaway ephemeral key and
+  /// proves nothing — anyone can encrypt to a public trade key. The rumor
+  /// inside carries a `pubkey` field but is unsigned by design, so that field
+  /// is a claim, not evidence. The authentication in NIP-59 lives in the
+  /// middle layer: the seal (kind 13) is signed by the sender's real identity
+  /// key. mostrod builds it exactly that way — `EventBuilder::seal(...)
+  /// .sign(identity_keys)` in mostro-core's `nip59.rs` — and the node uses a
+  /// single keypair for identity and trade, so the seal's author is the
+  /// configured node pubkey.
+  ///
+  /// [expectedAuthor] is checked against the seal's author and the seal's
+  /// signature is verified, which is what makes this path forgery-resistant.
+  /// Without both, any party able to reach the victim's trade key could inject
+  /// arbitrary Mostro messages.
   static Future<NostrEvent> decryptNIP59Event(
     NostrEvent event,
-    String privateKey,
-  ) async {
+    String privateKey, {
+    required String expectedAuthor,
+  }) async {
     if (event.kind != 1059) {
       throw ArgumentError('Wrong kind: ${event.kind}');
     }
@@ -402,14 +420,18 @@ class NostrUtils {
         event.pubkey,
       );
 
-      final rumorEvent = NostrEvent.deserialized(
+      // This is the seal (kind 13), not the rumor: the rumor is one layer
+      // further in, inside the seal's encrypted content.
+      final sealEvent = NostrEvent.deserialized(
         '["EVENT", "", $decryptedContent]',
       );
 
+      authenticateSeal(sealEvent, expectedAuthor);
+
       final finalDecryptedContent = await decryptNIP44(
-        rumorEvent.content!,
+        sealEvent.content!,
         privateKey,
-        rumorEvent.pubkey,
+        sealEvent.pubkey,
       );
 
       final wrap = jsonDecode(finalDecryptedContent) as Map<String, dynamic>;
@@ -437,6 +459,12 @@ class NostrUtils {
         ),
         subscriptionId: '',
       );
+    } on ArgumentError {
+      // Authentication verdicts propagate unwrapped. Folding them into the
+      // generic Exception below would make "this message is not from the node"
+      // indistinguishable from "the payload was malformed", both to callers
+      // and to anyone reading a log line.
+      rethrow;
     } catch (e) {
       throw Exception('Failed to decrypt NIP-59 event: $e');
     }
@@ -475,7 +503,7 @@ class NostrUtils {
         'Unexpected author: expected $expectedAuthor, got ${event.pubkey}',
       );
     }
-    if (!_isValidEventSignature(event)) {
+    if (!isValidEventSignature(event)) {
       throw ArgumentError('Invalid kind-14 event signature');
     }
 
@@ -490,9 +518,41 @@ class NostrUtils {
     }
   }
 
+  /// Authenticates a NIP-59 seal (kind 13) as having been written by
+  /// [expectedAuthor].
+  ///
+  /// The seal is the only layer of a gift wrap that names its sender under a
+  /// signature: the outer wrap (kind 1059) is signed by a throwaway ephemeral
+  /// key and proves nothing, and the rumor inside is unsigned by design, so
+  /// its `pubkey` field is a claim rather than evidence. mostrod builds the
+  /// seal as `EventBuilder::seal(...).sign(identity_keys)` (mostro-core
+  /// `nip59.rs`), and the node uses one keypair for identity and trade, so the
+  /// seal's author is the configured node pubkey.
+  ///
+  /// Single implementation on purpose: both gift-wrap unwrapping paths call
+  /// this, so a change to what "authenticated" means cannot reach one and miss
+  /// the other. Throws when the seal fails either check.
+  static void authenticateSeal(NostrEvent seal, String expectedAuthor) {
+    if (seal.pubkey != expectedAuthor) {
+      throw ArgumentError(
+        'Unexpected seal author: expected $expectedAuthor, got ${seal.pubkey}',
+      );
+    }
+    if (!isValidEventSignature(seal)) {
+      throw ArgumentError('Invalid seal signature');
+    }
+  }
+
   /// Verifies a Nostr event's id and Schnorr signature (NIP-01): recomputes the
   /// id from the serialized event and checks the signature over it.
-  static bool _isValidEventSignature(NostrEvent event) {
+  ///
+  /// Prefer this over `NostrEvent.isVerified()` for any event whose *content*
+  /// is trusted. `isVerified()` only checks the Schnorr signature against the
+  /// event's self-declared `id`, so a genuine `(id, sig, pubkey)` triple lifted
+  /// from one event and pasted onto arbitrary content and tags still passes it.
+  /// Recomputing the id from the serialized event is what binds the signature
+  /// to what the event actually says.
+  static bool isValidEventSignature(NostrEvent event) {
     final id = event.id;
     final sig = event.sig;
     final createdAt = event.createdAt;

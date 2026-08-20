@@ -179,14 +179,25 @@ extension MostroInstanceExtensions on NostrEvent {
 
   /// Parses the wire transport version from the `protocol_version` tag (§2).
   ///
-  /// Returns `null` when the tag is absent or unparseable. Callers treat
-  /// `null` as legacy v1 (NIP-59 gift wrap); the nullable form is preserved so
-  /// the transport resolver can distinguish "not advertised" from an explicit
-  /// version when deciding whether to log a version-skew downgrade.
+  /// Returns `null` when the tag is absent, empty or unparseable. Those are
+  /// not the same fact, and callers deciding a transport must not treat them
+  /// alike — pair this with [advertisesProtocolVersion] to tell them apart.
   int? get protocolVersion {
     final raw = _getOptionalTagValue('protocol_version');
     return raw == null ? null : int.tryParse(raw);
   }
+
+  /// Whether the event carries a `protocol_version` tag at all, regardless of
+  /// whether its value parses.
+  ///
+  /// This is the half of the story [protocolVersion] cannot tell. A daemon
+  /// before v0.18.0 emits no tag, and on a verified event that silence *is* an
+  /// assertion of v1. A tag holding `""` or `abc` asserts nothing: the node
+  /// meant to state a version and the value is unusable, so the client has no
+  /// evidence and must fall back to its safe default rather than read the
+  /// malformed value as legacy and pair itself with gift wrap.
+  bool get advertisesProtocolVersion =>
+      tags?.any((t) => t.isNotEmpty && t[0] == 'protocol_version') ?? false;
 
   /// Parses the anti-abuse bond policy from the `bond_enabled` tag.
   ///

@@ -68,10 +68,14 @@ extension NostrEventExtensions on NostrEvent {
     return timeago.format(createdAt!, allowFromNow: true, locale: locale);
   }
 
-  Future<NostrEvent> unWrap(String privateKey) async {
+  Future<NostrEvent> unWrap(
+    String privateKey, {
+    required String expectedAuthor,
+  }) async {
     return await NostrUtils.decryptNIP59Event(
       this,
       privateKey,
+      expectedAuthor: expectedAuthor,
     );
   }
 
@@ -104,7 +108,10 @@ extension NostrEventExtensions on NostrEvent {
     }
   }
 
-  Future<NostrEvent> mostroUnWrap(NostrKeyPairs receiver) async {
+  Future<NostrEvent> mostroUnWrap(
+    NostrKeyPairs receiver, {
+    required String expectedAuthor,
+  }) async {
     if (kind != 1059) {
       throw ArgumentError('Expected kind 1059 (Gift Wrap), got: $kind');
     }
@@ -138,6 +145,11 @@ extension NostrEventExtensions on NostrEvent {
         if (sealEvent.content == null || sealEvent.content!.isEmpty) {
           throw Exception('SEAL content is empty');
         }
+
+        // STEP 2b: Authenticate the sender before trusting anything inside.
+        // See NostrUtils.authenticateSeal for why the seal is the layer that
+        // carries this evidence.
+        NostrUtils.authenticateSeal(sealEvent, expectedAuthor);
 
         // STEP 3: Decrypt SEAL with sender's pubkey (from SEAL)
         // The SEAL pubkey identifies the actual sender (admin or user)
