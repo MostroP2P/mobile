@@ -22,6 +22,8 @@ class _Probe extends AbstractMostroNotifier {
   bool check(MostroMessage msg) => supersedesAppliedState(msg);
 
   void setApplied(int? timestamp) => lastAppliedTimestamp = timestamp;
+
+  void anchor(int? timestamp) => anchorAppliedTimestamp(timestamp);
 }
 
 class _FakePrefs implements SharedPreferencesAsync {
@@ -188,4 +190,58 @@ void main() {
       expect(p.check(message(weekAgo)), isFalse);
     });
   });
+  // A restore wipes the message history and then applies the node's snapshot.
+  // The snapshot's own message is dated with the order's creation time, which
+  // predates its entire lifecycle — so without a separate anchor the mark
+  // either stays null or lands far enough back that every archived message
+  // still reads as news.
+  group('freshness anchored to a restored snapshot', () {
+    setUp(() async {
+      await container.read(orderFreshnessStoreProvider).init();
+    });
+
+    test('the snapshot time is what the mark records, not the message date',
+        () {
+      final p = probe()..anchor(now);
+
+      // hourAgo is newer than the order's creation time but older than the
+      // snapshot: exactly the archived lifecycle event this closes off.
+      expect(p.check(message(hourAgo)), isFalse);
+      expect(p.check(message(weekAgo)), isFalse);
+    });
+
+    test('messages the snapshot could not have folded in are still applied',
+        () {
+      final p = probe()..anchor(hourAgo);
+
+      expect(p.check(message(now)), isTrue);
+    });
+
+    test('a null snapshot time leaves the mark untouched', () {
+      // v1 gift wrap has no signed clock, so restore yields null rather than
+      // a guess. Nothing is anchored and the guard keeps failing open.
+      final p = probe()..anchor(null);
+
+      expect(p.check(message(weekAgo)), isTrue);
+    });
+
+    test('anchoring never moves the mark backwards', () {
+      final p = probe()
+        ..setApplied(now)
+        ..anchor(weekAgo);
+
+      expect(p.check(message(hourAgo)), isFalse);
+    });
+
+    test('the anchor survives into the durable store', () async {
+      probe().anchor(now);
+      await container.read(orderFreshnessStoreProvider).pendingWrites;
+
+      expect(
+        container.read(orderFreshnessStoreProvider).timestampFor('order-1'),
+        now,
+      );
+    });
+  });
+
 }
