@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/services/nwc/nwc_connection.dart';
@@ -139,6 +140,91 @@ class NwcClient {
     }
   }
 
+  /// Decides what a single kind-23195 event means for the request [requestId]
+  /// is waiting on, completing [completer] only for a response that is
+  /// genuinely the wallet's and genuinely readable.
+  ///
+  /// Extracted from the subscription callback so the rule can be exercised
+  /// directly: the client's [Nostr] instance is built in place, so there is no
+  /// other way to drive an event through this path.
+  @visibleForTesting
+  Future<void> handleResponseEvent(
+    NostrEvent event,
+    String requestId,
+    Completer<NwcResponse> completer,
+  ) async {
+    try {
+      if (!isFromWallet(event, 23195)) return;
+
+      // Verify this response references our request via 'e' tag
+      final eTag = event.tags?.firstWhere(
+        (t) => t.isNotEmpty && t[0] == 'e',
+        orElse: () => [],
+      );
+
+      if (eTag == null || eTag.length < 2 || eTag[1] != requestId) {
+        logger.d('NWC: Ignoring event — e tag mismatch');
+        return; // Not our response
+      }
+
+      final content = event.content;
+      if (content == null || content.isEmpty) {
+        logger.w('NWC: ignoring response ${event.id} with no content');
+        return;
+      }
+
+      // Decrypt the response using the detected encryption mode.
+      // Auto-detect from content format as a safety fallback.
+      final responseMode = NwcCrypto.detectFromContent(content);
+      final decrypted = await NwcCrypto.decrypt(
+        content,
+        connection.secret,
+        connection.walletPubkey,
+        responseMode,
+      );
+
+      final response = NwcResponse.fromJson(decrypted);
+
+      if (!completer.isCompleted) {
+        completer.complete(response);
+      }
+    } catch (e) {
+      // Ignore the event; never fail the request on one.
+      //
+      // The request id travels in the clear on the relay carrying it, so
+      // addressing a reply to this request costs an attacker nothing. Failing
+      // here surfaced "payment failed" before the wallet's real response had
+      // a chance to arrive, and it is the user's retry that costs money. The
+      // genuine response is still coming; only the timeout ends this wait
+      // unsuccessfully.
+      logger.w('NWC: ignoring unusable response event ${event.id}: $e');
+    }
+  }
+
+  /// Whether [event] is a kind-[kind] event the wallet itself signed.
+  ///
+  /// Every NWC subscription names a kind and an author in its filter, but the
+  /// pinned dart_nostr fork parses relay EVENT frames straight into a
+  /// NostrEvent: it neither verifies the signature nor matches the frame
+  /// against the filter that was sent. Both are therefore a statement of what
+  /// was asked for, and the author on the way back is the relay's claim.
+  ///
+  /// The relay here is the one named in the user's own wallet URI — precisely
+  /// the party NIP-47's encryption says you should not have to trust.
+  @visibleForTesting
+  bool isFromWallet(NostrEvent event, int kind) {
+    if (event.kind != kind) return false;
+    if (event.pubkey != connection.walletPubkey) return false;
+    if (!NostrUtils.isValidEventSignature(event)) {
+      logger.w(
+        'NWC: ignoring kind-$kind event ${event.id} claiming to be from the '
+        'wallet: signature verification failed',
+      );
+      return false;
+    }
+    return true;
+  }
+
   /// Detects the wallet's supported encryption mode from its info event.
   Future<void> _detectEncryptionMode() async {
     try {
@@ -159,6 +245,8 @@ class NwcClient {
       );
 
       final subscription = stream.stream.listen((event) {
+        if (!isFromWallet(event, 13194)) return;
+
         // Look for the encryption tag
         final encTag = event.tags?.firstWhere(
           (t) => t.isNotEmpty && t[0] == 'encryption',
@@ -218,6 +306,8 @@ class NwcClient {
 
     final subscription = stream.stream.listen((event) async {
       try {
+        if (!isFromWallet(event, 23196)) return;
+
         // Verify the notification is addressed to us via 'p' tag
         final pTag = event.tags?.firstWhere(
           (t) => t.isNotEmpty && t[0] == 'p',
@@ -418,48 +508,9 @@ class NwcClient {
         ),
       );
 
-      final subscription = stream.stream.listen((event) async {
-        try {
-          logger.d(
-              'NWC: Received event kind=${event.kind} from ${event.pubkey.substring(0, 8)}...');
-
-          // Verify this response references our request via 'e' tag
-          final eTag = event.tags?.firstWhere(
-            (t) => t.isNotEmpty && t[0] == 'e',
-            orElse: () => [],
-          );
-
-          if (eTag == null || eTag.length < 2 || eTag[1] != requestId) {
-            logger.d(
-                'NWC: Ignoring event — e tag mismatch (expected: ${requestId.substring(0, 8)}..., got: ${eTag != null && eTag.length >= 2 ? eTag[1].substring(0, 8) : "none"}...)');
-            return; // Not our response
-          }
-
-          logger.d('NWC: Response matched for ${request.method}!');
-
-          // Decrypt the response using the detected encryption mode.
-          // Auto-detect from content format as a safety fallback.
-          final responseMode = NwcCrypto.detectFromContent(event.content!);
-          final decrypted = await NwcCrypto.decrypt(
-            event.content!,
-            connection.secret,
-            connection.walletPubkey,
-            responseMode,
-          );
-
-          final response = NwcResponse.fromJson(decrypted);
-
-          if (!completer.isCompleted) {
-            completer.complete(response);
-          }
-        } catch (e) {
-          if (!completer.isCompleted) {
-            completer.completeError(
-              NwcException('Failed to process response: $e'),
-            );
-          }
-        }
-      });
+      final subscription = stream.stream.listen(
+        (event) => handleResponseEvent(event, requestId, completer),
+      );
 
       _subscriptions[subId] = subscription;
 

@@ -496,52 +496,57 @@ class NostrService {
     }
   }
 
-  /// Fetches events from specific relays temporarily
+  /// Fetches events from [relays] on a connection of their own, leaving the
+  /// app's relay pool untouched.
+  ///
+  /// These URLs come from outside the user's configuration: a `mostro:` deep
+  /// link supplies them, so whoever gets a link tapped picks them. They used
+  /// to be merged into `settings.relays` and connected through [updateSettings],
+  /// with a restore afterwards that could not work — it passed the `settings`
+  /// getter, already replaced by then, so the relay comparison was the
+  /// temporary list against itself and skipped as unchanged.
+  ///
+  /// Restoring the settings correctly would not have been enough either.
+  /// dart_nostr's `init` is additive and the fork exposes no per-relay
+  /// disconnect, so once the app connects to a relay it stays connected for
+  /// the process lifetime — receiving every subscription filter the app
+  /// issues, every trade pubkey among them, and able to feed the app's
+  /// intakes. Nothing short of not connecting it to the shared pool works.
+  ///
+  /// The scoped instance is closed when the fetch ends, on every path. Same
+  /// approach the relay connectivity test uses.
   Future<List<NostrEvent>> _fetchFromSpecificRelays(
     NostrFilter filter,
     List<String> relays,
   ) async {
+    logger.i('Fetching from link-supplied relays on a scoped connection: '
+        '$relays');
+
+    final scoped = Nostr();
     try {
-      // Store current relays
-      final originalRelays = List<String>.from(settings.relays);
+      await scoped.services.relays.init(
+        relaysUrl: relays,
+        connectionTimeout: Config.relayConnectionTimeout,
+        shouldReconnectToRelayOnNotice: false,
+        retryOnClose: false,
+        retryOnError: false,
+      );
 
-      // Temporarily add specific relays if not already present
-      final allRelays = <String>{...originalRelays, ...relays}.toList();
-
-      if (!ListEquality().equals(originalRelays, allRelays)) {
-        logger.i('Temporarily connecting to additional relays: $relays');
-
-        // Update settings with additional relays
-        final tempSettings = Settings(
-          relays: allRelays,
-          mostroPublicKey: settings.mostroPublicKey,
-          fullPrivacyMode: settings.fullPrivacyMode,
-          defaultFiatCode: settings.defaultFiatCode,
-          selectedLanguage: settings.selectedLanguage,
-        );
-
-        await updateSettings(tempSettings);
-
-        // Fetch the events
-        final events = await fetchEvents(filter);
-
-        // Restore original relays
-        await updateSettings(settings);
-
-        return events;
-      } else {
-        // No new relays to add, use normal fetch
-        return await fetchEvents(filter);
-      }
+      return await scoped.services.relays.startEventsSubscriptionAsync(
+        request: NostrRequest(filters: [filter]),
+        timeout: Config.nostrOperationTimeout,
+      );
     } catch (e) {
       logger.e('Error fetching from specific relays: $e');
-      // Ensure we restore original settings even on error
-      try {
-        await updateSettings(settings);
-      } catch (restoreError) {
-        logger.e('Failed to restore original relay settings: $restoreError');
-      }
       rethrow;
+    } finally {
+      try {
+        await scoped.services.relays.disconnectFromRelays();
+      } catch (e) {
+        // The fetch already returned; a connection left open here would still
+        // be on the scoped instance, never on the app's pool.
+        logger.w('Failed to close the scoped relay connection: $e');
+      }
     }
   }
 }
