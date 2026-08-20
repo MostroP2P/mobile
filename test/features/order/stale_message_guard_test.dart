@@ -4,7 +4,12 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/features/order/order_freshness_store.dart';
+import 'package:mostro_mobile/shared/providers/storage_providers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'package:mostro_mobile/features/order/notifiers/abstract_mostro_notifier.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -17,6 +22,25 @@ class _Probe extends AbstractMostroNotifier {
   bool check(MostroMessage msg) => supersedesAppliedState(msg);
 
   void setApplied(int? timestamp) => lastAppliedTimestamp = timestamp;
+}
+
+class _FakePrefs implements SharedPreferencesAsync {
+  final Map<String, String> strings = {};
+
+  @override
+  Future<String?> getString(String key) async => strings[key];
+
+  @override
+  Future<void> setString(String key, String value) async {
+    strings[key] = value;
+  }
+
+  @override
+  Future<void> remove(String key) async => strings.remove(key);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
 }
 
 class _StubSessionNotifier extends StateNotifier<List<Session>>
@@ -39,11 +63,14 @@ void main() {
 
   late ProviderContainer container;
   late Provider<_Probe> probeProvider;
+  late _FakePrefs prefs;
 
   setUp(() {
+    prefs = _FakePrefs();
     probeProvider = Provider<_Probe>((ref) => _Probe('order-1', ref));
     container = ProviderContainer(
       overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
         sessionNotifierProvider.overrideWith((ref) => _StubSessionNotifier()),
       ],
     );
@@ -110,6 +137,54 @@ void main() {
 
     test('is refused once newer state exists', () {
       final p = probe()..setApplied(now);
+      expect(p.check(message(weekAgo)), isFalse);
+    });
+  });
+
+  // MM-021's last mile. A restore deletes the message history and re-derives
+  // the same trade keys, leaving the notifier with no in-memory mark. The
+  // durable store is what keeps the order from accepting an archived message
+  // as news during that window.
+  group('freshness that survives a wiped history', () {
+    Future<void> seedStore(int timestamp) async {
+      prefs.strings[SharedPreferencesKeys.orderFreshness.value] =
+          jsonEncode({'order-1': timestamp});
+      await container.read(orderFreshnessStoreProvider).init();
+    }
+
+    test('a fresh notifier inherits the remembered mark', () async {
+      await seedStore(now);
+
+      // No message has been folded in this process — the mark comes entirely
+      // from storage, exactly as it would right after a restore.
+      expect(probe().check(message(weekAgo)), isFalse);
+    });
+
+    test('and still accepts genuinely newer messages', () async {
+      await seedStore(weekAgo);
+
+      expect(probe().check(message(now)), isTrue);
+    });
+
+    test('applying a message records it durably', () async {
+      await container.read(orderFreshnessStoreProvider).init();
+      final p = probe()..setApplied(now);
+      await container.read(orderFreshnessStoreProvider).pendingWrites;
+
+      expect(
+        container.read(orderFreshnessStoreProvider).timestampFor('order-1'),
+        now,
+      );
+      expect(p.check(message(weekAgo)), isFalse);
+    });
+
+    test('the in-memory mark cannot lower the remembered one', () async {
+      await seedStore(now);
+
+      final p = probe()..setApplied(weekAgo);
+
+      // The store only moves forward, and the guard takes the higher of the
+      // two, so a stale local value cannot reopen the window.
       expect(p.check(message(weekAgo)), isFalse);
     });
   });
