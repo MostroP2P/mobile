@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/features/order/order_freshness_store.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/restore/restore_mode_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
@@ -24,6 +25,80 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   late Session session;
 
   ProviderSubscription<AsyncValue<MostroMessage?>>? subscription;
+
+  /// Signed timestamp of the newest message already folded into [state].
+  ///
+  /// The high-water mark MM-021 calls for. Every message reaching this notifier
+  /// is authentic — a replayed one carries the node's real signature over its
+  /// real, old timestamp — so authentication alone cannot tell a fresh
+  /// instruction from an archived one. Ordering can: a message older than the
+  /// state it would modify is describing a past this order has already left.
+  ///
+  /// Rebuilt from storage on [sync] and mirrored into [OrderFreshnessStore],
+  /// which outlives the databases a restore clears. Null until the first
+  /// timestamped message arrives and nothing is remembered.
+  int? _lastAppliedTimestamp;
+
+  @protected
+  int? get lastAppliedTimestamp {
+    final local = _lastAppliedTimestamp;
+    final remembered = _rememberedTimestamp();
+    if (local == null) return remembered;
+    if (remembered == null) return local;
+    return local > remembered ? local : remembered;
+  }
+
+  @protected
+  set lastAppliedTimestamp(int? value) {
+    _lastAppliedTimestamp = value;
+    if (value != null) {
+      try {
+        ref.read(orderFreshnessStoreProvider).record(orderId, value);
+      } catch (e) {
+        // Losing the durable mirror costs this order's memory across a
+        // restore; it can never produce a wrong (lower) mark, because the
+        // store only moves forward.
+        logger.w('Failed to persist freshness for order $orderId: $e');
+      }
+    }
+  }
+
+  int? _rememberedTimestamp() {
+    try {
+      return ref.read(orderFreshnessStoreProvider).timestampFor(orderId);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Whether [msg] may modify the current state.
+  ///
+  /// Fails open on a missing timestamp: the v1 gift-wrap path has no signed
+  /// clock (NIP-59 randomises those timestamps by design), so refusing
+  /// untimestamped messages would break v1 entirely rather than protect it.
+  /// Equal timestamps pass — a node can legitimately emit several messages in
+  /// one second, and exact re-deliveries are already stopped by event-id dedup.
+  @protected
+  bool supersedesAppliedState(MostroMessage msg) {
+    final incoming = msg.timestamp;
+    final applied = lastAppliedTimestamp;
+    if (incoming == null || applied == null) return true;
+    return incoming >= applied;
+  }
+
+  /// Moves the freshness mark forward to [appliedAt], never backwards.
+  ///
+  /// For state applied from something other than a streamed message — a
+  /// restored snapshot, whose own message is dated with the order's creation
+  /// time rather than the moment the state it carries describes.
+  @protected
+  void anchorAppliedTimestamp(int? appliedAt) {
+    if (appliedAt == null) return;
+    final applied = lastAppliedTimestamp;
+    if (applied == null || appliedAt > applied) {
+      lastAppliedTimestamp = appliedAt;
+    }
+  }
   final Set<String> _processedEventIds = <String>{};
 
   // Timer storage for orphan session cleanup
@@ -93,6 +168,19 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               logger.i('Received message with action: ${msg?.action}');
             }
             if (msg != null) {
+              // Freshness first, before anything is consumed. Everything below
+              // mutates state a stale message must not be able to spend: the
+              // orphan session timer, and the user-initiated cancel marker — a
+              // superseded `canceled` that took that marker would leave a
+              // genuine cancel in flight to be read as a counterparty timeout.
+              if (!supersedesAppliedState(msg)) {
+                logger.w(
+                  'Ignoring stale ${msg.action} for order $orderId: dated '
+                  '${msg.timestamp}, state already at $lastAppliedTimestamp',
+                );
+                return;
+              }
+
               // Cancel timer on ANY response from Mostro for this order
               cancelSessionTimeoutCleanup(orderId);
 
@@ -109,6 +197,9 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
               if (mounted) {
                 state = state.updateWith(msg);
+                if (msg.timestamp != null) {
+                  lastAppliedTimestamp = msg.timestamp;
+                }
               }
               if (msg.timestamp != null &&
                   msg.timestamp! >

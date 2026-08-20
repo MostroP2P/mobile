@@ -117,4 +117,50 @@ void main() {
       );
     });
   });
+
+  // Restore applies the node's snapshot and must then refuse anything older,
+  // which needs a trustworthy date for the snapshot itself. Only v2 has one.
+  group('signedSnapshotTimestamp', () {
+    late NostrKeyPairs tempTradeKey;
+    late NostrKeyPairs mostroKey;
+
+    setUp(() {
+      tempTradeKey = NostrUtils.generateKeyPair();
+      mostroKey = NostrUtils.generateKeyPair();
+    });
+
+    test('v2 (kind 14) yields the signed created_at in milliseconds', () {
+      final signedAt = DateTime.fromMillisecondsSinceEpoch(
+        DateTime(2026, 3, 1).millisecondsSinceEpoch,
+      );
+      final event = NostrEvent.fromPartialData(
+        kind: 14,
+        content: 'irrelevant',
+        keyPairs: mostroKey,
+        tags: [
+          ['p', tempTradeKey.public],
+        ],
+        createdAt: signedAt,
+      );
+
+      expect(
+        signedSnapshotTimestamp(event),
+        signedAt.millisecondsSinceEpoch,
+      );
+    });
+
+    test('v1 gift wrap (kind 1059) yields null', () async {
+      // NIP-59 randomises the wrap timestamp by design, so it says nothing
+      // about when the node produced the snapshot. Null keeps the guard
+      // failing open rather than anchoring on a fabricated date.
+      final event = await NostrUtils.createNIP59Event(
+        '[{}]',
+        tempTradeKey.public,
+        mostroKey.private,
+      );
+
+      expect(event.kind, 1059);
+      expect(signedSnapshotTimestamp(event), isNull);
+    });
+  });
 }

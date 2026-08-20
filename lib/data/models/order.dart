@@ -20,6 +20,9 @@ class Order implements Payload {
   final String? buyerTradePubkey;
   final String? sellerTradePubkey;
   final String? buyerInvoice;
+  /// Seconds since the Unix epoch, as the protocol sends it (Nostr
+  /// convention). Convert before handing it to anything that expects
+  /// milliseconds, including [MostroMessage.timestamp].
   final int? createdAt;
   final int? expiresAt;
 

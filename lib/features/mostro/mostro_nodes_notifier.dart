@@ -6,6 +6,7 @@ import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/mostro/mostro_node.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -269,12 +270,28 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
 
   void _applyMetadataFromEvent(NostrEvent event) {
     try {
-      if (!event.isVerified()) {
+      // Fail closed. The previous rule applied metadata even when
+      // verification failed, reasoning that the author filter had already
+      // vouched for the event — but a filter is a request, not a guarantee:
+      // the relay decides what to answer with, and nothing stops it from
+      // returning an event it wrote itself. This metadata is the name and
+      // avatar the user reads when choosing which node to trade against, so
+      // an unverified one is a free impersonation of a trusted node.
+      //
+      // `NostrUtils.isValidEventSignature` rather than `isVerified()`: the
+      // latter checks the signature against the event's self-declared id and
+      // never recomputes it, so a genuine (id, sig, pubkey) triple lifted onto
+      // attacker-chosen content still passes.
+      if (!NostrUtils.isValidEventSignature(event)) {
         logger.w(
-          'Kind 0 event for ${event.pubkey} failed signature verification '
-          '(may be a dart_nostr limitation). Applying metadata anyway since '
-          'the event was fetched by author filter.',
+          'Rejecting kind 0 metadata claiming to be from ${event.pubkey}: '
+          'signature verification failed',
         );
+        return;
+      }
+      if (event.kind != 0) {
+        logger.w('Ignoring non-kind-0 event as node metadata: ${event.kind}');
+        return;
       }
       final json = jsonDecode(event.content ?? '') as Map<String, dynamic>;
       updateNodeMetadata(

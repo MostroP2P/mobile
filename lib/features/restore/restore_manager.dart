@@ -588,12 +588,16 @@ class RestoreService {
     }
   }
 
+  /// [snapshotAt] is the node's signed `created_at` for the orders-details
+  /// response, in milliseconds, or null when the transport carries no
+  /// trustworthy clock. See [signedSnapshotTimestamp].
   Future<void> restore(
     Map<String, int> ordersIds,
     int lastTradeIndex,
     OrdersResponse ordersResponse,
-    List<RestoredDispute> disputes,
-  ) async {
+    List<RestoredDispute> disputes, {
+    int? snapshotAt,
+  }) async {
     try {
       if (_masterKey == null) {
         throw Exception('Master key not initialized');
@@ -605,7 +609,8 @@ class RestoreService {
       final settings = ref.read(settingsProvider);
 
       // Set the next trade key index
-      await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
+      // From the daemon: raise only. See KeyManager.raiseCurrentKeyIndexTo.
+      await keyManager.raiseCurrentKeyIndexTo(lastTradeIndex + 1);
 
       // Enable restore mode to block all old message processing
       ref.read(isRestoringProvider.notifier).state = true;
@@ -756,8 +761,13 @@ class RestoreService {
               disputeId: restoredDispute.disputeId,
               orderId: restoredDispute.orderId,
               status: restoredDispute.status,
+              // Order.createdAt is the protocol's `created_at`: seconds, per
+              // the Nostr convention. Reading it as milliseconds dated every
+              // restored dispute to January 1970.
               createdAt: orderDetail.createdAt != null
-                  ? DateTime.fromMillisecondsSinceEpoch(orderDetail.createdAt!)
+                  ? DateTime.fromMillisecondsSinceEpoch(
+                      orderDetail.createdAt! * 1000,
+                    )
                   : DateTime.now(),
               action: userInitiated
                   ? 'dispute-initiated-by-you'
@@ -802,9 +812,10 @@ class RestoreService {
               id: orderDetail.id,
               action: action,
               payload: dispute,
-              timestamp:
-                  orderDetail.createdAt ??
-                  DateTime.now().millisecondsSinceEpoch,
+              // Seconds on the wire, milliseconds in MostroMessage.
+              timestamp: orderDetail.createdAt != null
+                  ? orderDetail.createdAt! * 1000
+                  : DateTime.now().millisecondsSinceEpoch,
             );
 
             // Save dispute message to storage
@@ -813,7 +824,10 @@ class RestoreService {
             await storage.addMessage(disputeKey, disputeMessage);
 
             // Update state with dispute message
-            notifier.updateStateFromMessage(disputeMessage);
+            notifier.updateStateFromMessage(
+              disputeMessage,
+              appliedAt: snapshotAt,
+            );
             logger.i(
               'Restore: created dispute message for order ${orderDetail.id}',
             );
@@ -844,9 +858,10 @@ class RestoreService {
               id: orderDetail.id,
               action: action,
               payload: order,
-              timestamp:
-                  orderDetail.createdAt ??
-                  DateTime.now().millisecondsSinceEpoch,
+              // Seconds on the wire, milliseconds in MostroMessage.
+              timestamp: orderDetail.createdAt != null
+                  ? orderDetail.createdAt! * 1000
+                  : DateTime.now().millisecondsSinceEpoch,
             );
 
             // Save order message to storage
@@ -855,7 +870,10 @@ class RestoreService {
             await storage.addMessage(key, mostroMessage);
 
             // Update state with order message
-            notifier.updateStateFromMessage(mostroMessage);
+            notifier.updateStateFromMessage(
+              mostroMessage,
+              appliedAt: snapshotAt,
+            );
           }
         } catch (e, stack) {
           logger.e(
@@ -965,7 +983,7 @@ class RestoreService {
           lastTradeIndexEvent,
         );
         final lastTradeIndex = lastTradeIndexResponse.tradeIndex;
-        await keyManager.setCurrentKeyIndex(lastTradeIndex + 1);
+        await keyManager.raiseCurrentKeyIndexTo(lastTradeIndex + 1);
         noHistoryFound = lastTradeIndexResponse.noHistoryFound;
         success = true;
         return true;
@@ -1000,7 +1018,13 @@ class RestoreService {
 
       // STAGE 4: Processing and restoring sessions
       progress.updateStep(RestoreStep.processingRoles);
-      await restore(ordersMap, lastTradeIndex, ordersResponse, disputes);
+      await restore(
+        ordersMap,
+        lastTradeIndex,
+        ordersResponse,
+        disputes,
+        snapshotAt: signedSnapshotTimestamp(ordersDetailsEvent),
+      );
 
       // Navigate to home and clear notification tray
       final navProvider = ref.read(navigationProvider.notifier);
@@ -1101,10 +1125,9 @@ class RestoreService {
       );
       final response = await _extractLastTradeIndex(event);
 
-      await keyManager.setCurrentKeyIndex(response.tradeIndex + 1);
-      logger.i(
-        'syncTradeIndex: updated local trade index to ${response.tradeIndex + 1}',
-      );
+      final effective =
+          await keyManager.raiseCurrentKeyIndexTo(response.tradeIndex + 1);
+      logger.i('syncTradeIndex: local trade index is now $effective');
     } catch (e, stack) {
       logger.e('syncTradeIndex: failed', error: e, stackTrace: stack);
     } finally {
@@ -1141,6 +1164,19 @@ class RestoreService {
 /// (kind 1059, gift wrap unwrapped to a rumor whose content is the tuple). Both
 /// converge on `tuple[0]`.
 ///
+/// The node's signed timestamp for a restore response, in milliseconds, or
+/// null when the transport carries no trustworthy clock.
+///
+/// Only the v2 kind-14 `created_at` is covered by the node's signature and the
+/// recomputed id, so only it can anchor freshness. NIP-59 randomises the wrap
+/// and seal timestamps by design, so the v1 path has nothing equivalent and
+/// deliberately yields null rather than a plausible-looking guess.
+@visibleForTesting
+int? signedSnapshotTimestamp(NostrEvent event) {
+  if (event.kind != 14) return null;
+  return event.createdAt?.millisecondsSinceEpoch;
+}
+
 /// Top-level (not a private method) so the transport branch can be
 /// regression-tested without the full [RestoreService] / Riverpod orchestration.
 @visibleForTesting

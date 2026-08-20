@@ -9,6 +9,7 @@ import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/services/chat_cursor_store.dart';
+import 'package:mostro_mobile/shared/utils/in_flight_events.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:sembast/sembast.dart';
@@ -27,6 +28,10 @@ import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
+  /// Guards against concurrent re-delivery now that the durable write happens
+  /// after the envelope is authenticated. See [InFlightEvents].
+  final InFlightEvents _inFlight = InFlightEvents();
+
   static final EncryptedImageUploadService _imageUploadService =
       EncryptedImageUploadService();
   static final EncryptedFileUploadService _fileUploadService =
@@ -140,6 +145,12 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
   Future<void> handleChatEvent(NostrEvent event) => _onChatEvent(event);
 
   Future<void> _onChatEvent(NostrEvent event) async {
+    final eventId = event.id;
+    if (eventId == null) return;
+    await _inFlight.guard(eventId, () => _processChatEvent(event));
+  }
+
+  Future<void> _processChatEvent(NostrEvent event) async {
     try {
       if (event.kind != 14) {
         return;

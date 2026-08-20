@@ -64,6 +64,14 @@ class OrderNotifier extends AbstractMostroNotifier {
 
       state = currentState;
 
+      // Re-arm the high-water mark from the folded history, so a restart does
+      // not reset it and let an archived message back in. The list is sorted
+      // by signed timestamp above, so the last entry is the newest.
+      final newest = messages.last.timestamp;
+      if (newest != null) {
+        lastAppliedTimestamp = newest;
+      }
+
       logger.i(
           'Synced order $orderId to state: ${state.status} - ${state.action}');
 
@@ -216,11 +224,21 @@ class OrderNotifier extends AbstractMostroNotifier {
     );
   }
 
-  /// Update state from MostroMessage (used during restore)
-  void updateStateFromMessage(MostroMessage message) {
+  /// Applies a restored snapshot to this order's state.
+  ///
+  /// [appliedAt] is the node's signed timestamp for the snapshot, in
+  /// milliseconds. It anchors the freshness high-water mark: the snapshot
+  /// already folds in every lifecycle event up to that moment, so anything
+  /// older must not be able to re-apply afterwards. Without it a restored
+  /// device has no mark at all, and every archived message looks like news.
+  ///
+  /// The message's own timestamp is deliberately not used — it carries the
+  /// order's creation time, which predates its whole history.
+  void updateStateFromMessage(MostroMessage message, {int? appliedAt}) {
     if (mounted) {
       state = state.updateWith(message);
     }
+    anchorAppliedTimestamp(appliedAt);
   }
 
   /// Set fiatWasSent flag (used during restore to provide context

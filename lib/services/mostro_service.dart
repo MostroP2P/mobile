@@ -15,6 +15,8 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/data/repositories/event_storage.dart';
+import 'package:mostro_mobile/shared/utils/in_flight_events.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 
 class MostroService {
@@ -22,6 +24,10 @@ class MostroService {
 
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
+
+  /// Guards against concurrent re-delivery while the durable dedup write waits
+  /// for authentication. See [InFlightEvents].
+  final InFlightEvents _inFlight = InFlightEvents();
 
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
@@ -106,31 +112,50 @@ class MostroService {
     return false;
   }
 
+  /// Handles one event from the orders subscription.
+  ///
+  /// The dedup store is written *after* the event has been authenticated, and
+  /// that ordering is the security property. An event id is not evidence of
+  /// anything: a relay that has seen a genuine message can copy its id onto a
+  /// tampered event and deliver that first. Recording the id up front let the
+  /// forgery claim the slot — it would fail decryption and be dropped, but the
+  /// genuine event arriving behind it would then hit `hasItem` and be silently
+  /// discarded. That is a censorship primitive available to any relay, for
+  /// free, with nothing forged that has to survive a signature check.
   Future<void> _onData(NostrEvent event) async {
-    final eventStore = ref.read(eventStorageProvider);
-
-    if (await eventStore.hasItem(event.id!)) return;
-
-    // Reserve event ID immediately to prevent duplicate processing from multiple relays
-    await eventStore.putItem(event.id!, {
-      'id': event.id,
-      'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
-    });
-
-    final sessions = ref.read(sessionNotifierProvider);
-    final matchingSession = sessions.firstWhereOrNull(
-      (s) => s.tradeKey.public == event.recipient,
-    );
-    if (matchingSession == null) {
-      logger.w('No matching session found for recipient: ${event.recipient}');
+    final eventId = event.id;
+    if (eventId == null) {
+      logger.w('Ignoring event with no id');
       return;
     }
-    final privateKey = matchingSession.tradeKey.private;
 
+    final eventStore = ref.read(eventStorageProvider);
+    if (await eventStore.hasItem(eventId)) return;
+
+    await _inFlight.guard(eventId, () => _process(event, eventId, eventStore));
+  }
+
+  Future<void> _process(
+    NostrEvent event,
+    String eventId,
+    EventStorage eventStore,
+  ) async {
     try {
+      final sessions = ref.read(sessionNotifierProvider);
+      final matchingSession = sessions.firstWhereOrNull(
+        (s) => s.tradeKey.public == event.recipient,
+      );
+      if (matchingSession == null) {
+        logger.w('No matching session found for recipient: ${event.recipient}');
+        return;
+      }
+      final privateKey = matchingSession.tradeKey.private;
+
       // Transport branch (§5 Phase A): v1 gift wrap (kind 1059) yields an inner
       // rumor whose content is the message tuple; v2 NIP-44 direct (kind 14)
       // decrypts straight to the tuple. Both converge on jsonDecode below.
+      // Both paths pin the node as the author and verify a signature, so
+      // reaching the next line means the event is the node's.
       String? content;
       String? decryptedId;
       if (event.kind == 14) {
@@ -149,6 +174,12 @@ class MostroService {
       }
 
       if (content == null) return;
+
+      // Authenticated: only now does the id earn a durable slot.
+      await eventStore.putItem(eventId, {
+        'id': eventId,
+        'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+      });
 
       final result = jsonDecode(content);
 
@@ -172,6 +203,26 @@ class MostroService {
       }
 
       final msg = MostroMessage.fromJson(result[0]);
+
+      // Freshness comes from the wire, not from when this device happened to
+      // hear about it.
+      //
+      // On v2 the kind-14 `created_at` is covered by the node's signature —
+      // the id is recomputed over it and the signature verified above — so it
+      // is the node stating when it said this, and a relay cannot move it.
+      // That makes it the only trustworthy clock in the protocol, and it
+      // exists only here: NIP-59 deliberately randomises the wrap and seal
+      // timestamps to avoid leaking timing, so the v1 path has nothing
+      // equivalent and keeps falling back to receive time in MostroStorage.
+      //
+      // It also outranks any `timestamp` inside the decrypted payload, which
+      // no signature covers independently.
+      if (event.kind == 14) {
+        final signedAt = event.createdAt;
+        if (signedAt != null) {
+          msg.timestamp = signedAt.millisecondsSinceEpoch;
+        }
+      }
 
       final messageStorage = ref.read(mostroStorageProvider);
 

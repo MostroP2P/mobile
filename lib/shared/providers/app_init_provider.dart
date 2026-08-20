@@ -5,6 +5,7 @@ import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/mostro/mostro_nodes_provider.dart';
 import 'package:mostro_mobile/features/mostro/protocol_version_store.dart';
+import 'package:mostro_mobile/features/order/order_freshness_store.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/relays/relay_health_monitor.dart';
 import 'package:mostro_mobile/features/restore/restore_manager.dart';
@@ -38,6 +39,10 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   // ratchet only protects a cold start if the persisted versions are already
   // in memory when the transport is resolved.
   await ref.read(protocolVersionStoreProvider).init();
+
+  // Must load before any order notifier folds a message: this is the only
+  // freshness memory that survives a restore wiping the message history.
+  await ref.read(orderFreshnessStoreProvider).init();
 
   final sessionManager = ref.read(sessionNotifierProvider.notifier);
   await sessionManager.init();
