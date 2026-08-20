@@ -74,9 +74,32 @@ class ProtocolVersionStore {
   /// Loads persisted versions into memory. Must complete before the first
   /// [versionFor] call for the ratchet to apply on a cold start; a store that
   /// failed to load simply knows nothing and reports null.
+  ///
+  /// Merges rather than replaces. A `SubscriptionManager` can exist before this
+  /// runs — `RelaysNotifier` builds one of its own during bootstrap, and every
+  /// instance feeds the info-event stream into [record] — so entries may
+  /// already have been ratcheted into memory. Overwriting them would drop the
+  /// higher version, and the next snapshot would carry that loss to disk: a
+  /// ratchet that forgets is the one thing this store must not be.
   Future<void> init() async {
-    _versions = await _load();
+    final loaded = await _load();
+    final early = _versions;
+    _versions = loaded;
     _initialized = true;
+
+    var merged = false;
+    early.forEach((pubkey, version) {
+      final current = _versions[pubkey];
+      if (current == null || version > current) {
+        _versions[pubkey] = version;
+        merged = true;
+      }
+    });
+
+    // Only when something survived the load, so a normal cold start still
+    // costs no write. This is also the first write allowed through, so what
+    // lands on disk is the union rather than either half.
+    if (merged) _persist();
   }
 
   bool get isInitialized => _initialized;
@@ -114,7 +137,11 @@ class ProtocolVersionStore {
 
     _versions[pubkey] = version;
     logger.i('Recorded protocol_version $version for node $pubkey');
-    _persist();
+    // Nothing reaches disk before [init] has merged what is already there.
+    // A snapshot taken now would be of a map that has not seen storage yet,
+    // and writing it would erase every node this device had verified in an
+    // earlier session — the load that was going to rescue them has not run.
+    if (_initialized) _persist();
     return true;
   }
 

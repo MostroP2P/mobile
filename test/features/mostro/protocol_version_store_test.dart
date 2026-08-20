@@ -77,6 +77,34 @@ class _ReorderingSharedPreferencesAsync implements SharedPreferencesAsync {
       throw UnimplementedError('${invocation.memberName}');
 }
 
+/// Delays only the read, so `init()` is still awaiting `_load()` while a
+/// `record()` lands. Reproduces bootstrap order: `RelaysNotifier` builds a
+/// `SubscriptionManager` — and with it the info-event feed into `record()` —
+/// before `appInitializerProvider` gets to `init()`.
+class _SlowReadSharedPreferencesAsync implements SharedPreferencesAsync {
+  final Map<String, String> strings = {};
+
+  @override
+  Future<String?> getString(String key) async {
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    return strings[key];
+  }
+
+  @override
+  Future<void> setString(String key, String value) async {
+    strings[key] = value;
+  }
+
+  @override
+  Future<void> remove(String key) async {
+    strings.remove(key);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
+}
+
 const _nodeA =
     '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980';
 const _nodeB =
@@ -278,4 +306,82 @@ void main() {
       expect(orderedStore.versionFor(_nodeA), isNull);
     });
   });
+  group('ProtocolVersionStore records arriving before init', () {
+    late _SlowReadSharedPreferencesAsync slowRead;
+    late ProtocolVersionStore earlyStore;
+
+    setUp(() {
+      slowRead = _SlowReadSharedPreferencesAsync();
+      earlyStore = ProtocolVersionStore(slowRead);
+    });
+
+    test('a version recorded while loading is not dropped', () async {
+      final loading = earlyStore.init();
+      earlyStore.record(_nodeA, 2);
+      await loading;
+
+      expect(earlyStore.versionFor(_nodeA), 2);
+    });
+
+    test('and reaches disk instead of being erased by the next snapshot',
+        () async {
+      final loading = earlyStore.init();
+      earlyStore.record(_nodeA, 2);
+      await loading;
+
+      // A later record for a different node snapshots the whole map. If init()
+      // had dropped _nodeA, this write is what would carry the loss to disk.
+      earlyStore.record(_nodeB, 2);
+      await earlyStore.pendingWrites;
+
+      expect(jsonDecode(slowRead.strings[_key]!), {_nodeA: 2, _nodeB: 2});
+    });
+
+    test('the persisted value wins when it is the higher one', () async {
+      slowRead.strings[_key] = jsonEncode({_nodeA: 2});
+
+      final loading = earlyStore.init();
+      // A legacy info event racing the load must not walk the ratchet back.
+      earlyStore.record(_nodeA, 1);
+      await loading;
+
+      expect(earlyStore.versionFor(_nodeA), 2);
+    });
+
+    test('an early record for an unrelated node keeps the loaded ones',
+        () async {
+      slowRead.strings[_key] = jsonEncode({_nodeB: 2});
+
+      final loading = earlyStore.init();
+      earlyStore.record(_nodeA, 2);
+      await loading;
+
+      expect(earlyStore.versionFor(_nodeA), 2);
+      expect(earlyStore.versionFor(_nodeB), 2);
+    });
+
+    test('a record before init does not erase an earlier session', () async {
+      slowRead.strings[_key] = jsonEncode({_nodeB: 2});
+
+      // Bootstrap at its worst: the info event lands before init() is even
+      // called. A snapshot of the still-empty map would overwrite _nodeB.
+      earlyStore.record(_nodeA, 2);
+      await earlyStore.pendingWrites;
+      expect(jsonDecode(slowRead.strings[_key]!), {_nodeB: 2});
+
+      await earlyStore.init();
+      await earlyStore.pendingWrites;
+
+      expect(jsonDecode(slowRead.strings[_key]!), {_nodeB: 2, _nodeA: 2});
+      expect(earlyStore.versionFor(_nodeB), 2);
+    });
+
+    test('a plain cold start writes nothing', () async {
+      await earlyStore.init();
+      await earlyStore.pendingWrites;
+
+      expect(slowRead.strings[_key], isNull);
+    });
+  });
+
 }
