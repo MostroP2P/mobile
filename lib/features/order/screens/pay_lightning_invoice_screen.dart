@@ -13,6 +13,7 @@ import 'package:mostro_mobile/shared/widgets/invoice_header.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_payment_widget.dart';
 import 'package:mostro_mobile/shared/widgets/pay_lightning_invoice_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/invoice_terms.dart';
 
 class PayLightningInvoiceScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -34,6 +35,16 @@ class _PayLightningInvoiceScreenState
     final orderState = ref.watch(orderNotifierProvider(widget.orderId));
     final lnInvoice = orderState.paymentRequest?.lnInvoice ?? '';
     final sats = orderState.order?.amount ?? 0;
+
+    // The figure and the invoice reach this screen by different routes and
+    // used to be rendered side by side without ever being reconciled. A
+    // wallet honours the invoice, so until they agree the figure states
+    // nothing about what a tap would send.
+    final terms = InvoiceTerms.check(
+      invoice: lnInvoice,
+      expectedSats: orderState.order?.amount,
+    );
+    final blocked = lnInvoice.isNotEmpty && !terms.isPayable;
     final fiatAmount = orderState.order?.fiatAmount.toString() ?? '0';
     final fiatCode = orderState.order?.fiatCode ?? '';
     final orderNotifier =
@@ -76,7 +87,28 @@ class _PayLightningInvoiceScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (showNwcPayment) ...[
+            if (blocked) ...[
+              header,
+              const SizedBox(height: 24),
+              _InvoiceTermsNotice(terms: terms, orderSats: sats),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      context.go('/');
+                      await orderNotifier.cancelOrder();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.red,
+                    ),
+                    child: Text(S.of(context)!.cancel),
+                  ).withAutomationId(AutomationIds.payCancel),
+                ],
+              ),
+            ] else if (showNwcPayment) ...[
               // NWC auto-payment flow
               header,
               const SizedBox(height: 24),
@@ -89,7 +121,11 @@ class _PayLightningInvoiceScreenState
                   label: lnInvoice),
               NwcPaymentWidget(
                 lnInvoice: lnInvoice,
-                sats: sats,
+                // Read back off the invoice rather than the message that
+                // carried it. The check above has already established the two
+                // agree; taking it from here keeps the number on screen and
+                // the number the wallet will send the same value.
+                sats: terms.amountSats ?? sats,
                 onPaymentSuccess: () {
                   // Payment succeeded — Mostro will update the order state
                   // automatically via the event stream. We just navigate home.
@@ -136,6 +172,84 @@ class _PayLightningInvoiceScreenState
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Explains why an invoice will not be paid from this screen.
+///
+/// Every case is a refusal rather than a warning: there is no reading of an
+/// unreadable invoice, or of one that leaves the amount to the wallet, that
+/// makes paying it safe.
+class _InvoiceTermsNotice extends StatelessWidget {
+  final InvoiceTerms terms;
+  final int orderSats;
+
+  const _InvoiceTermsNotice({required this.terms, required this.orderSats});
+
+  String _body(BuildContext context) {
+    final s = S.of(context)!;
+    switch (terms.problem) {
+      case InvoiceTermsProblem.amountMismatch:
+        return s.invoiceTermsMismatchBody(
+          terms.amountSats?.toString() ?? '',
+          orderSats.toString(),
+        );
+      case InvoiceTermsProblem.amountMissing:
+        return s.invoiceAmountMissingBody;
+      case InvoiceTermsProblem.termsUnknown:
+        return s.invoiceTermsUnknownBody;
+      case InvoiceTermsProblem.unreadable:
+      case null:
+        return s.invoiceUnreadableBody;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.statusError.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppTheme.statusError.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: AppTheme.statusError,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  S.of(context)!.invoiceTermsMismatchTitle,
+                  style: const TextStyle(
+                    color: AppTheme.statusError,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  _body(context),
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

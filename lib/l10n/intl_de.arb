@@ -1767,5 +1767,10 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "invoiceTermsMismatchTitle": "Diese Rechnung passt nicht zur Order",
+    "invoiceTermsMismatchBody": "Die Rechnung fordert {invoiceAmount} Sats, diese Order lautet aber über {orderAmount} Sats. Sie kann hier nicht bezahlt werden.",
+    "invoiceUnreadableBody": "Diese Rechnung konnte nicht gelesen werden, daher lässt sich nicht bestätigen, was sie bezahlen würde. Sie kann hier nicht bezahlt werden.",
+    "invoiceAmountMissingBody": "Diese Rechnung legt keinen Betrag fest; die Wallet würde entscheiden, wie viel gesendet wird. Sie kann hier nicht bezahlt werden.",
+    "invoiceTermsUnknownBody": "Diese Order enthält keinen Betrag, gegen den die Rechnung geprüft werden kann. Sie kann hier nicht bezahlt werden."
 }
