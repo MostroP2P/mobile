@@ -34,6 +34,13 @@ void main() {
       expect(DeepLinkInterceptor.isCustomSchemeLocation(''), isFalse);
     });
 
+    test('claims schemes that merely start like a web one', () {
+      expect(
+        DeepLinkInterceptor.isCustomSchemeLocation('httpfoo://example.com'),
+        isTrue,
+      );
+    });
+
     test('leaves web locations alone', () {
       expect(
         DeepLinkInterceptor.isCustomSchemeLocation('https://mostro.network/x'),
@@ -41,6 +48,11 @@ void main() {
       );
       expect(
         DeepLinkInterceptor.isCustomSchemeLocation('http://localhost:8080/'),
+        isFalse,
+      );
+      // Uri normalises the scheme, so no case handling of our own is needed.
+      expect(
+        DeepLinkInterceptor.isCustomSchemeLocation('HTTPS://mostro.network/x'),
         isFalse,
       );
     });
