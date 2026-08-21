@@ -13,6 +13,7 @@ import 'package:mostro_mobile/shared/widgets/invoice_header.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_payment_widget.dart';
 import 'package:mostro_mobile/shared/widgets/pay_lightning_invoice_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/features/order/providers/settlement_anchor_provider.dart';
 import 'package:mostro_mobile/shared/utils/invoice_terms.dart';
 
 class PayLightningInvoiceScreen extends ConsumerStatefulWidget {
@@ -36,13 +37,25 @@ class _PayLightningInvoiceScreenState
     final lnInvoice = orderState.paymentRequest?.lnInvoice ?? '';
     final sats = orderState.order?.amount ?? 0;
 
-    // The figure and the invoice reach this screen by different routes and
-    // used to be rendered side by side without ever being reconciled. A
-    // wallet honours the invoice, so until they agree the figure states
-    // nothing about what a tap would send.
+    // What this payment should cost, preferably re-derived rather than
+    // accepted. The node publishes the order amount in its kind-38383 event
+    // and the fee rate in its kind-38385 one, and computes the hold invoice
+    // from exactly those two; deriving the same figure holds the message to
+    // the order the user actually chose, instead of only holding the message
+    // to itself.
+    //
+    // Falling back to the message's own amount when either input is missing
+    // is deliberate. The events arrive asynchronously and the message can win
+    // the race, so treating "cannot derive" as "wrong" would refuse correct
+    // payments on a slow relay. The fallback still reconciles the figure on
+    // screen against the invoice, which is what a wallet will actually send.
+    final expectedSats =
+        ref.watch(anchoredSellerAmountProvider(widget.orderId)) ??
+            orderState.order?.amount;
+
     final terms = InvoiceTerms.check(
       invoice: lnInvoice,
-      expectedSats: orderState.order?.amount,
+      expectedSats: expectedSats,
     );
     final blocked = lnInvoice.isNotEmpty && !terms.isPayable;
     final fiatAmount = orderState.order?.fiatAmount.toString() ?? '0';
@@ -90,7 +103,8 @@ class _PayLightningInvoiceScreenState
             if (blocked) ...[
               header,
               const SizedBox(height: 24),
-              _InvoiceTermsNotice(terms: terms, orderSats: sats),
+              _InvoiceTermsNotice(
+                  terms: terms, orderSats: expectedSats ?? sats),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
