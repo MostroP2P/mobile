@@ -15,6 +15,7 @@ import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/screens/payout_invoice_screen.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
@@ -42,9 +43,11 @@ class TradeDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tradeState = ref.watch(orderNotifierProvider(orderId));
     final originalOrder = ref.watch(eventProvider(orderId));
-    // If message is null or doesn't have an Order payload, show loading
+    // If message is null or doesn't have an Order payload, show loading.
+    // The public 38383 is only needed for the creator reputation below, and the
+    // book cache only holds the last 48h, so it must not gate the whole screen.
     final orderPayload = tradeState.order;
-    if (orderPayload == null || originalOrder == null) {
+    if (orderPayload == null) {
       return const Scaffold(
         backgroundColor: AppTheme.backgroundDark,
         body: Center(child: CircularProgressIndicator()),
@@ -77,7 +80,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 _buildOrderId(context),
                 const SizedBox(height: 16),
                 // For pending orders created by the user, show creator's reputation
-                if (isPending && isCreator) ...[
+                if (isPending && isCreator && originalOrder != null) ...[
                   // TODO: Change this to use `orderPayload` after Order model is updated
                   // with rating information
                   _buildCreatorReputation(context, originalOrder),
@@ -382,8 +385,12 @@ class TradeDetailScreen extends ConsumerWidget {
 
         case actions.Action.addInvoice:
           if (userRole == Role.buyer) {
+            // On a settled order the invoice is not part of the trade any
+            // more: it is the only way left to collect, so the label says so.
             widgets.add(_buildNostrButton(
-              S.of(context)!.addInvoiceButton,
+              isPayoutInvoice(tradeState.status)
+                  ? S.of(context)!.collectSatsButton
+                  : S.of(context)!.addInvoiceButton,
               action: actions.Action.addInvoice,
               backgroundColor: AppTheme.mostroGreen,
               onPressed: () => context.push('/add_invoice/$orderId'),

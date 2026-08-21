@@ -346,6 +346,21 @@
             }
         }
     },
+    "payoutInvoiceInstruction": "Füge eine Lightning-Rechnung über {sats} Sats hinzu, entsprechend {fiat_amount} {fiat_code}, um die Zahlung für deinen Kauf zu erhalten.",
+    "@payoutInvoiceInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "collectYourSats": "Deine Sats einlösen",
     "reputationReviewsCount": "{count, plural, =1{1 Bewertung} other{{count} Bewertungen}}",
     "@reputationReviewsCount": {
         "placeholders": {
@@ -657,6 +672,7 @@
     "yourSharedKey": "Dein geteilter Schlüssel (Shared Key):",
     "payInvoiceButton": "RECHNUNG BEZAHLEN",
     "addInvoiceButton": "RECHNUNG HINZUFÜGEN",
+    "collectSatsButton": "SATS EINLÖSEN",
     "release": "FREIGEBEN",
     "takeSell": "VERKAUF ANNEHMEN",
     "takeBuy": "KAUF ANNEHMEN",

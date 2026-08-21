@@ -346,6 +346,21 @@
             }
         }
     },
+    "payoutInvoiceInstruction": "Add a Lightning invoice for {sats} sats, equivalent to {fiat_amount} {fiat_code}, to receive the payment for your purchase.",
+    "@payoutInvoiceInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "collectYourSats": "Collect Your Sats",
     "reputationReviewsCount": "{count, plural, =1{1 review} other{{count} reviews}}",
     "@reputationReviewsCount": {
         "placeholders": {
@@ -657,6 +672,7 @@
     "yourSharedKey": "Your Shared Key:",
     "payInvoiceButton": "PAY INVOICE",
     "addInvoiceButton": "ADD INVOICE",
+    "collectSatsButton": "COLLECT SATS",
     "release": "RELEASE",
     "takeSell": "TAKE SELL",
     "takeBuy": "TAKE BUY",
