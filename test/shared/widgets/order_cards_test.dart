@@ -251,6 +251,66 @@ void main() {
 
       expect(find.textContaining('mostro:'), findsNothing);
       expect(find.byIcon(Icons.copy), findsNothing);
+      expect(find.byIcon(Icons.share), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('hands the link to the share sheet wrapped in a sentence',
+        (tester) async {
+      const channel = MethodChannel('dev.fluttercommunity.plus/share');
+      String? sharedText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        (call) async {
+          if (call.method == 'share') {
+            sharedText = (call.arguments as Map)['text'] as String?;
+          }
+          return 'dev.fluttercommunity.plus/share/success';
+        },
+      );
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null));
+
+      await pumpCard(
+        tester,
+        const OrderShareLinkCard(orderId: 'order-1234'),
+        settings: settingsWith(const ['wss://relay.mostro.network']),
+      );
+
+      await tester.tap(find.byIcon(Icons.share));
+      await tester.pumpAndSettle();
+
+      expect(sharedText, isNotNull);
+      expect(
+        sharedText,
+        contains(
+          'mostro:order-1234?relays=wss://relay.mostro.network&mostro=$pubkey',
+        ),
+      );
+      // The link travels with an explanation, not on its own.
+      expect(sharedText!.trim(), isNot(startsWith('mostro:')));
+    });
+
+    // Two 48dp buttons now sit next to a link long enough to wrap. This is the
+    // shape that produced the overflow in #654, so it is pinned here.
+    testWidgets('lays out both actions beside a long link without overflowing',
+        (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.reset);
+
+      await pumpCard(
+        tester,
+        const OrderShareLinkCard(orderId: 'order-1234'),
+        settings: settingsWith(const [
+          'wss://relay.mostro.network',
+          'wss://a-considerably-longer-relay-domain.example',
+          'wss://another-quite-long-relay-domain.example',
+        ]),
+      );
+
+      expect(find.byIcon(Icons.copy), findsOneWidget);
+      expect(find.byIcon(Icons.share), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

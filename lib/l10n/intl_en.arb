@@ -371,6 +371,15 @@
     "acceptCancelDialogMessage": "If you confirm, you will accept the cooperative cancellation initiated by your counterparty.",
     "orderIdCopiedMessage": "Order ID copied to clipboard",
     "orderLinkCopiedMessage": "Order link copied to clipboard",
+    "orderShareMessage": "Take this order on Mostro: {link}",
+    "@orderShareMessage": {
+        "placeholders": {
+            "link": {
+                "type": "String"
+            }
+        }
+    },
+    "failedToShareOrder": "Failed to share order. Please try copying instead.",
     "disputeTradeDialogTitle": "Start Dispute",
     "disputeTradeDialogContent": "You are about to start a dispute with your counterparty. Do you want to continue?",
     "disputeCreatedSuccessfully": "Dispute created successfully",

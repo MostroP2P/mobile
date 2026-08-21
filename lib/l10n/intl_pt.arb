@@ -371,6 +371,15 @@
     "acceptCancelDialogMessage": "Se você confirmar, aceitará o cancelamento cooperativo iniciado pela sua contraparte.",
     "orderIdCopiedMessage": "ID da ordem copiado para a área de transferência",
     "orderLinkCopiedMessage": "Link da ordem copiado para a área de transferência",
+    "orderShareMessage": "Aceita esta ordem no Mostro: {link}",
+    "@orderShareMessage": {
+        "placeholders": {
+            "link": {
+                "type": "String"
+            }
+        }
+    },
+    "failedToShareOrder": "Não foi possível partilhar a ordem. Tenta copiá-la.",
     "disputeTradeDialogTitle": "Iniciar Disputa",
     "disputeTradeDialogContent": "Você está prestes a iniciar uma disputa com sua contraparte. Deseja continuar?",
     "disputeCreatedSuccessfully": "Disputa criada com sucesso",

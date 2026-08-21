@@ -371,6 +371,15 @@
     "acceptCancelDialogMessage": "Wenn du bestätigst, akzeptierst du die von deinem Handelspartner eingeleitete kooperative Stornierung.",
     "orderIdCopiedMessage": "Order-ID in die Zwischenablage kopiert",
     "orderLinkCopiedMessage": "Order-Link in die Zwischenablage kopiert",
+    "orderShareMessage": "Nimm diese Order auf Mostro: {link}",
+    "@orderShareMessage": {
+        "placeholders": {
+            "link": {
+                "type": "String"
+            }
+        }
+    },
+    "failedToShareOrder": "Order konnte nicht geteilt werden. Versuche stattdessen zu kopieren.",
     "disputeTradeDialogTitle": "Streitfall starten",
     "disputeTradeDialogContent": "Du bist dabei, einen Streitfall mit deinem Handelspartner zu eröffnen. Möchtest du fortfahren?",
     "disputeCreatedSuccessfully": "Streitfall erfolgreich erstellt",

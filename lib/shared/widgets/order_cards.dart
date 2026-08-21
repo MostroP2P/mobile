@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/user_info.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
@@ -304,6 +306,7 @@ class OrderShareLinkCard extends ConsumerWidget {
                   color: Colors.white70,
                   size: 20,
                 ),
+                visualDensity: VisualDensity.compact,
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: link));
                   SnackBarHelper.showTopSnackBar(
@@ -312,11 +315,52 @@ class OrderShareLinkCard extends ConsumerWidget {
                   );
                 },
               ),
+              IconButton(
+                icon: const Icon(
+                  Icons.share,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+                visualDensity: VisualDensity.compact,
+                tooltip: S.of(context)!.share,
+                onPressed: () => _share(context, link),
+              ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  /// Hands the link to the system share sheet, wrapped in a sentence so it
+  /// arrives as something the recipient can make sense of.
+  ///
+  /// Everything taken from [context] is read before the await: this is a
+  /// stateless widget, so there is no `mounted` to check afterwards.
+  Future<void> _share(BuildContext context, String link) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final mediaQuery = MediaQuery.of(context);
+    final message = S.of(context)!.orderShareMessage(link);
+    final errorMessage = S.of(context)!.failedToShareOrder;
+    final box = context.findRenderObject() as RenderBox?;
+
+    try {
+      await Share.share(
+        message,
+        // iPads anchor the share sheet to the widget that raised it.
+        sharePositionOrigin: box == null
+            ? null
+            : box.localToGlobal(Offset.zero) & box.size,
+      );
+    } catch (e, stack) {
+      logger.e('Failed to share order link', error: e, stackTrace: stack);
+      SnackBarHelper.showTopSnackBarAsync(
+        messenger: messenger,
+        screenHeight: mediaQuery.size.height,
+        statusBarHeight: mediaQuery.padding.top,
+        message: errorMessage,
+      );
+    }
   }
 }
 
