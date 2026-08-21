@@ -58,3 +58,25 @@ final anchoredSellerAmountProvider =
     feeRate: feeRate,
   );
 });
+
+/// What the buyer's payout invoice for [orderId] should ask for, derived from
+/// the signed order amount and the signed fee rate.
+///
+/// The figure is the order amount less the buyer's half of the fee, so it is
+/// never the amount shown on the order — a client comparing against that
+/// would refuse every correct payout.
+///
+/// Null on the same terms as [anchoredSellerAmountProvider]: the caller has
+/// learned nothing about whether the request is right, only that it cannot
+/// re-derive what it should be.
+final anchoredBuyerAmountProvider =
+    Provider.family<int?, String>((ref, orderId) {
+  final amountSats = ref.watch(signedOrderAmountProvider(orderId));
+  final feeRate = ref.watch(nodeFeeRateProvider);
+  if (amountSats == null || feeRate == null) return null;
+
+  return SettlementAmounts.buyerReceives(
+    amountSats: amountSats,
+    feeRate: feeRate,
+  );
+});

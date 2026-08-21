@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/order/providers/settlement_anchor_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
@@ -80,6 +81,17 @@ class _AddLightningInvoiceScreenState
           reputation: orderState.peerReputation,
         );
 
+        // What this order should pay out, re-derived from the terms the node
+        // signed: the amount in its kind-38383 order event, less the buyer's
+        // half of the fee rate in its kind-38385 one. The figure above came
+        // from the message asking for the invoice, and an invoice minted for
+        // it is what the trade settles at.
+        //
+        // Null means the events have not both arrived, not that the request
+        // is wrong, so the screen only refuses on an actual disagreement.
+        final expectedSats = ref.watch(anchoredBuyerAmountProvider(orderId));
+        final blocked = expectedSats != null && amount != expectedSats;
+
         final nwcState = ref.watch(nwcProvider);
         final isNwcConnected = nwcState.status == NwcStatus.connected;
         final showLnAddressConfirmation =
@@ -99,27 +111,33 @@ class _AddLightningInvoiceScreenState
               16,
               16 + MediaQuery.of(context).viewPadding.bottom,
             ),
-            child: showLnAddressConfirmation
-                ? _buildLnAddressConfirmation(header: header)
-                : showNwcInvoice
-                    ? _buildNwcInvoiceFlow(header: header)
-                    : AddLightningInvoiceWidget(
-                        controller: invoiceController,
-                        onSubmit: () async {
-                          final invoice = invoiceController.text.trim();
-                          if (invoice.isNotEmpty) {
-                            await _submitInvoice(invoice, amount);
-                          }
-                        },
-                        onCancel: () async {
-                          await _cancelOrder();
-                        },
-                        amount: amount ?? 0,
-                        fiatAmount: fiatAmount,
-                        fiatCode: fiatCode,
-                        orderId: orderIdValue,
-                        header: header,
-                      ),
+            child: blocked
+                ? _buildBlockedFlow(
+                    header: header,
+                    requestedSats: amount ?? 0,
+                    expectedSats: expectedSats,
+                  )
+                : showLnAddressConfirmation
+                    ? _buildLnAddressConfirmation(header: header)
+                    : showNwcInvoice
+                        ? _buildNwcInvoiceFlow(header: header)
+                        : AddLightningInvoiceWidget(
+                            controller: invoiceController,
+                            onSubmit: () async {
+                              final invoice = invoiceController.text.trim();
+                              if (invoice.isNotEmpty) {
+                                await _submitInvoice(invoice, amount);
+                              }
+                            },
+                            onCancel: () async {
+                              await _cancelOrder();
+                            },
+                            amount: amount ?? 0,
+                            fiatAmount: fiatAmount,
+                            fiatCode: fiatCode,
+                            orderId: orderIdValue,
+                            header: header,
+                          ),
           ),
         );
       },
@@ -185,6 +203,75 @@ class _AddLightningInvoiceScreenState
           onFallbackToManual: () {
             setState(() => _manualMode = true);
           },
+        ),
+        const Spacer(),
+        _buildCancelButton(),
+      ],
+    );
+  }
+
+  /// Shown instead of every invoice flow when the amount asked for is not the
+  /// amount this order should pay out.
+  ///
+  /// A refusal rather than a warning: an invoice minted here is what the
+  /// trade settles at, and there is no confirming a figure the signed terms
+  /// contradict.
+  Widget _buildBlockedFlow({
+    required Widget header,
+    required int requestedSats,
+    required int expectedSats,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        header,
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.statusError.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppTheme.statusError.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: AppTheme.statusError,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      S.of(context)!.invoiceRequestMismatchTitle,
+                      style: const TextStyle(
+                        color: AppTheme.statusError,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      S.of(context)!.invoiceRequestMismatchBody(
+                            requestedSats.toString(),
+                            expectedSats.toString(),
+                          ),
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         const Spacer(),
         _buildCancelButton(),

@@ -1817,5 +1817,7 @@
     "invoiceTermsMismatchBody": "A fatura pede {invoiceAmount} sats, mas esta ordem é de {orderAmount} sats. Não pode ser paga aqui.",
     "invoiceUnreadableBody": "Não foi possível ler esta fatura, portanto não há como confirmar o que ela pagaria. Não pode ser paga aqui.",
     "invoiceAmountMissingBody": "Esta fatura não define um valor, o que deixaria a carteira decidir quanto enviar. Não pode ser paga aqui.",
-    "invoiceTermsUnknownBody": "Esta ordem não tem um valor contra o qual verificar a fatura. Não pode ser paga aqui."
+    "invoiceTermsUnknownBody": "Esta ordem não tem um valor contra o qual verificar a fatura. Não pode ser paga aqui.",
+    "invoiceRequestMismatchTitle": "Esta solicitação não corresponde à ordem",
+    "invoiceRequestMismatchBody": "Foi pedida uma fatura de {requestedAmount} sats, mas esta ordem deveria pagar {expectedAmount} sats. Nenhuma fatura será criada."
 }

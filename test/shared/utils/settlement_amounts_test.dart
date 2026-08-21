@@ -8,8 +8,8 @@ void main() {
 
   group('SettlementAmounts.feeFor', () {
     test('takes half the configured rate', () {
-      expect(SettlementAmounts.feeFor(amountSats: 100000, feeRate: feeRate),
-          300);
+      expect(
+          SettlementAmounts.feeFor(amountSats: 100000, feeRate: feeRate), 300);
     });
 
     test('rounds half away from zero, as mostrod does', () {
@@ -67,8 +67,7 @@ void main() {
 
     test('is null for a rate that is not a number', () {
       expect(
-        SettlementAmounts.sellerPays(
-            amountSats: 100000, feeRate: double.nan),
+        SettlementAmounts.sellerPays(amountSats: 100000, feeRate: double.nan),
         isNull,
       );
     });
@@ -117,6 +116,42 @@ void main() {
       expect(seller - buyer, half * 2);
       expect(seller - amount, half);
       expect(amount - buyer, half);
+    });
+  });
+
+  // The two figures a client is asked to act on, against the same order.
+  // Comparing either side against the order amount itself would refuse every
+  // correct settlement, which is why the derivation exists at all.
+  group('what the finding describes', () {
+    test('a payout request for the order amount is not what the order pays',
+        () {
+      const amount = 100000;
+      final expected =
+          SettlementAmounts.buyerReceives(amountSats: amount, feeRate: feeRate);
+
+      expect(expected, isNot(amount));
+      expect(expected, 99700);
+    });
+
+    test('a hold invoice for the order amount is not what the seller owes', () {
+      const amount = 100000;
+      final expected =
+          SettlementAmounts.sellerPays(amountSats: amount, feeRate: feeRate);
+
+      expect(expected, isNot(amount));
+      expect(expected, 100300);
+    });
+
+    test('an order skimmed by a tenth is nowhere near either figure', () {
+      // The finding's scenario: the trade is for 100000, the request says
+      // 90000, and the difference is kept.
+      const amount = 100000;
+      const skimmed = 90000;
+      final expected = SettlementAmounts.buyerReceives(
+          amountSats: amount, feeRate: feeRate)!;
+
+      expect(skimmed, isNot(expected));
+      expect(expected - skimmed, 9700);
     });
   });
 }
