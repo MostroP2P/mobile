@@ -33,7 +33,13 @@ class _PayLightningInvoiceScreenState
   Widget build(BuildContext context) {
     final orderState = ref.watch(orderNotifierProvider(widget.orderId));
     final lnInvoice = orderState.paymentRequest?.lnInvoice ?? '';
-    final sats = orderState.order?.amount ?? 0;
+    // The figure for this payment, not for the order: the hold invoice is the
+    // order amount plus the seller's half of the fee, and the node states it
+    // in the payment request. It used to arrive here by overwriting the
+    // tracked order, which is exactly what any other payload could do too.
+    final sats = orderState.paymentRequest?.order?.amount ??
+        orderState.order?.amount ??
+        0;
     final fiatAmount = orderState.order?.fiatAmount.toString() ?? '0';
     final fiatCode = orderState.order?.fiatCode ?? '';
     final orderNotifier =

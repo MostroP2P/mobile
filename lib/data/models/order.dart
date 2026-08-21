@@ -20,6 +20,7 @@ class Order implements Payload {
   final String? buyerTradePubkey;
   final String? sellerTradePubkey;
   final String? buyerInvoice;
+
   /// Seconds since the Unix epoch, as the protocol sends it (Nostr
   /// convention). Convert before handing it to anything that expects
   /// milliseconds, including [MostroMessage.timestamp].
@@ -166,9 +167,8 @@ class Order implements Payload {
       return Order(
         id: parseOptionalStringField('id'),
         kind: OrderType.fromString(parseStringField('kind')),
-        status: statusRaw != null
-            ? Status.fromString(statusRaw)
-            : Status.pending,
+        status:
+            statusRaw != null ? Status.fromString(statusRaw) : Status.pending,
         amount: amount,
         fiatCode: parseStringField('fiat_code'),
         minAmount: minAmount,
@@ -200,9 +200,8 @@ class Order implements Payload {
       paymentMethod: event.paymentMethods.join(','),
       premium: event.premium as int,
       createdAt: event.createdAt as int,
-      expiresAt: event.expiresAt != null
-          ? int.tryParse(event.expiresAt!)
-          : null,
+      expiresAt:
+          event.expiresAt != null ? int.tryParse(event.expiresAt!) : null,
     );
   }
 
@@ -249,6 +248,42 @@ class Order implements Payload {
 
   @override
   String get type => 'order';
+
+  /// A copy of this order carrying [terms]'s trade terms instead of its own.
+  ///
+  /// The four fields taken from [terms] are what the fiat side of the trade
+  /// is: where the money goes, how much of it, in what currency, at what
+  /// premium. They are settled when the order is taken, and nothing in the
+  /// protocol renegotiates them — so a later payload that reports on the
+  /// trade restates them at best, and redirects them at worst.
+  Order withTermsFrom(Order terms) {
+    return Order(
+      id: id,
+      kind: kind,
+      status: status,
+      amount: amount,
+      fiatCode: terms.fiatCode,
+      minAmount: minAmount,
+      maxAmount: maxAmount,
+      fiatAmount: terms.fiatAmount,
+      paymentMethod: terms.paymentMethod,
+      premium: terms.premium,
+      masterBuyerPubkey: masterBuyerPubkey,
+      masterSellerPubkey: masterSellerPubkey,
+      buyerTradePubkey: buyerTradePubkey,
+      sellerTradePubkey: sellerTradePubkey,
+      buyerInvoice: buyerInvoice,
+      expiresAt: expiresAt,
+      createdAt: createdAt,
+    );
+  }
+
+  /// Whether [other] states different trade terms than this order.
+  bool hasDifferentTermsThan(Order other) =>
+      paymentMethod != other.paymentMethod ||
+      fiatAmount != other.fiatAmount ||
+      fiatCode != other.fiatCode ||
+      premium != other.premium;
 
   Order copyWith({String? buyerInvoice, Status? status}) {
     return Order(
