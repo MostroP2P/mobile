@@ -62,7 +62,9 @@ class _AddLightningInvoiceScreenState
         if (isPayoutInvoice(orderState.status)) {
           return PayoutInvoiceScreen(
             orderId: orderId,
-            order: orderPayload,
+            // The stream only matches messages whose payload is an Order; the
+            // notifier also keeps one carried by a PaymentRequest.
+            order: orderPayload ?? orderState.order,
           );
         }
         final amount = orderPayload?.amount;

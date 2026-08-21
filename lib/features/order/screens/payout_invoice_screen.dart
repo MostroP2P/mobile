@@ -59,17 +59,19 @@ class _PayoutInvoiceScreenState extends ConsumerState<PayoutInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
     final order = widget.order;
-    final amount = order?.amount ?? 0;
+    // Only what is displayed falls back to zero; an unknown amount travels as
+    // null instead of claiming the payout is worth nothing.
+    final sats = order?.amount ?? 0;
     final fiatAmount = order?.fiatAmount.toString() ?? '0';
     final fiatCode = order?.fiatCode ?? '';
     final orderIdValue = order?.id ?? widget.orderId;
 
     final nwcState = ref.watch(nwcProvider);
     final showNwcInvoice =
-        nwcState.status == NwcStatus.connected && !_manualMode && amount > 0;
+        nwcState.status == NwcStatus.connected && !_manualMode && sats > 0;
 
     final header = _PayoutHeader(
-      sats: amount,
+      sats: sats,
       fiatAmount: fiatAmount,
       fiatCode: fiatCode,
       orderId: orderIdValue,
@@ -92,10 +94,10 @@ class _PayoutInvoiceScreenState extends ConsumerState<PayoutInvoiceScreen> {
                   header,
                   const SizedBox(height: 24),
                   NwcInvoiceWidget(
-                    sats: amount,
+                    sats: sats,
                     orderId: orderIdValue,
                     onInvoiceConfirmed: (invoice) async {
-                      await _submitInvoice(invoice, amount);
+                      await _submitInvoice(invoice, sats);
                     },
                     onFallbackToManual: () {
                       setState(() => _manualMode = true);
@@ -108,10 +110,10 @@ class _PayoutInvoiceScreenState extends ConsumerState<PayoutInvoiceScreen> {
                 onSubmit: () async {
                   final invoice = invoiceController.text.trim();
                   if (invoice.isNotEmpty) {
-                    await _submitInvoice(invoice, amount);
+                    await _submitInvoice(invoice, order?.amount);
                   }
                 },
-                amount: amount,
+                amount: sats,
                 fiatAmount: fiatAmount,
                 fiatCode: fiatCode,
                 orderId: orderIdValue,
