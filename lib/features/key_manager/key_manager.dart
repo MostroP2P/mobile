@@ -83,6 +83,7 @@ class KeyManager {
   }
 
   NostrKeyPairs deriveTradeKeyPair(int index) {
+    _requireTradeKeyIndex(index);
     final tradePrivateHex = _derivator.derivePrivateKey(_masterKeyHex!, index);
 
     return NostrKeyPairs(private: tradePrivateHex);
@@ -90,6 +91,7 @@ class KeyManager {
 
   /// Derive a trade key for a specific index
   Future<NostrKeyPairs> deriveTradeKeyFromIndex(int index) async {
+    _requireTradeKeyIndex(index);
     final masterKeyHex = await _storage.readMasterKey();
     if (masterKeyHex == null) {
       throw MasterKeyNotFoundException(
@@ -117,6 +119,25 @@ class KeyManager {
     await setCurrentKeyIndex(currentIndex + 1);
 
     return currentIndex + 1;
+  }
+
+  /// Refuses an index that does not name a trade key.
+  ///
+  /// Index 0 is the identity key — `_getMasterKey` derives it — so deriving
+  /// "trade key 0" hands back the master identity, and a session built on it
+  /// would sign chat events with, and run ECDH under, the key the whole
+  /// pseudonymity of a trade rests on separating.
+  ///
+  /// [setCurrentKeyIndex] has always enforced this for the counter, which is
+  /// why the normal path never reaches index 0. Derivation is reachable
+  /// without going through the counter — restore derives straight from an
+  /// index in the response — so the same rule has to sit here too.
+  void _requireTradeKeyIndex(int index) {
+    if (index < 1) {
+      throw InvalidTradeKeyIndexException(
+        'Trade key index must be greater than 0, got $index',
+      );
+    }
   }
 
   Future<void> setCurrentKeyIndex(int index) async {

@@ -7,7 +7,7 @@ void main() {
       final dispute = RestoredDispute.fromJson({
         'dispute_id': 'dispute-123',
         'order_id': 'order-456',
-        'trade_index': 0,
+        'trade_index': 1,
         'status': 'in-progress',
         'initiator': 'buyer',
       });
@@ -31,7 +31,7 @@ void main() {
       final dispute = RestoredDispute.fromJson({
         'dispute_id': 'dispute-123',
         'order_id': 'order-456',
-        'trade_index': 0,
+        'trade_index': 1,
         'status': 'in-progress',
         'initiator': 'BUYER',
       });
@@ -55,7 +55,7 @@ void main() {
       final dispute = RestoredDispute.fromJson({
         'dispute_id': 'dispute-123',
         'order_id': 'order-456',
-        'trade_index': 0,
+        'trade_index': 1,
         'status': 'in-progress',
         'initiator': 'BuYeR',
       });
@@ -67,7 +67,7 @@ void main() {
       final dispute = RestoredDispute.fromJson({
         'dispute_id': 'dispute-123',
         'order_id': 'order-456',
-        'trade_index': 0,
+        'trade_index': 1,
         'status': 'in-progress',
         'initiator': ' buyer ',
       });
@@ -91,7 +91,7 @@ void main() {
       final dispute = RestoredDispute.fromJson({
         'dispute_id': 'dispute-123',
         'order_id': 'order-456',
-        'trade_index': 0,
+        'trade_index': 1,
         'status': 'in-progress',
         'initiator': 'admin',
       });
@@ -103,7 +103,7 @@ void main() {
       final dispute = RestoredDispute.fromJson({
         'dispute_id': 'dispute-123',
         'order_id': 'order-456',
-        'trade_index': 0,
+        'trade_index': 1,
         'status': 'in-progress',
         'initiator': 'unknown',
       });
@@ -115,7 +115,7 @@ void main() {
       final dispute = RestoredDispute.fromJson({
         'dispute_id': 'dispute-123',
         'order_id': 'order-456',
-        'trade_index': 0,
+        'trade_index': 1,
         'status': 'in-progress',
         'initiator': '',
       });
@@ -127,7 +127,7 @@ void main() {
       final dispute = RestoredDispute.fromJson({
         'dispute_id': 'dispute-123',
         'order_id': 'order-456',
-        'trade_index': 0,
+        'trade_index': 1,
         'status': 'in-progress',
         'initiator': '   ',
       });
@@ -139,7 +139,7 @@ void main() {
       final dispute = RestoredDispute.fromJson({
         'dispute_id': 'dispute-123',
         'order_id': 'order-456',
-        'trade_index': 0,
+        'trade_index': 1,
         'status': 'in-progress',
       });
 
@@ -150,7 +150,7 @@ void main() {
       final dispute = RestoredDispute.fromJson({
         'dispute_id': 'dispute-123',
         'order_id': 'order-456',
-        'trade_index': 0,
+        'trade_index': 1,
         'status': 'in-progress',
         'initiator': null,
       });

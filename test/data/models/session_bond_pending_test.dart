@@ -34,7 +34,7 @@ void main() {
       final json = {
         'master_key': keyPair,
         'trade_key': keyPair,
-        'key_index': 0,
+        'key_index': 1,
         'full_privacy': false,
         'start_time': '2026-06-03T12:00:00.000',
         'order_id': 'order-1',
