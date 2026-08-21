@@ -672,6 +672,7 @@
     "yourSharedKey": "Your Shared Key:",
     "payInvoiceButton": "PAY INVOICE",
     "addInvoiceButton": "ADD INVOICE",
+    "collectSatsButton": "COLLECT SATS",
     "release": "RELEASE",
     "takeSell": "TAKE SELL",
     "takeBuy": "TAKE BUY",

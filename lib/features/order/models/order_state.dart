@@ -577,7 +577,6 @@ class OrderState {
       Status.settledHoldInvoice: {
         Action.addInvoice: [
           Action.addInvoice,
-          Action.cancel,
         ],
       },
     },
@@ -614,11 +613,14 @@ class OrderState {
         ],
       },
       Status.paymentFailed: {
+        // Only the invoice: the order is already settled, so Mostro rejects a
+        // cancel and there is nothing left to dispute.
         Action.addInvoice: [
-          // Only allow add invoice, no cancel or dispute during retrying
           Action.addInvoice,
         ],
-        Action.paymentFailed: [],
+        Action.paymentFailed: [
+          Action.addInvoice,
+        ],
       },
       Status.active: {
         Action.holdInvoicePaymentAccepted: [
@@ -715,7 +717,11 @@ class OrderState {
       Status.settledHoldInvoice: {
         Action.addInvoice: [
           Action.addInvoice,
-          Action.cancel,
+        ],
+        // Released but not paid yet: let the buyer replace an invoice that is
+        // not going to work instead of waiting for the payout to fail.
+        Action.released: [
+          Action.addInvoice,
         ],
       },
     },

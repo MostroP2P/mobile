@@ -521,6 +521,7 @@
     "yourSharedKey": "Tu clave compartida:",
     "payInvoiceButton": "PAGAR FACTURA",
     "addInvoiceButton": "AGREGAR FACTURA",
+    "collectSatsButton": "COBRAR SATS",
     "release": "LIBERAR",
     "takeSell": "TOMAR VENTA",
     "takeBuy": "TOMAR COMPRA",

@@ -672,6 +672,7 @@
     "yourSharedKey": "Dein geteilter Schlüssel (Shared Key):",
     "payInvoiceButton": "RECHNUNG BEZAHLEN",
     "addInvoiceButton": "RECHNUNG HINZUFÜGEN",
+    "collectSatsButton": "SATS EINLÖSEN",
     "release": "FREIGEBEN",
     "takeSell": "VERKAUF ANNEHMEN",
     "takeBuy": "KAUF ANNEHMEN",

@@ -672,6 +672,7 @@
     "yourSharedKey": "Votre clé partagée :",
     "payInvoiceButton": "PAYER LA FACTURE",
     "addInvoiceButton": "AJOUTER UNE FACTURE",
+    "collectSatsButton": "ENCAISSER LES SATS",
     "release": "LIBÉRER",
     "takeSell": "PRENDRE VENTE",
     "takeBuy": "PRENDRE ACHAT",
