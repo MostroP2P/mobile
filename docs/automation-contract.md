@@ -111,8 +111,9 @@ When enabled:
   list instead, so a disconnected local relay produces a test failure, not
   public-network traffic. A build that arms the test environment without
   `MORTSOM_RELAYS` fails at startup rather than starting with no relay;
-- plain `ws://` relays on private addresses are accepted by the add-relay
-  validation;
+- plain `ws://` relays on local hosts (`localhost`, IPv4, optional port) are
+  accepted by the add-relay validation. Debug builds (`kDebugMode`) accept
+  them too, independently of the test environment; release builds never do;
 - a red `TEST ENVIRONMENT · Mortsom` banner (`env.marker`) is shown on every
   screen.
 

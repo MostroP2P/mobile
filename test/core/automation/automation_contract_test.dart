@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:mostro_mobile/core/automation/automation_ids.dart';
@@ -166,8 +167,14 @@ void main() {
       expect(TestEnvironment.enabled, TestEnvironment.defineEnabled);
       expect(TestEnvironment.disableBootstrapFallback,
           TestEnvironment.defineEnabled);
-      expect(
-          TestEnvironment.allowInsecureRelays, TestEnvironment.defineEnabled);
+      expect(TestEnvironment.allowInsecureRelays,
+          TestEnvironment.defineEnabled || kDebugMode);
+    });
+
+    test('allows insecure relays in debug builds without arming', () {
+      // `flutter test` runs in debug mode, so this must hold here.
+      expect(TestEnvironment.enabled, isFalse);
+      expect(TestEnvironment.allowInsecureRelays, kDebugMode);
     });
 
     test('parses relay lists', () {
