@@ -7,7 +7,9 @@ import 'package:mostro_mobile/generated/l10n.dart';
 class AddLightningInvoiceWidget extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback onSubmit;
-  final VoidCallback onCancel;
+
+  /// Hidden when null: the payout flow has nothing left to cancel.
+  final VoidCallback? onCancel;
   final int amount;
   final String fiatAmount;
   final String fiatCode;
@@ -20,7 +22,7 @@ class AddLightningInvoiceWidget extends StatefulWidget {
     super.key,
     required this.controller,
     required this.onSubmit,
-    required this.onCancel,
+    this.onCancel,
     required this.amount,
     required this.fiatAmount,
     required this.fiatCode,
@@ -82,22 +84,24 @@ class _AddLightningInvoiceWidgetState extends State<AddLightningInvoiceWidget> {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(
-                child: TextButton(
-                  key: const Key('cancelInvoiceButton'),
-                  onPressed: widget.onCancel,
-                  child: Text(
-                    S.of(context)!.cancel,
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+              if (widget.onCancel != null) ...[
+                Expanded(
+                  child: TextButton(
+                    key: const Key('cancelInvoiceButton'),
+                    onPressed: widget.onCancel,
+                    child: Text(
+                      S.of(context)!.cancel,
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ).withAutomationId(AutomationIds.invoiceCancel),
-              ),
-              const SizedBox(width: 12),
+                  ).withAutomationId(AutomationIds.invoiceCancel),
+                ),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: ElevatedButton(
                   key: const Key('submitInvoiceButton'),

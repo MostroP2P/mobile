@@ -855,6 +855,21 @@
             }
         }
     },
+    "payoutInvoiceInstruction": "Aggiungi una fattura Lightning di {sats} sats, equivalenti a {fiat_amount} {fiat_code}, per ricevere il pagamento del tuo acquisto.",
+    "@payoutInvoiceInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "collectYourSats": "Riscuoti i Tuoi Sats",
     "reputationReviewsCount": "{count, plural, =1{1 recensione} other{{count} recensioni}}",
     "@reputationReviewsCount": {
         "placeholders": {
