@@ -32,6 +32,13 @@ void main() {
       expect(secure.normalize('http://relay.example.com'), isNull);
     });
 
+    test('strips trailing slashes', () {
+      expect(secure.normalize('wss://relay.example.com/'),
+          'wss://relay.example.com');
+      expect(secure.normalize('relay.example.com//'),
+          'wss://relay.example.com');
+    });
+
     test('rejects domains without a dot', () {
       expect(secure.normalize('localhost'), isNull);
       expect(secure.normalize('relay'), isNull);
@@ -70,6 +77,18 @@ void main() {
     test('still rejects malformed hosts', () {
       expect(insecure.normalize('ws://local host'), isNull);
       expect(insecure.normalize('ws://localhost:abc'), isNull);
+    });
+
+    test('rejects IPv4 octets above 255', () {
+      expect(insecure.normalize('ws://999.999.999.999:7000'), isNull);
+      expect(insecure.normalize('ws://10.0.256.1'), isNull);
+    });
+
+    test('rejects ports above 65535 or zero', () {
+      expect(insecure.normalize('ws://localhost:99999'), isNull);
+      expect(insecure.normalize('ws://127.0.0.1:65536'), isNull);
+      expect(insecure.normalize('ws://localhost:0'), isNull);
+      expect(insecure.normalize('ws://localhost:65535'), 'ws://localhost:65535');
     });
 
     test('bare localhost gets wss:// prefix (no implicit downgrade)', () {

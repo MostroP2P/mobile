@@ -13,8 +13,13 @@ class RelayUrlValidator {
       r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$');
 
   /// `localhost` or a dotted IPv4 address, with an optional `:port`.
+  /// Octet and port ranges are checked separately in [_isValidLocalHost].
   static final RegExp _localHostRegex =
-      RegExp(r'^(localhost|\d{1,3}(\.\d{1,3}){3})(:\d{1,5})?$');
+      RegExp(r'^(localhost|\d{1,3}(\.\d{1,3}){3})(:(\d{1,5}))?$');
+
+  static const int _maxOctet = 255;
+  static const int _maxPort = 65535;
+  static final RegExp _trailingSlashes = RegExp(r'/+$');
 
   /// Normalizes [input] into a relay URL, or returns null when rejected.
   ///
@@ -24,7 +29,8 @@ class RelayUrlValidator {
   /// - A bare host gets a `wss://` prefix; it is never silently downgraded
   ///   to `ws://`, the user has to ask for that explicitly.
   String? normalize(String input) {
-    final value = input.trim().toLowerCase();
+    final value =
+        input.trim().toLowerCase().replaceFirst(_trailingSlashes, '');
 
     if (!isValidHost(value)) return null;
 
@@ -38,12 +44,32 @@ class RelayUrlValidator {
   bool isValidHost(String input) {
     final host = _stripProtocol(input);
 
-    if (allowInsecure && _localHostRegex.hasMatch(host)) return true;
+    if (allowInsecure && _isValidLocalHost(host)) return true;
 
     // Reject IP addresses (numbers and dots only).
     if (RegExp(r'^[\d.]+$').hasMatch(host)) return false;
 
     return _domainRegex.hasMatch(host) && host.contains('.');
+  }
+
+  /// `localhost` or IPv4 with octets in 0-255 and, if given, a port in
+  /// 1-65535.
+  static bool _isValidLocalHost(String host) {
+    final match = _localHostRegex.firstMatch(host);
+    if (match == null) return false;
+
+    final name = match.group(1)!;
+    if (name != 'localhost') {
+      final octetsInRange = name
+          .split('.')
+          .every((octet) => int.parse(octet) <= _maxOctet);
+      if (!octetsInRange) return false;
+    }
+
+    final port = match.group(4);
+    if (port == null) return true;
+    final portNumber = int.parse(port);
+    return portNumber >= 1 && portNumber <= _maxPort;
   }
 
   static String _stripProtocol(String input) {
