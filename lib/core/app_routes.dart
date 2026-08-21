@@ -37,17 +37,24 @@ import 'package:mostro_mobile/features/walkthrough/providers/first_run_provider.
 import 'package:mostro_mobile/shared/widgets/navigation_listener_widget.dart';
 import 'package:mostro_mobile/shared/widgets/notification_listener_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/core/deep_link_interceptor.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 
 GoRouter createRouter(WidgetRef ref) {
+  // A cold-start deep link arrives as the platform default route, which
+  // go_router prefers over initialLocation; matching it asserts. Kept
+  // conditional so web still opens at the requested URL.
+  final platformDefaultLocation =
+      WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+
   return GoRouter(
     navigatorKey: MostroApp.navigatorKey,
     initialLocation: '/',
+    overridePlatformDefaultLocation:
+        DeepLinkInterceptor.isCustomSchemeLocation(platformDefaultLocation),
     redirect: (context, state) {
       // Redirect custom schemes to home to prevent assertion failures
-      if (state.uri.scheme == 'mostro' ||
-          (!state.uri.scheme.startsWith('http') &&
-              state.uri.scheme.isNotEmpty)) {
+      if (DeepLinkInterceptor.isCustomSchemeUri(state.uri)) {
         return '/';
       }
       final firstRunState = ref.read(firstRunProvider);
