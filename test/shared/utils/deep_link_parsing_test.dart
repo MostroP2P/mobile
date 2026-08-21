@@ -142,4 +142,114 @@ void main() {
       expect(result!['mostroPubkey'], isNull);
     });
   });
+
+  group('NostrUtils.buildMostroUrl', () {
+    const orderId = 'e215c07e-b1f9-45b0-9640-0295067ee99a';
+    const pubkey =
+        '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
+
+    test('builds a link its own parser reads back unchanged', () {
+      final url = NostrUtils.buildMostroUrl(
+        orderId: orderId,
+        relays: const ['wss://relay.mostro.network', 'wss://relay.damus.io'],
+        mostroPubkey: pubkey,
+      );
+
+      expect(url, isNotNull);
+      expect(NostrUtils.isValidMostroUrl(url!), isTrue);
+
+      final parsed = NostrUtils.parseMostroUrl(url);
+      expect(parsed, isNotNull);
+      expect(parsed!['orderId'], orderId);
+      expect(parsed['relays'],
+          ['wss://relay.mostro.network', 'wss://relay.damus.io']);
+      expect(parsed['mostroPubkey'], pubkey);
+    });
+
+    test('omits the mostro param when no pubkey is given', () {
+      final url = NostrUtils.buildMostroUrl(
+        orderId: orderId,
+        relays: const ['wss://relay.mostro.network'],
+      );
+
+      expect(url, isNot(contains('mostro=')));
+      expect(NostrUtils.parseMostroUrl(url!)!['mostroPubkey'], isNull);
+    });
+
+    test('drops a pubkey the parser would reject rather than emitting it', () {
+      final url = NostrUtils.buildMostroUrl(
+        orderId: orderId,
+        relays: const ['wss://relay.mostro.network'],
+        mostroPubkey: 'not-a-pubkey',
+      );
+
+      expect(url, isNot(contains('mostro=')));
+    });
+
+    test('accepts a pubkey in upper case or 0x-prefixed', () {
+      final url = NostrUtils.buildMostroUrl(
+        orderId: orderId,
+        relays: const ['wss://relay.mostro.network'],
+        mostroPubkey: '0x${pubkey.toUpperCase()}',
+      );
+
+      expect(NostrUtils.parseMostroUrl(url!)!['mostroPubkey'], pubkey);
+    });
+
+    test('keeps only relays carrying a WebSocket scheme', () {
+      final url = NostrUtils.buildMostroUrl(
+        orderId: orderId,
+        relays: const [
+          'https://relay.example.com',
+          '  wss://relay.mostro.network  ',
+          'relay.example.org',
+          'ws://localhost:7000',
+        ],
+      );
+
+      expect(NostrUtils.parseMostroUrl(url!)!['relays'],
+          ['wss://relay.mostro.network', 'ws://localhost:7000']);
+    });
+
+    test('removes duplicates and caps the relay count', () {
+      final url = NostrUtils.buildMostroUrl(
+        orderId: orderId,
+        relays: const [
+          'wss://a.example',
+          'wss://a.example',
+          'wss://b.example',
+          'wss://c.example',
+          'wss://d.example',
+        ],
+        maxRelays: 3,
+      );
+
+      expect(NostrUtils.parseMostroUrl(url!)!['relays'],
+          ['wss://a.example', 'wss://b.example', 'wss://c.example']);
+    });
+
+    test('returns null when no usable relay is left', () {
+      expect(
+        NostrUtils.buildMostroUrl(
+          orderId: orderId,
+          relays: const ['https://relay.example.com'],
+        ),
+        isNull,
+      );
+      expect(
+        NostrUtils.buildMostroUrl(orderId: orderId, relays: const []),
+        isNull,
+      );
+    });
+
+    test('returns null without an order id', () {
+      expect(
+        NostrUtils.buildMostroUrl(
+          orderId: '   ',
+          relays: const ['wss://relay.mostro.network'],
+        ),
+        isNull,
+      );
+    });
+  });
 }

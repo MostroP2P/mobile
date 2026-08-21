@@ -108,6 +108,8 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                   const SizedBox(height: 16),
                   _buildOrderId(context),
                   const SizedBox(height: 16),
+                  _buildOrderLink(context),
+                  const SizedBox(height: 16),
                   _buildCreatorReputation(order),
                   const SizedBox(height: 24),
                   if (order.status == Status.pending)
@@ -209,6 +211,10 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
 
   Widget _buildOrderId(BuildContext context) {
     return OrderIdCard(orderId: widget.orderId);
+  }
+
+  Widget _buildOrderLink(BuildContext context) {
+    return OrderShareLinkCard(orderId: widget.orderId);
   }
 
   Widget _buildPaymentMethod(BuildContext context, NostrEvent order) {

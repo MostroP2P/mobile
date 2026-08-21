@@ -5,6 +5,8 @@ import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/user_info.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
@@ -235,6 +237,78 @@ class OrderIdCard extends StatelessWidget {
                   SnackBarHelper.showTopSnackBar(
                     context,
                     S.of(context)!.orderIdCopiedMessage,
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Card that displays the order's shareable `mostro:` link with a copy button.
+///
+/// The link carries the relays the order can be resolved from and the Mostro
+/// instance it lives on, so any client that understands the scheme can open the
+/// order directly. It renders nothing when no usable relay is configured.
+class OrderShareLinkCard extends ConsumerWidget {
+  final String orderId;
+
+  const OrderShareLinkCard({
+    super.key,
+    required this.orderId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final link = NostrUtils.buildMostroUrl(
+      orderId: orderId,
+      relays: settings.relays,
+      mostroPubkey: settings.mostroPublicKey,
+    );
+
+    if (link == null) return const SizedBox.shrink();
+
+    return CustomCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            S.of(context)!.orderLinkLabel,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  link,
+                  style: const TextStyle(
+                    color: AppTheme.mostroGreen,
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.copy,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: link));
+                  SnackBarHelper.showTopSnackBar(
+                    context,
+                    S.of(context)!.orderLinkCopiedMessage,
                   );
                 },
               ),
