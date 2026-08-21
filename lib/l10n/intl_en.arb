@@ -1812,5 +1812,34 @@
                 "type": "int"
             }
         }
+    },
+    "invoiceTermsMismatchTitle": "This invoice does not match the order",
+    "invoiceTermsMismatchBody": "The invoice asks for {invoiceAmount} sats, but this order is for {orderAmount} sats. It cannot be paid from here.",
+    "@invoiceTermsMismatchBody": {
+        "description": "Shown when the invoice amount does not match the order amount",
+        "placeholders": {
+            "invoiceAmount": {
+                "type": "String"
+            },
+            "orderAmount": {
+                "type": "String"
+            }
+        }
+    },
+    "invoiceUnreadableBody": "This invoice could not be read, so there is no way to confirm what it would pay. It cannot be paid from here.",
+    "invoiceAmountMissingBody": "This invoice sets no amount, which would let the wallet decide how much to send. It cannot be paid from here.",
+    "invoiceTermsUnknownBody": "This order carries no amount to check the invoice against. It cannot be paid from here.",
+    "invoiceRequestMismatchTitle": "This request does not match the order",
+    "invoiceRequestMismatchBody": "You were asked to provide an invoice for {requestedAmount} sats, but this order should pay out {expectedAmount} sats. No invoice will be created.",
+    "@invoiceRequestMismatchBody": {
+        "description": "Shown when the amount the node asks the buyer to invoice for does not match the order terms",
+        "placeholders": {
+            "requestedAmount": {
+                "type": "String"
+            },
+            "expectedAmount": {
+                "type": "String"
+            }
+        }
     }
 }

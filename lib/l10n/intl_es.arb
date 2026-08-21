@@ -1742,5 +1742,12 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "invoiceTermsMismatchTitle": "Esta factura no coincide con la orden",
+    "invoiceTermsMismatchBody": "La factura pide {invoiceAmount} sats, pero esta orden es por {orderAmount} sats. No se puede pagar desde aquí.",
+    "invoiceUnreadableBody": "No se pudo leer esta factura, así que no hay forma de confirmar qué pagaría. No se puede pagar desde aquí.",
+    "invoiceAmountMissingBody": "Esta factura no fija un monto, lo que dejaría que la billetera decida cuánto enviar. No se puede pagar desde aquí.",
+    "invoiceTermsUnknownBody": "Esta orden no tiene un monto contra el cual verificar la factura. No se puede pagar desde aquí.",
+    "invoiceRequestMismatchTitle": "Esta solicitud no coincide con la orden",
+    "invoiceRequestMismatchBody": "Se te pidió una factura por {requestedAmount} sats, pero esta orden debería pagar {expectedAmount} sats. No se creará ninguna factura."
 }

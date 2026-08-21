@@ -1808,5 +1808,12 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "invoiceTermsMismatchTitle": "Questa fattura non corrisponde all’ordine",
+    "invoiceTermsMismatchBody": "La fattura chiede {invoiceAmount} sats, ma questo ordine è di {orderAmount} sats. Non può essere pagata da qui.",
+    "invoiceUnreadableBody": "Non è stato possibile leggere questa fattura, quindi non c’è modo di confermare cosa pagherebbe. Non può essere pagata da qui.",
+    "invoiceAmountMissingBody": "Questa fattura non fissa un importo, il che lascerebbe al portafoglio decidere quanto inviare. Non può essere pagata da qui.",
+    "invoiceTermsUnknownBody": "Questo ordine non ha un importo con cui verificare la fattura. Non può essere pagata da qui.",
+    "invoiceRequestMismatchTitle": "Questa richiesta non corrisponde all’ordine",
+    "invoiceRequestMismatchBody": "Ti è stata chiesta una fattura da {requestedAmount} sats, ma questo ordine dovrebbe pagare {expectedAmount} sats. Non verrà creata alcuna fattura."
 }
