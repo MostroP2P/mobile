@@ -62,9 +62,16 @@ class DeepLinkInterceptor extends WidgetsBindingObserver {
   }
 
   /// Check if the URI uses a custom scheme
-  bool _isCustomScheme(Uri uri) {
-    return uri.scheme == 'mostro' ||
-           (!uri.scheme.startsWith('http') && uri.scheme.isNotEmpty);
+  bool _isCustomScheme(Uri uri) => isCustomSchemeUri(uri);
+
+  /// Whether the URI uses a scheme the app resolves itself, such as `mostro:`
+  static bool isCustomSchemeUri(Uri uri) =>
+      uri.scheme.isNotEmpty && uri.scheme != 'http' && uri.scheme != 'https';
+
+  /// [isCustomSchemeUri] for an unparsed location; unparseable means no
+  static bool isCustomSchemeLocation(String location) {
+    final uri = Uri.tryParse(location);
+    return uri != null && isCustomSchemeUri(uri);
   }
 
   /// Dispose the interceptor
