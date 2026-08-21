@@ -11,6 +11,7 @@ import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'relay.dart';
+import 'relay_url_validator.dart';
 
 class RelayValidationResult {
   final bool success;
@@ -116,53 +117,17 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     await _saveRelays();
   }
 
-  /// Smart URL normalization - handles different input formats
-  String? normalizeRelayUrl(String input) {
-    input = input.trim().toLowerCase();
+  RelayUrlValidator get _urlValidator =>
+      RelayUrlValidator(allowInsecure: TestEnvironment.allowInsecureRelays);
 
-    if (!isValidDomainFormat(input)) return null;
+  /// Smart URL normalization - handles different input formats.
+  /// Plain `ws://` and local hosts are accepted only when
+  /// [TestEnvironment.allowInsecureRelays] is true (debug builds or the
+  /// Mortsom test environment).
+  String? normalizeRelayUrl(String input) => _urlValidator.normalize(input);
 
-    if (input.startsWith('wss://')) {
-      return input; // Already properly formatted
-    } else if (input.startsWith('ws://')) {
-      // Plain WebSocket relays are accepted only inside the Mortsom test
-      // environment, where the relay is a local process on a private address.
-      return TestEnvironment.allowInsecureRelays ? input : null;
-    } else if (input.startsWith('http')) {
-      return null; // Reject non-secure protocols
-    } else {
-      return 'wss://$input'; // Auto-add wss:// prefix
-    }
-  }
-
-  /// Domain validation using RegExp
-  bool isValidDomainFormat(String input) {
-    // Remove protocol prefix if present
-    if (input.startsWith('wss://')) {
-      input = input.substring(6);
-    } else if (input.startsWith('ws://')) {
-      input = input.substring(5);
-    } else if (input.startsWith('http://')) {
-      input = input.substring(7);
-    } else if (input.startsWith('https://')) {
-      input = input.substring(8);
-    }
-
-    // Reject IP addresses (basic check for numbers and dots only), except
-    // the emulator's host address family inside the test environment.
-    if (TestEnvironment.allowInsecureRelays &&
-        RegExp(r'^[\d.]+(:\d+)?$').hasMatch(input)) {
-      return true;
-    }
-    if (RegExp(r'^[\d.]+$').hasMatch(input)) {
-      return false;
-    }
-
-    // Domain regex: valid domain format with at least one dot
-    final domainRegex = RegExp(
-        r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$');
-    return domainRegex.hasMatch(input) && input.contains('.');
-  }
+  /// Domain validation (protocol prefix optional).
+  bool isValidDomainFormat(String input) => _urlValidator.isValidHost(input);
 
   /// Test connectivity using proper Nostr protocol validation
   /// Sends REQ message and waits for EVENT + EOSE responses

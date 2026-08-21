@@ -67,9 +67,10 @@ class TestEnvironment {
   /// bootstrap relays: a disconnected local relay must fail the test.
   static bool get disableBootstrapFallback => enabled;
 
-  /// Local test relays are plain `ws://` on a private address; that is
-  /// only acceptable inside the test environment.
-  static bool get allowInsecureRelays => enabled;
+  /// Local test relays are plain `ws://` on a private address (for example
+  /// `ws://localhost:7000`). That is acceptable inside the test environment
+  /// and in debug builds, never in release builds.
+  static bool get allowInsecureRelays => enabled || kDebugMode;
 
   /// Copy of the visible environment marker.
   static const String markerLabel = 'TEST ENVIRONMENT · Mortsom';
