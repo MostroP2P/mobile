@@ -152,6 +152,51 @@ class NostrUtils {
     }
   }
 
+  /// Builds a shareable `mostro:` link for [orderId], in the same format
+  /// [parseMostroUrl] reads back.
+  ///
+  /// Relays that carry no WebSocket scheme are dropped and duplicates are
+  /// removed; at most [maxRelays] survive, so the link stays short enough to
+  /// paste into a chat. Returns null when none is left, since the format
+  /// requires at least one relay to resolve the order.
+  static String? buildMostroUrl({
+    required String orderId,
+    required List<String> relays,
+    String? mostroPubkey,
+    int maxRelays = 3,
+  }) {
+    final trimmedOrderId = orderId.trim();
+    if (trimmedOrderId.isEmpty) return null;
+
+    final usableRelays = <String>[];
+    for (final relay in relays) {
+      final trimmedRelay = relay.trim();
+      if (!trimmedRelay.startsWith('wss://') &&
+          !trimmedRelay.startsWith('ws://')) {
+        continue;
+      }
+      if (usableRelays.contains(trimmedRelay)) continue;
+      usableRelays.add(trimmedRelay);
+      if (usableRelays.length == maxRelays) break;
+    }
+    if (usableRelays.isEmpty) return null;
+
+    final buffer = StringBuffer('mostro:$trimmedOrderId?relays=')
+      ..write(usableRelays.join(','));
+
+    // Same shape parseMostroUrl accepts, so a link we build never carries a
+    // pubkey the reader would silently discard.
+    final normalizedPubkey =
+        mostroPubkey?.trim().toLowerCase().replaceFirst('0x', '');
+    if (normalizedPubkey != null &&
+        normalizedPubkey.length == 64 &&
+        RegExp(r'^[0-9a-f]{64}$').hasMatch(normalizedPubkey)) {
+      buffer.write('&mostro=$normalizedPubkey');
+    }
+
+    return buffer.toString();
+  }
+
   /// Parses a mostro: URL and returns order information
   /// Format: `mostro:order-id?relays=wss://relay1,wss://relay2&mostro=pubkey`
   /// Returns a map with 'orderId', 'relays', and optionally 'mostroPubkey' keys
