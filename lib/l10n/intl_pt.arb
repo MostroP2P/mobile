@@ -1812,5 +1812,8 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "bondPolicyMismatchTitle": "Este bond não corresponde à política do nó",
+    "bondPolicyNotAdvertisedBody": "Este nó não publicou uma política de bond, portanto não há nada que esta solicitação possa estar a seguir. Não será pago.",
+    "bondAmountMismatchBody": "O bond pede {requestedAmount} sats, que não é o que a política publicada deste nó gera para esta ordem. Não será pago."
 }

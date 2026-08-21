@@ -6,6 +6,9 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/utils/bond_amounts.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -69,8 +72,7 @@ class PayBondInvoiceScreen extends ConsumerWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             ),
             child: Text(
               s.yes,
@@ -125,6 +127,25 @@ class PayBondInvoiceScreen extends ConsumerWidget {
     final orderState = ref.watch(orderNotifierProvider(orderId));
     final lnInvoice = orderState.paymentRequest?.lnInvoice ?? '';
     final bondAmount = orderState.paymentRequest?.order?.amount;
+
+    // Held against the policy the node published in its kind-38385 event,
+    // which is where it states that it charges bonds at all and how it sizes
+    // them. Nothing gated this request on any of it, so the figure was
+    // whatever the message said.
+    //
+    // The order's sats amount is what the node sizes the bond from. It has
+    // none for a market-priced range order — each taker's bond follows their
+    // own quote, which the node computes and never sends — so only the
+    // advertised floor can be checked there.
+    final info = ref.watch(orderRepositoryProvider).mostroInstance;
+    final instance = info == null ? null : MostroInstance.fromEvent(info);
+    final bondProblem = BondAmounts.problemWith(
+      requestedSats: bondAmount,
+      orderAmountSats: orderState.order?.amount,
+      advertised: instance?.bondPolicy == BondPolicy.enabled,
+      amountPct: instance?.bondAmountPct,
+      baseAmountSats: instance?.bondBaseAmountSats,
+    );
     // A maker creating an order pays the bond before it is published, so the
     // copy must warn them to keep the screen open or the order won't be created.
     final isMakerBond = ref
@@ -132,7 +153,8 @@ class PayBondInvoiceScreen extends ConsumerWidget {
             .getSessionByOrderId(orderId)
             ?.bondPending ??
         false;
-    final explanation = isMakerBond ? s.bondExplanationMaker : s.bondExplanation;
+    final explanation =
+        isMakerBond ? s.bondExplanationMaker : s.bondExplanation;
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -144,100 +166,172 @@ class PayBondInvoiceScreen extends ConsumerWidget {
           16,
           16 + MediaQuery.of(context).viewPadding.bottom,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              explanation,
-              style: const TextStyle(
-                color: AppTheme.cream1,
-                fontSize: 15,
-                height: 1.4,
-              ),
-            ),
-            if (bondAmount != null && bondAmount > 0) ...[
-              const SizedBox(height: 16),
-              Text(
-                s.bondPayInvoicePrompt(bondAmount),
-                style: const TextStyle(
-                  color: AppTheme.cream1,
-                  fontSize: 15,
-                  height: 1.4,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-            const SizedBox(height: 20),
-            Center(
-              child: Container(
-                padding: const EdgeInsets.all(8.0),
-                color: AppTheme.cream1,
-                child: QrImageView(
-                  data: lnInvoice,
-                  version: QrVersions.auto,
-                  size: 250.0,
-                  backgroundColor: AppTheme.cream1,
-                  errorStateBuilder: (cxt, err) {
-                    return Center(
-                      child: Text(
-                        s.failedToGenerateQR,
-                        textAlign: TextAlign.center,
+        child: bondProblem != null
+            ? _BondPolicyNotice(
+                problem: bondProblem,
+                requestedSats: bondAmount ?? 0,
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    explanation,
+                    style: const TextStyle(
+                      color: AppTheme.cream1,
+                      fontSize: 15,
+                      height: 1.4,
+                    ),
+                  ),
+                  if (bondAmount != null && bondAmount > 0) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      s.bondPayInvoicePrompt(bondAmount),
+                      style: const TextStyle(
+                        color: AppTheme.cream1,
+                        fontSize: 15,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: lnInvoice.isEmpty
-                      ? null
-                      : () {
-                          Clipboard.setData(ClipboardData(text: lnInvoice));
-                          logger.i('Copied bond invoice to clipboard');
-                          SnackBarHelper.showTopSnackBar(
-                            context,
-                            s.invoiceCopiedToClipboard,
-                            duration: const Duration(seconds: 2),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      color: AppTheme.cream1,
+                      child: QrImageView(
+                        data: lnInvoice,
+                        version: QrVersions.auto,
+                        size: 250.0,
+                        backgroundColor: AppTheme.cream1,
+                        errorStateBuilder: (cxt, err) {
+                          return Center(
+                            child: Text(
+                              s.failedToGenerateQR,
+                              textAlign: TextAlign.center,
+                            ),
                           );
                         },
-                  icon: const Icon(Icons.copy),
-                  label: Text(s.copy),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.mostroGreen,
+                      ),
+                    ),
                   ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: lnInvoice.isEmpty
-                      ? null
-                      : () => _shareInvoice(context, lnInvoice),
-                  icon: const Icon(Icons.share),
-                  label: Text(s.share),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.mostroGreen,
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: lnInvoice.isEmpty
+                            ? null
+                            : () {
+                                Clipboard.setData(
+                                    ClipboardData(text: lnInvoice));
+                                logger.i('Copied bond invoice to clipboard');
+                                SnackBarHelper.showTopSnackBar(
+                                  context,
+                                  s.invoiceCopiedToClipboard,
+                                  duration: const Duration(seconds: 2),
+                                );
+                              },
+                        icon: const Icon(Icons.copy),
+                        label: Text(s.copy),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.mostroGreen,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: lnInvoice.isEmpty
+                            ? null
+                            : () => _shareInvoice(context, lnInvoice),
+                        icon: const Icon(Icons.share),
+                        label: Text(s.share),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.mostroGreen,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => _confirmAndCancel(context, ref),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.red,
+                        ),
+                        child: Text(s.cancel),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+/// Shown instead of the bond invoice when the request does not follow the
+/// policy the node published.
+///
+/// A refusal: a bond is money held against the trade, and there is no
+/// confirming a figure the node's own published policy does not yield.
+class _BondPolicyNotice extends StatelessWidget {
+  final BondProblem problem;
+  final int requestedSats;
+
+  const _BondPolicyNotice({
+    required this.problem,
+    required this.requestedSats,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = S.of(context)!;
+    final body = problem == BondProblem.notAdvertised
+        ? s.bondPolicyNotAdvertisedBody
+        : s.bondAmountMismatchBody(requestedSats.toString());
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.statusError.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.statusError.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: AppTheme.statusError,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ElevatedButton(
-                  onPressed: () => _confirmAndCancel(context, ref),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.red,
+                Text(
+                  s.bondPolicyMismatchTitle,
+                  style: const TextStyle(
+                    color: AppTheme.statusError,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                   ),
-                  child: Text(s.cancel),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  body,
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
