@@ -103,9 +103,8 @@ class OrderState {
       peer: peer ?? this.peer,
       paymentFailed: paymentFailed ?? this.paymentFailed,
       fiatWasSent: fiatWasSent ?? this.fiatWasSent,
-      peerReputation: clearPeerReputation
-          ? null
-          : peerReputation ?? this.peerReputation,
+      peerReputation:
+          clearPeerReputation ? null : peerReputation ?? this.peerReputation,
     );
   }
 
@@ -217,12 +216,14 @@ class OrderState {
       effectiveAction = newFiatWasSent
           ? Action.cooperativeCancelFiatSentByYou
           : Action.cooperativeCancelNoFiatByYou;
-      logger.i('Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
+      logger.i(
+          'Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
     } else if (message.action == Action.cooperativeCancelInitiatedByPeer) {
       effectiveAction = newFiatWasSent
           ? Action.cooperativeCancelFiatSentByPeer
           : Action.cooperativeCancelNoFiatByPeer;
-      logger.i('Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
+      logger.i(
+          'Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
     }
 
     // Determine the new status based on the action received
@@ -296,24 +297,27 @@ class OrderState {
       // the dispute list for good.
       if (message.timestamp != null) {
         final tsMs = message.timestamp!;
-        if (updatedDispute.createdAt == null || 
+        if (updatedDispute.createdAt == null ||
             updatedDispute.createdAt!.millisecondsSinceEpoch != tsMs) {
           updatedDispute = updatedDispute.copyWith(
             createdAt: DateTime.fromMillisecondsSinceEpoch(tsMs),
           );
-          logger.i('Updated dispute ${updatedDispute.disputeId} createdAt from message timestamp: ${updatedDispute.createdAt}');
+          logger.i(
+              'Updated dispute ${updatedDispute.disputeId} createdAt from message timestamp: ${updatedDispute.createdAt}');
         }
       }
     }
-    
+
     // Add defensive null check - if both message payload and existing dispute are null,
     // we cannot perform dispute updates
-    if (updatedDispute == null && 
-        (message.action == Action.adminTookDispute || 
-         message.action == Action.adminSettled || 
-         message.action == Action.adminCanceled)) {
-      logger.w('Cannot update dispute for action ${message.action}: no dispute found in message payload or existing state');
-    } else if (message.action == Action.adminTookDispute && updatedDispute != null) {
+    if (updatedDispute == null &&
+        (message.action == Action.adminTookDispute ||
+            message.action == Action.adminSettled ||
+            message.action == Action.adminCanceled)) {
+      logger.w(
+          'Cannot update dispute for action ${message.action}: no dispute found in message payload or existing state');
+    } else if (message.action == Action.adminTookDispute &&
+        updatedDispute != null) {
       // When admin takes dispute, update status to in-progress and set admin info
       // Extract admin pubkey from Peer payload if available
       String? adminPubkey = updatedDispute.adminPubkey;
@@ -324,33 +328,40 @@ class OrderState {
           logger.i('Extracted admin pubkey from Peer payload: $adminPubkey');
         }
       }
-      
+
       updatedDispute = updatedDispute.copyWith(
         status: 'in-progress',
         adminTookAt: DateTime.now(),
         adminPubkey: adminPubkey,
       );
-      logger.i('Updated dispute status to in-progress for adminTookDispute action');
-    } else if (message.action == Action.adminSettled && updatedDispute != null) {
+      logger.i(
+          'Updated dispute status to in-progress for adminTookDispute action');
+    } else if (message.action == Action.adminSettled &&
+        updatedDispute != null) {
       // When admin settles dispute, update status to resolved with settlement info
       updatedDispute = updatedDispute.copyWith(
         status: 'resolved',
         action: 'admin-settled', // Store the resolution type
       );
       logger.i('Updated dispute status to resolved for adminSettled action');
-    } else if (message.action == Action.adminCanceled && updatedDispute != null) {
+    } else if (message.action == Action.adminCanceled &&
+        updatedDispute != null) {
       // When admin cancels order, update dispute status to seller-refunded
       updatedDispute = updatedDispute.copyWith(
         status: 'seller-refunded',
         action: 'admin-canceled', // Store the resolution type
       );
-      logger.i('Updated dispute status to seller-refunded for adminCanceled action');
+      logger.i(
+          'Updated dispute status to seller-refunded for adminCanceled action');
       logger.i('Dispute status updated to: ${updatedDispute.status}');
     }
 
     // Auto-close dispute when order reaches terminal state by user action
-    final disputeAlreadyTerminal = const ['resolved', 'seller-refunded', 'closed']
-        .contains(updatedDispute?.status?.toLowerCase());
+    final disputeAlreadyTerminal = const [
+      'resolved',
+      'seller-refunded',
+      'closed'
+    ].contains(updatedDispute?.status?.toLowerCase());
 
     if (updatedDispute != null &&
         !disputeAlreadyTerminal &&
@@ -373,19 +384,14 @@ class OrderState {
 
     // Bond acks (3.5) and slash notice (4): their SmallOrder has a null status
     // and a bond-sized amount; don't let it overwrite the tracked trade order.
-    final bool isBondPayoutAck =
-        message.action == Action.bondInvoiceAccepted ||
-            message.action == Action.bondPayoutCompleted ||
-            message.action == Action.bondSlashed;
+    final bool isBondPayoutAck = message.action == Action.bondInvoiceAccepted ||
+        message.action == Action.bondPayoutCompleted ||
+        message.action == Action.bondSlashed;
 
     final newState = copyWith(
       status: newStatus,
       action: effectiveAction,
-      order: (message.payload is Order && !isBondPayoutAck)
-          ? message.getPayload<Order>()
-          : message.payload is PaymentRequest
-              ? message.getPayload<PaymentRequest>()!.order
-              : order,
+      order: _orderAfter(message, isBondPayoutAck: isBondPayoutAck),
       paymentRequest: newPaymentRequest,
       cantDo: message.getPayload<CantDo>() ?? cantDo,
       dispute: updatedDispute,
@@ -399,10 +405,49 @@ class OrderState {
     );
 
     logger.i('New state: ${newState.status} - ${newState.action}');
-    logger
-        .i('PaymentRequest preserved: ${newState.paymentRequest != null}');
+    logger.i('PaymentRequest preserved: ${newState.paymentRequest != null}');
 
     return newState;
+  }
+
+  /// The order to track once [message] has been applied.
+  ///
+  /// Inbound payloads used to replace the tracked order outright, which made
+  /// every economic field restatable by any later message. Two rules now
+  /// stand between a payload and the order:
+  ///
+  /// A `PaymentRequest`'s embedded order never becomes the tracked one. Its
+  /// `amount` is the figure for that particular payment — the hold invoice is
+  /// the order amount plus the seller's fee, the payout is the order amount
+  /// less the buyer's — so it is a statement about a payment, not about the
+  /// trade. It stays reachable on [paymentRequest] for the screens that need
+  /// it.
+  ///
+  /// The fiat terms freeze once the order is under way. While it is pending
+  /// they are still being settled, so the message that takes it out of
+  /// pending writes freely; after that, where the fiat goes and how much of
+  /// it is fixed. The sats amount is deliberately not frozen: a market-price
+  /// order has none until it is taken, and the node resolves it then.
+  Order? _orderAfter(MostroMessage message, {required bool isBondPayoutAck}) {
+    // Bond acks (3.5) and the slash notice (4) carry a bond-sized SmallOrder
+    // with a null status; it was never the trade order.
+    if (isBondPayoutAck) return order;
+    if (message.payload is! Order) return order;
+
+    final incoming = message.getPayload<Order>();
+    if (incoming == null) return order;
+
+    final current = order;
+    if (current == null || status == Status.pending) return incoming;
+
+    if (incoming.hasDifferentTermsThan(current)) {
+      logger.w(
+        'Ignoring restated trade terms on ${message.action} for order '
+        '${current.id}: payment method, fiat amount, currency and premium '
+        'were settled when the order was taken',
+      );
+    }
+    return incoming.withTermsFrom(current);
   }
 
   /// Maps actions to their corresponding statuses based on mostrod DM messages
@@ -420,7 +465,7 @@ class OrderState {
       // Actions that should set status to waiting-buyer-invoice
       case Action.waitingBuyerInvoice:
         return Status.waitingBuyerInvoice;
-      
+
       case Action.addInvoice:
         // Mostro reuses this action to ask for a payout invoice after a failed
         // payment, and only then does the payload carry settled-hold-invoice.
@@ -429,7 +474,6 @@ class OrderState {
           return Status.paymentFailed;
         }
         return Status.waitingBuyerInvoice;
-
 
       // FIX: Cuando alguien toma una orden, debe cambiar el status inmediatamente
 
@@ -523,7 +567,6 @@ class OrderState {
       // For actions that include Order payload, use the payload status
       case Action.newOrder:
         return payloadStatus ?? status;
-
 
       // For other actions, keep the current status unless payload has a different one
       default:
