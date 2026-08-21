@@ -322,9 +322,10 @@ class OrderState {
         return Status.waitingBuyerInvoice;
       
       case Action.addInvoice:
-        // If current status is paymentFailed, maintain it for UI consistency
-        // Otherwise, transition to waitingBuyerInvoice for normal flow
-        if (status == Status.paymentFailed) {
+        // Mostro reuses this action to ask for a payout invoice after a failed
+        // payment, and only then does the payload carry settled-hold-invoice.
+        if (payloadStatus == Status.settledHoldInvoice ||
+            status == Status.paymentFailed) {
           return Status.paymentFailed;
         }
         return Status.waitingBuyerInvoice;
