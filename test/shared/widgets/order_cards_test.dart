@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/data/models/currency.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/features/settings/settings_notifier.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 final _currencies = <String, Currency>{
   'USD': Currency(
@@ -19,18 +26,30 @@ final _currencies = <String, Currency>{
   ),
 };
 
+/// Holds a fixed [Settings] so cards reading `settingsProvider` can be pumped
+/// without touching storage. Nothing calls `init()`, so the preferences
+/// instance is never used.
+class _StubSettingsNotifier extends SettingsNotifier {
+  _StubSettingsNotifier(Settings settings) : super(SharedPreferencesAsync()) {
+    state = settings;
+  }
+}
+
 /// Pumps [child] with the currency catalogue stubbed out, so cards that read
 /// `currencyCodesProvider` resolve without hitting the exchange service.
 Future<void> pumpCard(
   WidgetTester tester,
   Widget child, {
   Map<String, Currency>? currencies,
+  Settings? settings,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         currencyCodesProvider
             .overrideWith((ref) async => currencies ?? _currencies),
+        if (settings != null)
+          settingsProvider.overrideWith((ref) => _StubSettingsNotifier(settings)),
       ],
       child: MaterialApp(
         localizationsDelegates: S.localizationsDelegates,
@@ -44,6 +63,11 @@ Future<void> pumpCard(
 }
 
 void main() {
+  setUp(() {
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
+  });
+
   group('OrderAmountCard', () {
     testWidgets('renders the title, amount and currency', (tester) async {
       await pumpCard(
@@ -157,6 +181,136 @@ void main() {
       await pumpCard(tester, const OrderIdCard(orderId: 'order-1234'));
 
       expect(find.textContaining('order-1234'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('OrderShareLinkCard', () {
+    const pubkey =
+        '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
+
+    Settings settingsWith(List<String> relays) => Settings(
+          relays: relays,
+          fullPrivacyMode: false,
+          mostroPublicKey: pubkey,
+        );
+
+    testWidgets('renders a link carrying the order, relays and instance',
+        (tester) async {
+      await pumpCard(
+        tester,
+        const OrderShareLinkCard(orderId: 'order-1234'),
+        settings: settingsWith(const ['wss://relay.mostro.network']),
+      );
+
+      expect(
+        find.text(
+          'mostro:order-1234?relays=wss://relay.mostro.network&mostro=$pubkey',
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('copies that link to the clipboard', (tester) async {
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String?;
+          }
+          return null;
+        },
+      );
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null));
+
+      await pumpCard(
+        tester,
+        const OrderShareLinkCard(orderId: 'order-1234'),
+        settings: settingsWith(const ['wss://relay.mostro.network']),
+      );
+
+      await tester.tap(find.byIcon(Icons.copy));
+      await tester.pump();
+
+      expect(
+        copied,
+        'mostro:order-1234?relays=wss://relay.mostro.network&mostro=$pubkey',
+      );
+    });
+
+    testWidgets('renders nothing when no relay can resolve the order',
+        (tester) async {
+      await pumpCard(
+        tester,
+        const OrderShareLinkCard(orderId: 'order-1234'),
+        settings: settingsWith(const []),
+      );
+
+      expect(find.textContaining('mostro:'), findsNothing);
+      expect(find.byIcon(Icons.copy), findsNothing);
+      expect(find.byIcon(Icons.share), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('hands the link to the share sheet wrapped in a sentence',
+        (tester) async {
+      const channel = MethodChannel('dev.fluttercommunity.plus/share');
+      String? sharedText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        (call) async {
+          if (call.method == 'share') {
+            sharedText = (call.arguments as Map)['text'] as String?;
+          }
+          return 'dev.fluttercommunity.plus/share/success';
+        },
+      );
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null));
+
+      await pumpCard(
+        tester,
+        const OrderShareLinkCard(orderId: 'order-1234'),
+        settings: settingsWith(const ['wss://relay.mostro.network']),
+      );
+
+      await tester.tap(find.byIcon(Icons.share));
+      await tester.pumpAndSettle();
+
+      expect(sharedText, isNotNull);
+      expect(
+        sharedText,
+        contains(
+          'mostro:order-1234?relays=wss://relay.mostro.network&mostro=$pubkey',
+        ),
+      );
+      // The link travels with an explanation, not on its own.
+      expect(sharedText!.trim(), isNot(startsWith('mostro:')));
+    });
+
+    // Two 48dp buttons now sit next to a link long enough to wrap. This is the
+    // shape that produced the overflow in #654, so it is pinned here.
+    testWidgets('lays out both actions beside a long link without overflowing',
+        (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.reset);
+
+      await pumpCard(
+        tester,
+        const OrderShareLinkCard(orderId: 'order-1234'),
+        settings: settingsWith(const [
+          'wss://relay.mostro.network',
+          'wss://a-considerably-longer-relay-domain.example',
+          'wss://another-quite-long-relay-domain.example',
+        ]),
+      );
+
+      expect(find.byIcon(Icons.copy), findsOneWidget);
+      expect(find.byIcon(Icons.share), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

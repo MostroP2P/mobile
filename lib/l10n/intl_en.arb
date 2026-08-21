@@ -313,6 +313,7 @@
     "paymentMethodLabel": "Payment Method",
     "createdOnLabel": "Created On",
     "orderIdLabel": "Order ID",
+    "orderLinkLabel": "Order link",
     "creatorReputationLabel": "Creator's Reputation",
     "buyerReputationLabel": "Buyer's Reputation",
     "sellerReputationLabel": "Seller's Reputation",
@@ -369,6 +370,16 @@
     "cooperativeCancelDialogMessage": "If you confirm, you will start a cooperative cancellation with your counterparty.",
     "acceptCancelDialogMessage": "If you confirm, you will accept the cooperative cancellation initiated by your counterparty.",
     "orderIdCopiedMessage": "Order ID copied to clipboard",
+    "orderLinkCopiedMessage": "Order link copied to clipboard",
+    "orderShareMessage": "Take this order on Mostro: {link}",
+    "@orderShareMessage": {
+        "placeholders": {
+            "link": {
+                "type": "String"
+            }
+        }
+    },
+    "failedToShareOrder": "Failed to share order. Please try copying instead.",
     "disputeTradeDialogTitle": "Start Dispute",
     "disputeTradeDialogContent": "You are about to start a dispute with your counterparty. Do you want to continue?",
     "disputeCreatedSuccessfully": "Dispute created successfully",

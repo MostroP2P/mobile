@@ -76,6 +76,12 @@ class TradeDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildOrderId(context),
                 const SizedBox(height: 16),
+                // Only while the order can still be taken: sharing a link to a
+                // trade already under way is of no use to whoever opens it.
+                if (isPending) ...[
+                  OrderShareLinkCard(orderId: orderId),
+                  const SizedBox(height: 16),
+                ],
                 // For pending orders created by the user, show creator's reputation
                 if (isPending && isCreator) ...[
                   // TODO: Change this to use `orderPayload` after Order model is updated

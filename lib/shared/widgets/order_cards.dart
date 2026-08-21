@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/user_info.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
@@ -243,6 +247,120 @@ class OrderIdCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Card that displays the order's shareable `mostro:` link with a copy button.
+///
+/// The link carries the relays the order can be resolved from and the Mostro
+/// instance it lives on, so any client that understands the scheme can open the
+/// order directly. It renders nothing when no usable relay is configured.
+class OrderShareLinkCard extends ConsumerWidget {
+  final String orderId;
+
+  const OrderShareLinkCard({
+    super.key,
+    required this.orderId,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final link = NostrUtils.buildMostroUrl(
+      orderId: orderId,
+      relays: settings.relays,
+      mostroPubkey: settings.mostroPublicKey,
+    );
+
+    if (link == null) return const SizedBox.shrink();
+
+    return CustomCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            S.of(context)!.orderLinkLabel,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  link,
+                  style: const TextStyle(
+                    color: AppTheme.mostroGreen,
+                    fontSize: 14,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.copy,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+                visualDensity: VisualDensity.compact,
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: link));
+                  SnackBarHelper.showTopSnackBar(
+                    context,
+                    S.of(context)!.orderLinkCopiedMessage,
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.share,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+                visualDensity: VisualDensity.compact,
+                tooltip: S.of(context)!.share,
+                onPressed: () => _share(context, link),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Hands the link to the system share sheet, wrapped in a sentence so it
+  /// arrives as something the recipient can make sense of.
+  ///
+  /// Everything taken from [context] is read before the await: this is a
+  /// stateless widget, so there is no `mounted` to check afterwards.
+  Future<void> _share(BuildContext context, String link) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final mediaQuery = MediaQuery.of(context);
+    final message = S.of(context)!.orderShareMessage(link);
+    final errorMessage = S.of(context)!.failedToShareOrder;
+    final box = context.findRenderObject() as RenderBox?;
+
+    try {
+      await Share.share(
+        message,
+        // iPads anchor the share sheet to the widget that raised it.
+        sharePositionOrigin: box == null
+            ? null
+            : box.localToGlobal(Offset.zero) & box.size,
+      );
+    } catch (e, stack) {
+      logger.e('Failed to share order link', error: e, stackTrace: stack);
+      SnackBarHelper.showTopSnackBarAsync(
+        messenger: messenger,
+        screenHeight: mediaQuery.size.height,
+        statusBarHeight: mediaQuery.padding.top,
+        message: errorMessage,
+      );
+    }
   }
 }
 
