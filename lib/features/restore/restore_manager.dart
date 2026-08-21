@@ -838,23 +838,71 @@ class RestoreService {
               }
             }
 
-            // Create regular order message with Order payload
-            final mostroMessage = MostroMessage<Order>(
-              id: orderDetail.id,
-              action: action,
-              payload: order,
-              timestamp:
-                  orderDetail.createdAt ??
-                  DateTime.now().millisecondsSinceEpoch,
-            );
+            // `settled-hold-invoice` is overloaded for the buyer (see issue
+            // #615): it covers both "hold settled, sats in flight" and "payout
+            // failed, awaiting a new invoice". The protocol distinguishes them
+            // only via the action (`payment-failed` / `add-invoice`), so a
+            // status-based rebuild always lands on the "paying sats" screen.
+            // On restore the daemon re-sends `add-invoice` to the buyer's trade
+            // key when the payout failed (mostro#754). Detect that substate and
+            // replay `payment-failed` then `add-invoice` so the order lands on
+            // `payment-failed` + `add-invoice` (the new-invoice prompt) instead.
+            // Seed replay timestamps from the order creation time so the
+            // reconstructed happy-path message keeps its historical ordering.
+            List<Action> actionsToApply = [action];
+            int baseTimestamp =
+                orderDetail.createdAt ?? DateTime.now().millisecondsSinceEpoch;
+            final orderSession = ref
+                .read(sessionNotifierProvider.notifier)
+                .getSessionByOrderId(orderDetail.id);
+            if (order.status == Status.settledHoldInvoice &&
+                orderSession?.role == Role.buyer) {
+              final messages = await storage.getAllMessagesForOrderId(
+                orderDetail.id,
+              );
+              if (restoreHasFailedPayoutSignal(messages)) {
+                actionsToApply = [Action.paymentFailed, Action.addInvoice];
+                // Stamp the replayed pair after every message already in
+                // storage so a later OrderNotifier.sync() (which replays storage
+                // sorted by timestamp) applies them last and converges to
+                // payment-failed. Seeding from createdAt instead would let an
+                // older re-delivered `released`/`settled` replay after the pair
+                // and drag the buyer back to "paying sats", making the fix
+                // non-persistent across provider recreation or app restart.
+                baseTimestamp = messages.fold<int>(
+                      baseTimestamp,
+                      (max, m) => (m.timestamp ?? 0) > max ? m.timestamp! : max,
+                    ) +
+                    1;
+                logger.i(
+                  'Restore: detected failed payout for order ${orderDetail.id}, '
+                  'restoring payment-failed substate instead of "paying sats"',
+                );
+              }
+            }
 
-            // Save order message to storage
-            final key =
-                '${orderDetail.id}_restore_${action.value}_${DateTime.now().millisecondsSinceEpoch}';
-            await storage.addMessage(key, mostroMessage);
+            // Create and apply the regular order message(s) with Order payload.
+            // When more than one action is replayed, stagger their timestamps so
+            // a later sync() replays them in the same order and converges to the
+            // same final state.
+            for (var i = 0; i < actionsToApply.length; i++) {
+              final replayAction = actionsToApply[i];
+              final mostroMessage = MostroMessage<Order>(
+                id: orderDetail.id,
+                action: replayAction,
+                payload: order,
+                timestamp: baseTimestamp + i,
+              );
 
-            // Update state with order message
-            notifier.updateStateFromMessage(mostroMessage);
+              // Save order message to storage
+              final key =
+                  '${orderDetail.id}_restore_${replayAction.value}_'
+                  '${DateTime.now().millisecondsSinceEpoch}_$i';
+              await storage.addMessage(key, mostroMessage);
+
+              // Update state with order message
+              notifier.updateStateFromMessage(mostroMessage);
+            }
           }
         } catch (e, stack) {
           logger.e(
@@ -1168,6 +1216,53 @@ Future<Map<String, dynamic>> decodeRestoreMessage(
     throw Exception('Restore message tuple is empty');
   }
   return contentList[0] as Map<String, dynamic>;
+}
+
+/// Detects the "payout failed, awaiting a new invoice" substate of an order
+/// that Mostro reports as `settled-hold-invoice`. See issue #615.
+///
+/// `settled-hold-invoice` is overloaded for the buyer: it covers both "hold
+/// settled, sats in flight" and "payout failed, awaiting a new invoice". The
+/// protocol distinguishes them only via the action, and `payment-failed` is a
+/// client-synthesized status that never travels on the wire, so the snapshot
+/// status alone cannot recover the failed substate.
+///
+/// Invariant this relies on (mostro#754): on `restore-session` the daemon
+/// re-enqueues ONLY `add-invoice`, and only for orders flagged
+/// `failed_payment = true` in `settled-hold-invoice`. It does NOT re-send
+/// `payment-failed`, `released` or `settled`. Restore also clears local storage
+/// before re-subscribing. A bare `add-invoice` sitting in freshly cleared
+/// storage is therefore the daemon's targeted failed-payout prompt, which is
+/// why a lone `add-invoice` counts as a signal here. Requiring a preceding
+/// `payment-failed`/release for the single-message case would miss this re-send
+/// and reintroduce the money-at-risk regression of #615.
+///
+/// The ordering check keeps this correct if a relay additionally re-delivers
+/// the full historical stream: `add-invoice` also appears early in the happy
+/// flow (waiting-buyer-invoice), so it is trusted as a failed-payout signal
+/// only when no release/settle precedes it (the daemon's fresh re-send) or when
+/// it arrives after one. `payment-failed`, if ever present, is definitive on
+/// its own.
+bool restoreHasFailedPayoutSignal(List<MostroMessage> messages) {
+  final sorted = [...messages]
+    ..sort((a, b) => (a.timestamp ?? 0).compareTo(b.timestamp ?? 0));
+
+  int releaseIndex = -1;
+  for (var i = 0; i < sorted.length; i++) {
+    final action = sorted[i].action;
+    if (action == Action.release ||
+        action == Action.released ||
+        action == Action.holdInvoicePaymentSettled) {
+      releaseIndex = i;
+    }
+  }
+
+  for (var i = 0; i < sorted.length; i++) {
+    final action = sorted[i].action;
+    if (action == Action.paymentFailed) return true;
+    if (action == Action.addInvoice && i > releaseIndex) return true;
+  }
+  return false;
 }
 
 /// Thrown when Mostro responds with cant-do: invalid_trade_index to
