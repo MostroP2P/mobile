@@ -1812,5 +1812,16 @@
                 "type": "int"
             }
         }
+    },
+    "bondPolicyMismatchTitle": "This bond does not match the node policy",
+    "bondPolicyNotAdvertisedBody": "This node has not published a bond policy, so there is nothing this request could be following. It will not be paid.",
+    "bondAmountMismatchBody": "The bond asks for {requestedAmount} sats, which is not what this node’s published policy yields for this order. It will not be paid.",
+    "@bondAmountMismatchBody": {
+        "description": "Shown when the bond amount does not match the node published policy",
+        "placeholders": {
+            "requestedAmount": {
+                "type": "String"
+            }
+        }
     }
 }

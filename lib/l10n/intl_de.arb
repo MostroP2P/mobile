@@ -1767,5 +1767,8 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "bondPolicyMismatchTitle": "Diese Kaution passt nicht zur Node-Richtlinie",
+    "bondPolicyNotAdvertisedBody": "Diese Node hat keine Kautionsrichtlinie veröffentlicht, also gibt es nichts, dem diese Anfrage folgen könnte. Sie wird nicht bezahlt.",
+    "bondAmountMismatchBody": "Die Kaution fordert {requestedAmount} Sats, was die veröffentlichte Richtlinie dieser Node für diese Order nicht ergibt. Sie wird nicht bezahlt."
 }

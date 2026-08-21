@@ -88,8 +88,12 @@ class Session {
         throw FormatException('Invalid key_index type: ${keyIndexValue.runtimeType}');
       }
 
-      if (keyIndex < 0) {
-        throw FormatException('Key index cannot be negative: $keyIndex');
+      // Not merely non-negative: index 0 is the identity key, and a session
+      // restored onto it would sign and ECDH under the master identity. The
+      // counter starts at 1 and setCurrentKeyIndex refuses anything lower, so
+      // no session this app wrote can be below it.
+      if (keyIndex < 1) {
+        throw FormatException('Key index must be greater than 0: $keyIndex');
       }
 
       // Validate key pair fields  
