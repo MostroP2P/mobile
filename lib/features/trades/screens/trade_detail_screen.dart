@@ -42,9 +42,11 @@ class TradeDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tradeState = ref.watch(orderNotifierProvider(orderId));
     final originalOrder = ref.watch(eventProvider(orderId));
-    // If message is null or doesn't have an Order payload, show loading
+    // If message is null or doesn't have an Order payload, show loading.
+    // The public 38383 is only needed for the creator reputation below, and the
+    // book cache only holds the last 48h, so it must not gate the whole screen.
     final orderPayload = tradeState.order;
-    if (orderPayload == null || originalOrder == null) {
+    if (orderPayload == null) {
       return const Scaffold(
         backgroundColor: AppTheme.backgroundDark,
         body: Center(child: CircularProgressIndicator()),
@@ -77,7 +79,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 _buildOrderId(context),
                 const SizedBox(height: 16),
                 // For pending orders created by the user, show creator's reputation
-                if (isPending && isCreator) ...[
+                if (isPending && isCreator && originalOrder != null) ...[
                   // TODO: Change this to use `orderPayload` after Order model is updated
                   // with rating information
                   _buildCreatorReputation(context, originalOrder),
