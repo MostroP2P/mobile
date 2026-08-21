@@ -7,7 +7,6 @@ import 'package:mostro_mobile/features/chat/providers/active_chat_screens_provid
 import 'package:mostro_mobile/features/disputes/widgets/dispute_communication_section.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_message_input.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart';
-import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
@@ -36,16 +35,7 @@ class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
     // Mark dispute as read when screen is opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      unawaited(
-        DisputeReadStatusService.markDisputeAsRead(widget.disputeId)
-            .catchError((Object e, StackTrace s) {
-          logger.w(
-            'Failed to mark dispute ${widget.disputeId} as read',
-            error: e,
-            stackTrace: s,
-          );
-        }),
-      );
+      unawaited(DisputeReadStatusService.markDisputeAsRead(widget.disputeId));
       // Notify that the dispute has been marked as read
       ref.read(disputeReadStatusProvider(widget.disputeId).notifier).state =
           DateTime.now().millisecondsSinceEpoch;
