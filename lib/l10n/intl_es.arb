@@ -1758,5 +1758,8 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "bondPolicyMismatchTitle": "Este bond no coincide con la política del nodo",
+    "bondPolicyNotAdvertisedBody": "Este nodo no publicó una política de bond, así que no hay nada que esta solicitud pueda estar siguiendo. No se pagará.",
+    "bondAmountMismatchBody": "El bond pide {requestedAmount} sats, que no es lo que la política publicada de este nodo da para esta orden. No se pagará."
 }
