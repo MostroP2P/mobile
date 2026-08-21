@@ -46,9 +46,18 @@ class RestoredOrder {
   });
 
   factory RestoredOrder.fromJson(Map<String, dynamic> json) {
+    final tradeIndex = json['trade_index'] as int;
+    // Index 0 is the identity key, so a restore response naming it would have
+    // the session that gets built here sign and ECDH under the master
+    // identity. Rejected at the boundary rather than at derivation, so the
+    // order never becomes a session in the first place.
+    if (tradeIndex < 1) {
+      throw FormatException('Trade index must be greater than 0: $tradeIndex');
+    }
+
     return RestoredOrder(
       id: json['order_id'] as String,
-      tradeIndex: json['trade_index'] as int,
+      tradeIndex: tradeIndex,
       status: json['status'] as String,
     );
   }
@@ -81,10 +90,15 @@ class RestoredDispute {
     final rawInitiator = json['initiator'] as String?;
     final normalizedInitiator = _normalizeInitiator(rawInitiator);
 
+    final tradeIndex = json['trade_index'] as int;
+    if (tradeIndex < 1) {
+      throw FormatException('Trade index must be greater than 0: $tradeIndex');
+    }
+
     return RestoredDispute(
       disputeId: json['dispute_id'] as String,
       orderId: json['order_id'] as String,
-      tradeIndex: json['trade_index'] as int,
+      tradeIndex: tradeIndex,
       status: json['status'] as String,
       initiator: normalizedInitiator,
       solverPubkey: json['solver_pubkey'] as String?,

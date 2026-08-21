@@ -1,3 +1,4 @@
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/data/models/last_trade_index_response.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
@@ -9,6 +10,13 @@ import 'package:mostro_mobile/features/key_manager/key_storage.dart';
 /// the test, not a case to stub out.
 class _FakeKeyStorage implements KeyStorage {
   int index = 1;
+
+  /// A real extended key, derived from a fixed mnemonic in [setUp]. The
+  /// derivator takes a BIP32 xprv, not a raw private key.
+  String? masterKey;
+
+  @override
+  Future<String?> readMasterKey() async => masterKey;
 
   @override
   Future<int> readTradeKeyIndex() async => index;
@@ -23,13 +31,22 @@ class _FakeKeyStorage implements KeyStorage {
       throw UnimplementedError('${invocation.memberName}');
 }
 
+/// A fixed BIP39 mnemonic, so every derivation here is reproducible.
+const _mnemonic =
+    'abandon abandon abandon abandon abandon abandon abandon abandon '
+    'abandon abandon abandon about';
+
 void main() {
   late _FakeKeyStorage storage;
   late KeyManager keyManager;
 
+  late KeyDerivator derivator;
+
   setUp(() {
+    derivator = KeyDerivator("m/44'/1237'/38383'/0");
     storage = _FakeKeyStorage();
-    keyManager = KeyManager(storage, KeyDerivator("m/44'/1237'/38383'/0"));
+    storage.masterKey = derivator.extendedKeyFromMnemonic(_mnemonic);
+    keyManager = KeyManager(storage, derivator);
   });
 
   // MM-021 / MM-003: the index counts trade keys this device has derived.
@@ -110,6 +127,67 @@ void main() {
         () => LastTradeIndexResponse.fromJson({'trade_index': 'many'}),
         throwsFormatException,
       );
+    });
+  });
+  // MM-003: index 0 is the identity key — `_getMasterKey` derives it — so a
+  // "trade key 0" is the master identity. The restore path derives straight
+  // from an index in the daemon's response, without going through the counter
+  // that has always refused it.
+  group('trade key index bounds', () {
+    setUp(() async {
+      await keyManager.init();
+    });
+
+    test('index 0 is the identity key, not a trade key', () {
+      // What the guard keeps out of a session: index 0 is what
+      // KeyManager.masterKeyPair is derived from, so a session built on
+      // "trade key 0" would sign and ECDH under the master identity.
+      final atZero = derivator.derivePrivateKey(storage.masterKey!, 0);
+
+      expect(atZero, keyManager.masterKeyPair!.private);
+      expect(atZero, isNot(derivator.derivePrivateKey(storage.masterKey!, 1)));
+    });
+
+    test('deriveTradeKeyPair refuses index 0', () {
+      expect(
+        () => keyManager.deriveTradeKeyPair(0),
+        throwsA(isA<InvalidTradeKeyIndexException>()),
+      );
+    });
+
+    test('deriveTradeKeyPair refuses a negative index', () {
+      expect(
+        () => keyManager.deriveTradeKeyPair(-1),
+        throwsA(isA<InvalidTradeKeyIndexException>()),
+      );
+    });
+
+    test('deriveTradeKeyPair still derives a real trade key', () {
+      expect(keyManager.deriveTradeKeyPair(1), isA<NostrKeyPairs>());
+      expect(keyManager.deriveTradeKeyPair(9999), isA<NostrKeyPairs>());
+    });
+
+    test('deriveTradeKeyFromIndex refuses index 0', () async {
+      await expectLater(
+        keyManager.deriveTradeKeyFromIndex(0),
+        throwsA(isA<InvalidTradeKeyIndexException>()),
+      );
+    });
+
+    test('deriveTradeKeyFromIndex refuses before it reads the master key',
+        () async {
+      // The argument is wrong whatever storage holds, and saying so without
+      // touching the key keeps the two failures apart.
+      storage.masterKey = null;
+
+      await expectLater(
+        keyManager.deriveTradeKeyFromIndex(0),
+        throwsA(isA<InvalidTradeKeyIndexException>()),
+      );
+    });
+
+    test('deriveTradeKeyFromIndex still derives a real trade key', () async {
+      expect(await keyManager.deriveTradeKeyFromIndex(1), isA<NostrKeyPairs>());
     });
   });
 }
