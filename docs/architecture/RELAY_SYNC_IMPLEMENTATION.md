@@ -239,54 +239,52 @@ Future<void> _saveRelays() async {
 
 ### URL Normalization and Validation System
 
-#### Smart URL Normalization (Lines 122-134)
+Validation lives in a pure, dependency-free class,
+`lib/features/relays/relay_url_validator.dart`, so it is unit-tested directly
+(`test/features/relays/relay_url_validator_test.dart`). `RelaysNotifier`
+builds it from `Config.allowInsecureRelays` and exposes `normalizeRelayUrl()`
+as a thin delegate; tests inject a validator through the `urlValidator`
+constructor parameter.
+
+#### `RelayUrlValidator.validate()`
 ```dart
-String? normalizeRelayUrl(String input) {
-  input = input.trim().toLowerCase();                        // Line 123
-
-  if (!isValidDomainFormat(input)) return null;             // Line 125
-
-  if (input.startsWith('wss://')) {
-    return input; // Already properly formatted                // Line 128
-  } else if (input.startsWith('ws://') || input.startsWith('http')) {
-    return null; // Reject non-secure protocols              // Line 130
-  } else {
-    return 'wss://$input'; // Auto-add wss:// prefix         // Line 132
-  }
-}
+final validator = RelayUrlValidator(allowInsecure: Config.allowInsecureRelays);
+final result = validator.validate(input); // RelayUrlValidation
+result.url;        // normalized URL, or null
+result.rejection;  // RelayUrlRejection.insecureScheme | httpScheme | invalidHost
 ```
 
-#### Domain Format Validation (Lines 137-158)
-```dart
-bool isValidDomainFormat(String input) {
-  // Remove protocol prefix if present
-  if (input.startsWith('wss://')) {
-    input = input.substring(6);                              // Line 140
-  } else if (input.startsWith('ws://')) {
-    input = input.substring(5);                              // Line 142
-  } else if (input.startsWith('http://')) {
-    input = input.substring(7);                              // Line 144
-  } else if (input.startsWith('https://')) {
-    input = input.substring(8);                              // Line 146
-  }
+Policy:
 
-  // Reject IP addresses (basic check for numbers and dots only)
-  if (RegExp(r'^[\d.]+$').hasMatch(input)) {
-    return false;                                            // Line 151
-  }
+| Input | Release build | `allowInsecure` (debug/profile, Mortsom) |
+|---|---|---|
+| `wss://relay.example.com[:port]`, bare host | accepted | accepted |
+| `wss://localhost[:port]`, `wss://10.0.2.2` | `invalidHost` | accepted |
+| `ws://localhost[:port]`, `ws://10.0.2.2` | `insecureScheme` | accepted |
+| `ws://relay.example.com` | `insecureScheme` | `insecureScheme` (plain text only to local hosts) |
+| `http(s)://…` | `httpScheme` | `httpScheme` |
+| malformed host, octet > 255, port outside 1-65535 | `invalidHost` (`insecureScheme` if given as `ws://`) | `invalidHost` |
 
-  // Domain regex: valid domain format with at least one dot
-  final domainRegex = RegExp(
-      r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'); // Line 155
-  return domainRegex.hasMatch(input) && input.contains('.'); // Line 157
-}
-```
+The scheme is decided first (split on the first `://`), then the host is
+validated, so a bare domain that merely starts with `http` is accepted. The
+rejection reason drives the localized error in
+`addRelayWithSmartValidation()` (`relayErrorOnlySecure`, `relayErrorNoHttp`,
+`relayErrorInvalidDomain`).
+
+#### Canonical key
+`RelayUrlValidator.canonicalKey(url)` trims, strips trailing slashes and
+lowercases scheme and host (a path keeps its case). It is the single
+normalizer used by `normalize()` and by every dedupe/blacklist comparison in
+`RelaysNotifier` (`_normalizeRelayUrl()` delegates to it), so URLs stored by
+older app versions (`wss://Relay.Example.com/`) still match freshly
+validated input.
 
 **Security Features**:
-- **Protocol Enforcement**: Only accepts `wss://` (secure WebSocket) connections
-- **IP Address Rejection**: Prevents direct IP connections for security
-- **Domain Validation**: RFC-compliant domain name validation
-- **Auto-prefix Addition**: User-friendly input handling
+- **Protocol Enforcement**: Release builds accept only `wss://`; plain `ws://`
+  is never accepted towards a public host in any build
+- **Host Policy**: Domain names (optional port) always; `localhost`/IPv4 only
+  when `Config.allowInsecureRelays` is true
+- **Auto-prefix Addition**: Bare hosts get `wss://`, never `ws://`
 
 ### Two-Tier Connectivity Validation System
 
@@ -837,16 +835,9 @@ Future<void> _cleanAllRelaysAndResync() async {
 
 ### Utility Methods and Helpers
 
-#### URL Normalization (Lines 847-854)
+#### URL Normalization
 ```dart
-String _normalizeRelayUrl(String url) {
-  url = url.trim();                                         // Line 848
-  // Remove trailing slash if present
-  if (url.endsWith('/')) {                                  // Line 850
-    url = url.substring(0, url.length - 1);                // Line 851
-  }
-  return url;                                               // Line 853
-}
+String _normalizeRelayUrl(String url) => RelayUrlValidator.canonicalKey(url);
 ```
 
 #### Safety Validation (Lines 779-789)
@@ -1258,8 +1249,8 @@ Storage Persistence → UI Feedback
 ### Input Validation and Sanitization
 
 #### URL Security
-- **Protocol Enforcement**: Only accepts secure WebSocket connections (wss://)
-- **IP Address Rejection**: Prevents direct IP connections for security
+- **Protocol Enforcement**: Release builds only accept secure WebSocket connections (wss://); non-release builds and the Mortsom test environment accept plain `ws://` only towards local hosts
+- **IP Address Rejection**: Direct IP connections rejected in release builds (local hosts allowed only when `Config.allowInsecureRelays` is true)
 - **Domain Validation**: RFC-compliant domain name validation
 - **Input Sanitization**: Proper trimming and normalization of user input
 
@@ -1269,7 +1260,7 @@ Storage Persistence → UI Feedback
 - **Subscription Isolation**: Each Mostro instance gets isolated subscriptions
 
 ### Network Security
-- **Secure Connections Only**: Rejects insecure ws:// and http:// protocols
+- **Secure Connections Only**: Rejects http:// always and insecure ws:// except towards local hosts in non-release builds
 - **Connectivity Validation**: Mandatory connectivity testing before relay addition
 - **Test Instance Isolation**: Connectivity tests use separate Nostr instances
 

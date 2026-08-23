@@ -112,8 +112,10 @@ When enabled:
   public-network traffic. A build that arms the test environment without
   `MORTSOM_RELAYS` fails at startup rather than starting with no relay;
 - plain `ws://` relays on local hosts (`localhost`, IPv4, optional port) are
-  accepted by the add-relay validation. Debug builds (`kDebugMode`) accept
-  them too, independently of the test environment; release builds never do;
+  accepted by the add-relay validation (`ws://` is never accepted towards a
+  public host). Non-release builds (debug and profile, see
+  `Config.allowInsecureRelays`) accept them too, independently of the test
+  environment; release builds never do;
 - a red `TEST ENVIRONMENT · Mortsom` banner (`env.marker`) is shown on every
   screen.
 

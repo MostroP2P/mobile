@@ -4,7 +4,6 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/ease.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
-import 'package:mostro_mobile/core/test_environment.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
@@ -41,7 +40,14 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   // Timestamp validation to ignore older events
   DateTime? _lastProcessedEventTime;
 
-  RelaysNotifier(this.settings, this.ref) : super([]) {
+  /// Validates user-entered relay URLs. Injectable so the policy wiring
+  /// (release builds never accept plain `ws://`) can be unit-tested.
+  final RelayUrlValidator _urlValidator;
+
+  RelaysNotifier(this.settings, this.ref, {RelayUrlValidator? urlValidator})
+      : _urlValidator = urlValidator ??
+            RelayUrlValidator(allowInsecure: Config.allowInsecureRelays),
+        super([]) {
     _loadRelays();
     _initMostroRelaySync();
     _initSettingsListener();
@@ -117,17 +123,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     await _saveRelays();
   }
 
-  RelayUrlValidator get _urlValidator =>
-      RelayUrlValidator(allowInsecure: TestEnvironment.allowInsecureRelays);
-
   /// Smart URL normalization - handles different input formats.
   /// Plain `ws://` and local hosts are accepted only when
-  /// [TestEnvironment.allowInsecureRelays] is true (debug builds or the
-  /// Mortsom test environment).
+  /// [Config.allowInsecureRelays] is true (non-release builds or the Mortsom
+  /// test environment), see [RelayUrlValidator].
   String? normalizeRelayUrl(String input) => _urlValidator.normalize(input);
-
-  /// Domain validation (protocol prefix optional).
-  bool isValidDomainFormat(String input) => _urlValidator.isValidHost(input);
 
   /// Test connectivity using proper Nostr protocol validation
   /// Sends REQ message and waits for EVENT + EOSE responses
@@ -310,28 +310,19 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     required String errorNotValid,
   }) async {
     // Step 1: Normalize URL
-    final normalizedUrl = normalizeRelayUrl(input);
+    final validation = _urlValidator.validate(input);
+    final normalizedUrl = validation.url;
     if (normalizedUrl == null) {
-      if (input.trim().toLowerCase().startsWith('ws://')) {
-        return RelayValidationResult(
-          success: false,
-          error: errorOnlySecure,
-        );
-      } else if (input.trim().toLowerCase().startsWith('http')) {
-        return RelayValidationResult(
-          success: false,
-          error: errorNoHttp,
-        );
-      } else {
-        return RelayValidationResult(
-          success: false,
-          error: errorInvalidDomain,
-        );
-      }
+      final error = switch (validation.rejection!) {
+        RelayUrlRejection.insecureScheme => errorOnlySecure,
+        RelayUrlRejection.httpScheme => errorNoHttp,
+        RelayUrlRejection.invalidHost => errorInvalidDomain,
+      };
+      return RelayValidationResult(success: false, error: error);
     }
 
-    // Step 2: Check for duplicates
-    if (state.any((relay) => relay.url == normalizedUrl)) {
+    // Step 2: Check for duplicates (stored URLs may predate normalization)
+    if (state.any((relay) => _normalizeRelayUrl(relay.url) == normalizedUrl)) {
       return RelayValidationResult(
         success: false,
         error: errorAlreadyExists,
@@ -349,10 +340,15 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       );
     }
 
-    // Step 5: Remove from blacklist if present (user wants to manually add it)
-    if (settings.state.blacklistedRelays.contains(normalizedUrl)) {
-      await settings.removeFromBlacklist(normalizedUrl);
-      logger.i('Removed $normalizedUrl from blacklist - user manually added it');
+    // Step 5: Remove from blacklist if present (user wants to manually add it).
+    // Compare through the canonical key: stored entries may predate
+    // normalization.
+    final blacklisted = settings.state.blacklistedRelays
+        .where((url) => _normalizeRelayUrl(url) == normalizedUrl)
+        .toList();
+    for (final url in blacklisted) {
+      await settings.removeFromBlacklist(url);
+      logger.i('Removed $url from blacklist - user manually added it');
     }
 
     // Step 6: Add relay as user relay
@@ -833,12 +829,9 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     }
   }
 
-  /// Normalize relay URL to prevent duplicates (removes trailing slash)
-  String _normalizeRelayUrl(String url) {
-    // Remove every trailing slash so `wss://relay//` and `wss://relay/`
-    // normalize to the same key as `wss://relay`.
-    return url.trim().replaceAll(RegExp(r'/+$'), '');
-  }
+  /// Canonical key used for every dedupe/blacklist comparison, shared with
+  /// the add-relay validation so both sides normalize the same way.
+  String _normalizeRelayUrl(String url) => RelayUrlValidator.canonicalKey(url);
 
   @override
   void dispose() {

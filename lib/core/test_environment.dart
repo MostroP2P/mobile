@@ -68,9 +68,10 @@ class TestEnvironment {
   static bool get disableBootstrapFallback => enabled;
 
   /// Local test relays are plain `ws://` on a private address (for example
-  /// `ws://localhost:7000`). That is acceptable inside the test environment
-  /// and in debug builds, never in release builds.
-  static bool get allowInsecureRelays => enabled || kDebugMode;
+  /// `ws://localhost:7000`), so the test environment accepts them. The
+  /// general build policy (non-release builds accept them too) lives in
+  /// `Config.allowInsecureRelays`, not here.
+  static bool get allowInsecureRelays => enabled;
 
   /// Copy of the visible environment marker.
   static const String markerLabel = 'TEST ENVIRONMENT · Mortsom';

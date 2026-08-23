@@ -2,13 +2,14 @@
 // must stay present, unique and namespaced. Removing or renaming one is a
 // contract change (see docs/automation-contract.md) and must fail here.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:mostro_mobile/core/automation/automation_ids.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/core/test_environment.dart';
 import 'package:mostro_mobile/features/community/community.dart';
 import 'package:mostro_mobile/features/community/widgets/community_card.dart';
@@ -167,14 +168,24 @@ void main() {
       expect(TestEnvironment.enabled, TestEnvironment.defineEnabled);
       expect(TestEnvironment.disableBootstrapFallback,
           TestEnvironment.defineEnabled);
-      expect(TestEnvironment.allowInsecureRelays,
-          TestEnvironment.defineEnabled || kDebugMode);
+      expect(
+          TestEnvironment.allowInsecureRelays, TestEnvironment.defineEnabled);
     });
 
-    test('allows insecure relays in debug builds without arming', () {
-      // `flutter test` runs in debug mode, so this must hold here.
+    test('does not allow insecure relays on its own when not armed', () {
+      // The debug-build allowance lives in Config.allowInsecureRelays; the
+      // test-environment flag itself must stay tied to `enabled`.
       expect(TestEnvironment.enabled, isFalse);
-      expect(TestEnvironment.allowInsecureRelays, kDebugMode);
+      expect(TestEnvironment.allowInsecureRelays, isFalse);
+    });
+
+    test('Config.allowInsecureRelays follows the build mode when not armed',
+        () {
+      // `flutter test` is a non-release build, so the allowance comes from
+      // the build mode alone, never from the test environment.
+      expect(TestEnvironment.enabled, isFalse);
+      expect(Config.allowInsecureRelays, !kReleaseMode);
+      expect(Config.allowInsecureRelays, isTrue);
     });
 
     test('parses relay lists', () {
