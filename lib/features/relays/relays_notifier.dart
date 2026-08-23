@@ -84,12 +84,13 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   }
 
   Future<void> _saveRelays() async {
-    // Get blacklisted relays
+    // Get blacklisted relays (membership is checked through the canonical
+    // key: stored relay URLs may predate normalization)
     final blacklistedUrls = settings.state.blacklistedRelays;
     
     // Include ALL active relays (Mostro/default + user) that are NOT blacklisted
     final allActiveRelayUrls = state
-        .where((r) => !blacklistedUrls.contains(r.url))
+        .where((r) => !_isBlacklisted(r.url))
         .map((r) => r.url)
         .toList();
     
@@ -700,8 +701,14 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   }
 
   /// Check if a relay URL is currently blacklisted
-  bool isRelayBlacklisted(String url) {
-    return settings.state.blacklistedRelays.contains(url);
+  bool isRelayBlacklisted(String url) => _isBlacklisted(url);
+
+  /// Blacklist membership through the canonical key, so legacy entries and
+  /// relay URLs that differ only in case or trailing slashes still match.
+  bool _isBlacklisted(String url) {
+    final key = _normalizeRelayUrl(url);
+    return settings.state.blacklistedRelays
+        .any((b) => _normalizeRelayUrl(b) == key);
   }
 
   /// Get all blacklisted relay URLs
@@ -712,7 +719,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   /// Order: [Default relays...] [Mostro relays...] [User relays...]
   List<MostroRelayInfo> get mostroRelaysWithStatus {
     final blacklistedUrls = settings.state.blacklistedRelays;
-    final activeRelays = state.map((r) => r.url).toSet();
+    final activeRelays = state.map((r) => _normalizeRelayUrl(r.url)).toSet();
     final allRelayInfos = <MostroRelayInfo>[];
     
     // 1. Get active Mostro and default relays
@@ -721,7 +728,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         .map((r) => MostroRelayInfo(
               url: r.url,
               // Check if this relay is blacklisted (even if it's still in state)
-              isActive: !blacklistedUrls.contains(r.url),
+              isActive: !_isBlacklisted(r.url),
               isHealthy: r.isHealthy,
               source: r.source,
             ))
@@ -729,7 +736,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     
     // 2. Add blacklisted Mostro/default relays that are NOT in the active state
     final mostroBlacklistedRelays = blacklistedUrls
-        .where((url) => !activeRelays.contains(url))
+        .where((url) => !activeRelays.contains(_normalizeRelayUrl(url)))
         .map((url) => MostroRelayInfo(
               url: url,
               isActive: false,
@@ -748,7 +755,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         .where((r) => r.source == RelaySource.user)
         .map((r) => MostroRelayInfo(
               url: r.url,
-              isActive: !blacklistedUrls.contains(r.url), // User relays can also be blacklisted
+              isActive: !_isBlacklisted(r.url), // User relays can also be blacklisted
               isHealthy: r.isHealthy,
               source: r.source,
             ))
@@ -763,12 +770,19 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
 
   /// Check if blacklisting this relay would leave the app without any active relays
   bool wouldLeaveNoActiveRelays(String urlToBlacklist) {
-    final currentActiveRelays = state.map((r) => r.url).toList();
-    final currentBlacklist = settings.state.blacklistedRelays;
-    
+    final currentActiveRelays =
+        state.map((r) => _normalizeRelayUrl(r.url)).toList();
+    final currentBlacklist =
+        settings.state.blacklistedRelays.map(_normalizeRelayUrl);
+
     // Simulate what would happen if we blacklist this URL
-    final wouldBeBlacklisted = [...currentBlacklist, urlToBlacklist];
-    final wouldRemainActive = currentActiveRelays.where((url) => !wouldBeBlacklisted.contains(url)).toList();
+    final wouldBeBlacklisted = {
+      ...currentBlacklist,
+      _normalizeRelayUrl(urlToBlacklist),
+    };
+    final wouldRemainActive = currentActiveRelays
+        .where((url) => !wouldBeBlacklisted.contains(url))
+        .toList();
     
     logger.d('Current active: ${currentActiveRelays.length}, Would remain: ${wouldRemainActive.length}');
     return wouldRemainActive.isEmpty;
@@ -778,7 +792,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   /// If active -> blacklist it and remove from active relays  
   /// If blacklisted -> remove from blacklist and trigger re-sync to add back
   Future<void> toggleMostroRelayBlacklist(String url) async {
-    final isCurrentlyBlacklisted = settings.state.blacklistedRelays.contains(url);
+    final isCurrentlyBlacklisted = _isBlacklisted(url);
     
     if (isCurrentlyBlacklisted) {
       // Remove from blacklist and trigger sync to add back

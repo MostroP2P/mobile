@@ -434,76 +434,66 @@ Future<bool> _testBasicWebSocketConnectivity(String url) async {
 
 ### Smart Relay Addition with Comprehensive Validation
 
-#### Six-Step Validation Process (Lines 332-401)
+#### Six-Step Validation Process
 ```dart
 Future<RelayValidationResult> addRelayWithSmartValidation(
   String input, {
-  required String errorOnlySecure,                          // Line 334
-  required String errorNoHttp,                              // Line 335
-  required String errorInvalidDomain,                       // Line 336
-  required String errorAlreadyExists,                       // Line 337
-  required String errorNotValid,                            // Line 338
+  required String errorOnlySecure,
+  required String errorNoHttp,
+  required String errorInvalidDomain,
+  required String errorAlreadyExists,
+  required String errorNotValid,
 }) async {
-  // Step 1: Normalize URL
-  final normalizedUrl = normalizeRelayUrl(input);           // Line 341
+  // Step 1: Validate and normalize (typed rejection picks the message)
+  final validation = _urlValidator.validate(input);
+  final normalizedUrl = validation.url;
   if (normalizedUrl == null) {
-    if (input.trim().toLowerCase().startsWith('ws://')) {
-      return RelayValidationResult(
-        success: false,
-        error: errorOnlySecure,                              // Line 346
-      );
-    } else if (input.trim().toLowerCase().startsWith('http')) {
-      return RelayValidationResult(
-        success: false,
-        error: errorNoHttp,                                  // Line 351
-      );
-    } else {
-      return RelayValidationResult(
-        success: false,
-        error: errorInvalidDomain,                           // Line 356
-      );
-    }
+    final error = switch (validation.rejection!) {
+      RelayUrlRejection.insecureScheme => errorOnlySecure,
+      RelayUrlRejection.httpScheme => errorNoHttp,
+      RelayUrlRejection.invalidHost => errorInvalidDomain,
+    };
+    return RelayValidationResult(success: false, error: error);
   }
 
-  // Step 2: Check for duplicates
-  if (state.any((relay) => relay.url == normalizedUrl)) {   // Line 362
-    return RelayValidationResult(
-      success: false,
-      error: errorAlreadyExists,                             // Line 365
-    );
+  // Step 2: Check for duplicates through the canonical key
+  // (stored URLs may predate normalization)
+  if (state.any((relay) => _normalizeRelayUrl(relay.url) == normalizedUrl)) {
+    return RelayValidationResult(success: false, error: errorAlreadyExists);
   }
 
   // Step 3: Test connectivity using dart_nostr - MUST PASS to proceed
-  final isHealthy = await testRelayConnectivity(normalizedUrl); // Line 370
+  final isHealthy = await testRelayConnectivity(normalizedUrl);
 
   // Step 4: Only add relay if it passes connectivity test
   if (!isHealthy) {
-    return RelayValidationResult(
-      success: false,
-      error: errorNotValid,                                  // Line 376
-    );
+    return RelayValidationResult(success: false, error: errorNotValid);
   }
 
-  // Step 5: Remove from blacklist if present (user wants to manually add it)
-  if (settings.state.blacklistedRelays.contains(normalizedUrl)) { // Line 381
-    await settings.removeFromBlacklist(normalizedUrl);      // Line 382
-    _logger.i('Removed $normalizedUrl from blacklist - user manually added it'); // Line 383
+  // Step 5: Remove from blacklist if present (user wants to manually add it),
+  // again comparing canonical keys
+  final blacklisted = settings.state.blacklistedRelays
+      .where((url) => _normalizeRelayUrl(url) == normalizedUrl)
+      .toList();
+  for (final url in blacklisted) {
+    await settings.removeFromBlacklist(url);
+    logger.i('Removed $url from blacklist - user manually added it');
   }
 
   // Step 6: Add relay as user relay
   final newRelay = Relay(
-    url: normalizedUrl,                                      // Line 388
-    isHealthy: true,                                         // Line 389
-    source: RelaySource.user,                               // Line 390
-    addedAt: DateTime.now(),                                // Line 391
+    url: normalizedUrl,
+    isHealthy: true,
+    source: RelaySource.user,
+    addedAt: DateTime.now(),
   );
-  state = [...state, newRelay];                             // Line 393
-  await _saveRelays();                                      // Line 394
+  state = [...state, newRelay];
+  await _saveRelays();
 
   return RelayValidationResult(
-    success: true,                                           // Line 397
-    normalizedUrl: normalizedUrl,                           // Line 398
-    isHealthy: true,                                        // Line 399
+    success: true,
+    normalizedUrl: normalizedUrl,
+    isHealthy: true,
   );
 }
 ```
@@ -1260,7 +1250,7 @@ Storage Persistence → UI Feedback
 - **Subscription Isolation**: Each Mostro instance gets isolated subscriptions
 
 ### Network Security
-- **Secure Connections Only**: Rejects http:// always and insecure ws:// except towards local hosts in non-release builds
+- **Secure Connections Only**: Rejects http:// always. Insecure ws:// is rejected unless `Config.allowInsecureRelays` is true (non-release builds, or the Mortsom test environment: armed entry point plus `MORTSOM_TEST_ENV`), and even then only towards local hosts (`localhost`, IPv4)
 - **Connectivity Validation**: Mandatory connectivity testing before relay addition
 - **Test Instance Isolation**: Connectivity tests use separate Nostr instances
 

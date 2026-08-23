@@ -99,4 +99,23 @@ void main() {
       });
     });
   });
+
+  group('RelaysNotifier blacklist matching', () {
+    testWidgets(
+        'does not persist relays whose legacy URL differs only in case or '
+        'trailing slash from a blacklist entry', (tester) async {
+      await withNotifier(tester, allowInsecure: false, body: (notifier) async {
+        await notifier.settings.addToBlacklist('wss://blocked.example.com');
+
+        // Legacy state entries stored before normalization existed.
+        await notifier.addRelay(Relay(url: 'wss://Blocked.Example.com/'));
+        await notifier.addRelay(Relay(url: 'wss://kept.example.com'));
+
+        expect(notifier.settings.state.relays, ['wss://kept.example.com']);
+        expect(
+            notifier.isRelayBlacklisted('wss://Blocked.Example.com//'), isTrue);
+        expect(notifier.isRelayBlacklisted('wss://kept.example.com'), isFalse);
+      });
+    });
+  });
 }

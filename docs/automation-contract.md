@@ -115,7 +115,8 @@ When enabled:
   accepted by the add-relay validation (`ws://` is never accepted towards a
   public host). Non-release builds (debug and profile, see
   `Config.allowInsecureRelays`) accept them too, independently of the test
-  environment; release builds never do;
+  environment; a release build accepts them only inside the test environment
+  (armed entry point plus the define), never on its own;
 - a red `TEST ENVIRONMENT · Mortsom` banner (`env.marker`) is shown on every
   screen.
 
