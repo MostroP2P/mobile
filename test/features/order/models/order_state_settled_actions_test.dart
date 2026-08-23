@@ -42,12 +42,46 @@ void main() {
       expect(actions, contains(Action.addInvoice));
     });
 
+    test('the invoice survives the invoice-updated ack', () {
+      // Mostro acks the new invoice with invoice-updated and no payload, so the
+      // status is kept and only the action changes. Without a row for it the
+      // buyer would lose the button until the next payment-failed.
+      for (final state in [
+        _state(Status.paymentFailed, Action.invoiceUpdated),
+        _state(Status.settledHoldInvoice, Action.invoiceUpdated),
+      ]) {
+        expect(state.getActions(Role.buyer), contains(Action.addInvoice),
+            reason: '${state.status} / ${state.action}');
+      }
+    });
+
+    test('the whole payout retry sequence keeps the invoice reachable', () {
+      // released -> add-invoice (settled payload) -> invoice-updated ack.
+      var state = _state(Status.settledHoldInvoice, Action.released);
+      expect(state.getActions(Role.buyer), contains(Action.addInvoice));
+
+      state = state.updateWith(MostroMessage<Order>(
+        action: Action.addInvoice,
+        payload: _settledOrder(),
+      ));
+      expect(state.status, equals(Status.paymentFailed));
+      expect(state.getActions(Role.buyer), contains(Action.addInvoice));
+
+      state = state.updateWith(MostroMessage<Order>(
+        action: Action.invoiceUpdated,
+      ));
+      expect(state.status, equals(Status.paymentFailed));
+      expect(state.getActions(Role.buyer), contains(Action.addInvoice));
+    });
+
     test('cancel is never offered: Mostro rejects it on a settled order', () {
       for (final state in [
         _state(Status.settledHoldInvoice, Action.released),
         _state(Status.settledHoldInvoice, Action.addInvoice),
         _state(Status.paymentFailed, Action.addInvoice),
         _state(Status.paymentFailed, Action.paymentFailed),
+        _state(Status.paymentFailed, Action.invoiceUpdated),
+        _state(Status.settledHoldInvoice, Action.invoiceUpdated),
       ]) {
         expect(state.getActions(Role.buyer), isNot(contains(Action.cancel)),
             reason: '${state.status} / ${state.action}');

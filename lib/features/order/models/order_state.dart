@@ -621,6 +621,12 @@ class OrderState {
         Action.paymentFailed: [
           Action.addInvoice,
         ],
+        // Mostro acked the new invoice (invoice-updated, no payload) and the
+        // payout is being retried. The swap is accepted between attempts, so
+        // keep the way in for a buyer whose second invoice is wrong too.
+        Action.invoiceUpdated: [
+          Action.addInvoice,
+        ],
       },
       Status.active: {
         Action.holdInvoicePaymentAccepted: [
@@ -721,6 +727,11 @@ class OrderState {
         // Released but not paid yet: let the buyer replace an invoice that is
         // not going to work instead of waiting for the payout to fail.
         Action.released: [
+          Action.addInvoice,
+        ],
+        // Same as the payment-failed row: the invoice-updated ack must not
+        // leave the buyer without a way back in.
+        Action.invoiceUpdated: [
           Action.addInvoice,
         ],
       },

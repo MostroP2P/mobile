@@ -58,8 +58,9 @@ class _AddLightningInvoiceScreenState
         final orderPayload = mostroMessage?.getPayload<Order>();
         final orderState = ref.watch(orderNotifierProvider(orderId));
         // A settled order is not asking for the invoice a take requires, but
-        // for the payout one, which has its own screen.
-        if (isPayoutInvoice(orderState.status)) {
+        // for the payout one, which has its own screen. It deliberately ignores
+        // `lnAddress`: the address may be what broke the payout to begin with.
+        if (orderState.status.isPayoutInvoice) {
           return PayoutInvoiceScreen(
             orderId: orderId,
             // The stream only matches messages whose payload is an Order; the

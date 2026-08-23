@@ -43,6 +43,16 @@ enum Status {
         _ => false,
       };
 
+  /// Whether an add-invoice on this status asks for the payout of an already
+  /// settled order rather than the invoice a take requires.
+  ///
+  /// Both statuses mean the same thing: the hold invoice is settled and the
+  /// only thing left is paying the buyer. [paymentFailed] is where a payout
+  /// retry lands, [settledHoldInvoice] is the window between the release and
+  /// the payout, where the buyer may want to replace a wrong invoice.
+  bool get isPayoutInvoice =>
+      this == Status.paymentFailed || this == Status.settledHoldInvoice;
+
   @override
   String toString() {
     return value;

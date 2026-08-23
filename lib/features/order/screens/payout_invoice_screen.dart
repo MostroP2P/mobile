@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
-import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
@@ -11,16 +10,6 @@ import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 import 'package:mostro_mobile/shared/widgets/add_lightning_invoice_widget.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_invoice_widget.dart';
-
-/// Whether this add-invoice asks for the payout of an already settled order
-/// rather than the invoice a take requires.
-///
-/// Both statuses mean the same thing: the hold invoice is settled and the only
-/// thing left is paying the buyer. `paymentFailed` is where a payout retry
-/// lands, `settledHoldInvoice` is the window between the release and the
-/// payout, where the buyer may want to replace a wrong invoice on their own.
-bool isPayoutInvoice(Status status) =>
-    status == Status.paymentFailed || status == Status.settledHoldInvoice;
 
 /// Invoice screen for collecting the sats of a settled order.
 ///
@@ -97,7 +86,9 @@ class _PayoutInvoiceScreenState extends ConsumerState<PayoutInvoiceScreen> {
                     sats: sats,
                     orderId: orderIdValue,
                     onInvoiceConfirmed: (invoice) async {
-                      await _submitInvoice(invoice, sats);
+                      // Same nullable amount as the manual path: only the
+                      // display falls back to zero, never what is submitted.
+                      await _submitInvoice(invoice, order?.amount);
                     },
                     onFallbackToManual: () {
                       setState(() => _manualMode = true);
