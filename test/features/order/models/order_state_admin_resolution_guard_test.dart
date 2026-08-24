@@ -127,6 +127,63 @@ void main() {
           reason: 'the tracked dispute id must survive the wire payload');
     });
 
+    test('a resolution naming another dispute does not resolve the tracked one',
+        () {
+      // Keeping the tracked dispute is not enough: applying the resolution to
+      // it closes dispute-1 on the authority of a message about another
+      // dispute, and drives the resolution UI for a trade still under review.
+      final state = _stateWithDispute();
+
+      for (final action in [Action.adminSettled, Action.adminCanceled]) {
+        final updated = state.updateWith(
+          _message(action, payload: Dispute(disputeId: 'some-other-dispute')),
+        );
+
+        expect(updated.status, equals(Status.dispute),
+            reason: '$action for another dispute must not end this trade');
+        expect(updated.dispute!.status, equals('in-progress'),
+            reason: '$action for another dispute must not resolve this one');
+      }
+    });
+
+    test('a mismatched dispute id is reported so side effects are dropped', () {
+      final state = _stateWithDispute();
+
+      expect(
+        state.rejectsAdminDisputeMessage(
+          _message(Action.adminSettled,
+              payload: Dispute(disputeId: 'some-other-dispute')),
+        ),
+        isTrue,
+        reason: 'the notifier must suppress the notification and navigation '
+            'for a resolution about a dispute this order does not track',
+      );
+    });
+
+    test('the tracked dispute still resolves when the payload matches it', () {
+      final state = _stateWithDispute();
+
+      final updated = state.updateWith(
+        _message(Action.adminSettled,
+            payload: Dispute(disputeId: 'dispute-1')),
+      );
+
+      expect(updated.status, equals(Status.settledByAdmin));
+      expect(updated.dispute!.status, equals('resolved'));
+    });
+
+    test('a null payload still resolves, as Mostro sends these confirmations',
+        () {
+      final state = _stateWithDispute();
+
+      final updated = state.updateWith(_message(Action.adminSettled));
+
+      expect(updated.status, equals(Status.settledByAdmin),
+          reason: 'admin-settled confirmations carry payload: null, so the '
+              'mismatch check must not reject the legitimate shape');
+      expect(updated.dispute!.status, equals('resolved'));
+    });
+
     test('a bare dispute message is not evidence for the resolution behind it',
         () {
       // Two-step forgery: Action.dispute maps to Status.dispute without
@@ -180,31 +237,31 @@ void main() {
     test('reports rejection for admin actions with no dispute evidence', () {
       final state = _stateWithoutDispute();
 
-      expect(state.rejectsAdminDisputeAction(Action.adminCanceled), isTrue);
-      expect(state.rejectsAdminDisputeAction(Action.adminSettled), isTrue);
-      expect(state.rejectsAdminDisputeAction(Action.adminTookDispute), isTrue);
+      expect(state.rejectsAdminDisputeMessage(_message(Action.adminCanceled)), isTrue);
+      expect(state.rejectsAdminDisputeMessage(_message(Action.adminSettled)), isTrue);
+      expect(state.rejectsAdminDisputeMessage(_message(Action.adminTookDispute)), isTrue);
     });
 
     test('reports no rejection when a dispute is under review', () {
       final state = _stateWithDispute();
 
-      expect(state.rejectsAdminDisputeAction(Action.adminCanceled), isFalse);
-      expect(state.rejectsAdminDisputeAction(Action.adminSettled), isFalse);
+      expect(state.rejectsAdminDisputeMessage(_message(Action.adminCanceled)), isFalse);
+      expect(state.rejectsAdminDisputeMessage(_message(Action.adminSettled)), isFalse);
     });
 
     test('reports rejection once the dispute is already resolved', () {
       final state = _stateWithDispute(disputeStatus: 'resolved');
 
-      expect(state.rejectsAdminDisputeAction(Action.adminSettled), isTrue,
+      expect(state.rejectsAdminDisputeMessage(_message(Action.adminSettled)), isTrue,
           reason: 'replaying a resolution onto a settled dispute is rejected');
     });
 
     test('never reports rejection for non-admin actions', () {
       final state = _stateWithoutDispute();
 
-      expect(state.rejectsAdminDisputeAction(Action.fiatSentOk), isFalse);
-      expect(state.rejectsAdminDisputeAction(Action.canceled), isFalse);
-      expect(state.rejectsAdminDisputeAction(Action.release), isFalse);
+      expect(state.rejectsAdminDisputeMessage(_message(Action.fiatSentOk)), isFalse);
+      expect(state.rejectsAdminDisputeMessage(_message(Action.canceled)), isFalse);
+      expect(state.rejectsAdminDisputeMessage(_message(Action.release)), isFalse);
     });
 
     test('agrees with what updateWith actually does', () {
@@ -222,13 +279,25 @@ void main() {
         Action.adminTookDispute,
       ];
 
+      // Null is the payload shape Mostro actually sends for these
+      // confirmations; the others are what a forgery can put on the wire.
+      final payloads = <Payload?>[
+        null,
+        Dispute(disputeId: 'dispute-1', orderId: 'test-order-id'),
+        Dispute(disputeId: 'some-other-dispute', orderId: 'test-order-id'),
+      ];
+
       for (final state in states) {
         for (final action in adminActions) {
-          final rejected = state.rejectsAdminDisputeAction(action);
-          final unchanged = identical(state.updateWith(_message(action)), state);
-          expect(rejected, equals(unchanged),
-              reason: 'predicate and updateWith disagree for $action on '
-                  '${state.status}/${state.dispute?.status}');
+          for (final payload in payloads) {
+            final message = _message(action, payload: payload);
+            final rejected = state.rejectsAdminDisputeMessage(message);
+            final unchanged = identical(state.updateWith(message), state);
+            expect(rejected, equals(unchanged),
+                reason: 'predicate and updateWith disagree for $action on '
+                    '${state.status}/${state.dispute?.status} with payload '
+                    '${payload is Dispute ? payload.disputeId : 'none'}');
+          }
         }
       }
     });

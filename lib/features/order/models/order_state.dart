@@ -146,13 +146,33 @@ class OrderState {
         !_terminalDisputeStatuses.contains(localDisputeStatus);
   }
 
-  /// Whether [updateWith] would drop this action for lack of dispute evidence.
+  /// Whether [message] carries a Dispute for some dispute other than the one
+  /// this order tracks.
+  ///
+  /// Mostro sends `admin-settled` / `admin-canceled` confirmations with a null
+  /// payload, so a resolution naming a different dispute is not a shape the
+  /// daemon produces. Applying it would resolve the dispute this order does
+  /// track on the authority of a message about another one.
+  bool _hasMismatchedDisputePayload(MostroMessage message) {
+    final localDispute = dispute;
+    if (localDispute == null) return false;
+
+    final payloadDispute = message.getPayload<Dispute>();
+    return payloadDispute != null &&
+        payloadDispute.disputeId != localDispute.disputeId;
+  }
+
+  /// Whether [updateWith] would drop this message for lack of dispute evidence
+  /// or because it names a dispute this order does not track.
   ///
   /// Callers use this to suppress the message's side effects too. A rejected
   /// resolution that still raises a notification or navigates would hand the
-  /// attacker the user-visible half of the forgery.
-  bool rejectsAdminDisputeAction(Action action) =>
-      _isAdminDisputeAction(action) && !_acceptsAdminDisputeAction;
+  /// attacker the user-visible half of the forgery. Takes the whole message
+  /// rather than the action alone so that no caller can consult the guard
+  /// without also seeing the payload it depends on.
+  bool rejectsAdminDisputeMessage(MostroMessage message) =>
+      _isAdminDisputeAction(message.action) &&
+      (!_acceptsAdminDisputeAction || _hasMismatchedDisputePayload(message));
 
   OrderState updateWith(MostroMessage message) {
     logger.i('Updating OrderState with Action: ${message.action}');
@@ -168,10 +188,12 @@ class OrderState {
     // UI, so drop it unless local state corroborates the dispute. Checked
     // before the reputation notice below so a forged resolution cannot write
     // even a reputation snapshot.
-    if (_isAdminDisputeAction(message.action) && !_acceptsAdminDisputeAction) {
+    if (rejectsAdminDisputeMessage(message)) {
       logger.w(
         'Ignoring ${message.action} for order ${message.id}: no dispute '
-        'evidence in local state (status: $status, dispute: ${dispute?.status ?? 'none'})',
+        'evidence in local state (status: $status, dispute: ${dispute?.status ?? 'none'}, '
+        'payload dispute: ${message.getPayload<Dispute>()?.disputeId ?? 'none'}, '
+        'tracked dispute: ${dispute?.disputeId ?? 'none'})',
       );
       return this;
     }

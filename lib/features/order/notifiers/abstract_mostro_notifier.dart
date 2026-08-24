@@ -110,7 +110,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               // Evaluated before the state update, which is what consumes the
               // dispute evidence this depends on.
               final rejectedAdminAction =
-                  state.rejectsAdminDisputeAction(msg.action);
+                  state.rejectsAdminDisputeMessage(msg);
 
               if (mounted) {
                 state = state.updateWith(msg);
