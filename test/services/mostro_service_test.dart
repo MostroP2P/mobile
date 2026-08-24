@@ -19,6 +19,7 @@ import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -28,10 +29,62 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/data/repositories/event_storage.dart';
+import 'package:mostro_mobile/features/restore/restore_mode_provider.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
+import 'package:sembast/sembast_memory.dart';
 
 import '../mocks.dart';
 import '../mocks.mocks.dart';
 import 'mostro_service_helper_functions.dart';
+
+/// Builds a real, correctly-signed kind-14 (NIP-44 direct) event simulating a
+/// live message sent FROM the Mostro daemon TO the client's trade key. Reuses
+/// [MostroMessage.wrapNip44] as-is (full-privacy mode, no master key), which
+/// is the exact production wire format `_onData` expects to decrypt.
+Future<NostrEvent> buildLiveDaemonEvent({
+  required NostrKeyPairs mostroKeyPair,
+  required NostrKeyPairs recipientTradeKey,
+  required MostroMessage message,
+}) {
+  return message.wrapNip44(
+    tradeKey: mostroKeyPair,
+    recipientPubKey: recipientTradeKey.public,
+  );
+}
+
+/// Builds a kind-14 event whose decrypted wire payload carries a spoofed
+/// top-level `receivedAt` key alongside the real `order` wrapper — the shape
+/// `_onData` would see if a peer ever supplied that client-local field. Used
+/// to prove the client's own explicit assignment always overwrites it.
+Future<NostrEvent> buildSpoofedReceivedAtEvent({
+  required NostrKeyPairs mostroKeyPair,
+  required NostrKeyPairs recipientTradeKey,
+  required MostroMessage message,
+  required int spoofedReceivedAt,
+}) async {
+  final messageMap = {
+    'order': message.toJson(version: 2),
+    'receivedAt': spoofedReceivedAt,
+  };
+  final tuple = jsonEncode([messageMap, null, null]);
+  final encrypted = await NostrUtils.encryptNIP44(
+    tuple,
+    mostroKeyPair.private,
+    recipientTradeKey.public,
+  );
+
+  return NostrEvent.fromPartialData(
+    kind: 14,
+    content: encrypted,
+    keyPairs: mostroKeyPair,
+    tags: [
+      ['p', recipientTradeKey.public],
+    ],
+    createdAt: DateTime.now(),
+  );
+}
 
 void main() {
   // Provide dummy values for Mockito
@@ -48,6 +101,10 @@ void main() {
 
   // Add dummy for MostroStorage
   provideDummy<MostroStorage>(MockMostroStorage());
+
+  // Add dummy for EventStorage (never invoked directly — its constructor only
+  // stores the Database reference, so a mock db suffices as a placeholder).
+  provideDummy<EventStorage>(EventStorage(db: MockDatabase()));
 
   // Add dummy for NostrService
   provideDummy<NostrService>(MockNostrService());
@@ -562,6 +619,368 @@ void main() {
 
       final payload = message.toJson()['payload'];
       expect(payload, isNull);
+    });
+  });
+
+  group('MostroService._onData receivedAt stamping', () {
+    late NostrKeyPairs mostroKeyPair;
+    late NostrKeyPairs clientTradeKey;
+    late MockSettings liveSettings;
+    late MockMostroStorage capturingStorage;
+    late Database eventDb;
+    late EventStorage realEventStorage;
+
+    setUp(() async {
+      mostroKeyPair = NostrUtils.generateKeyPair();
+      clientTradeKey = NostrUtils.generateKeyPair();
+
+      liveSettings = MockSettings();
+      when(liveSettings.mostroPublicKey).thenReturn(mostroKeyPair.public);
+      when(mockRef.read(settingsProvider)).thenReturn(liveSettings);
+
+      capturingStorage = MockMostroStorage();
+      when(capturingStorage.addMessage(any, any))
+          .thenAnswer((_) async {});
+      when(mockRef.read(mostroStorageProvider)).thenReturn(capturingStorage);
+
+      eventDb = await databaseFactoryMemory.openDatabase(
+        'mostro_service_test_events_${DateTime.now().microsecondsSinceEpoch}.db',
+      );
+      realEventStorage = EventStorage(db: eventDb);
+      when(mockRef.read(eventStorageProvider)).thenReturn(realEventStorage);
+
+      when(mockRef.read(isRestoringProvider)).thenReturn(false);
+
+      final session = Session(
+        startTime: DateTime.now(),
+        masterKey: clientTradeKey,
+        keyIndex: 1,
+        tradeKey: clientTradeKey,
+        fullPrivacy: true,
+      );
+      when(mockRef.read(sessionNotifierProvider)).thenReturn([session]);
+
+      // Reconstruct the service so its internal `_settings` field (captured
+      // at construction) reflects `liveSettings`, not the outer setUp's.
+      mostroService = MostroService(mockRef);
+    });
+
+    test(
+        'a wire payload carrying a receivedAt-shaped key is overwritten by '
+        'the client explicit assignment', () async {
+      final message = MostroMessage(action: Action.fiatSent, id: 'order-c');
+      final spoofed = 1; // implausibly old, would fail any freshness check
+      final event = await buildSpoofedReceivedAtEvent(
+        mostroKeyPair: mostroKeyPair,
+        recipientTradeKey: clientTradeKey,
+        message: message,
+        spoofedReceivedAt: spoofed,
+      );
+
+      final before = DateTime.now().millisecondsSinceEpoch;
+      await mostroService.onDataForTesting(event);
+      final after = DateTime.now().millisecondsSinceEpoch;
+
+      final captured = verify(
+        capturingStorage.addMessage(any, captureAny),
+      ).captured;
+      final stamped = captured.single as MostroMessage;
+      expect(stamped.receivedAt, isNot(spoofed));
+      expect(stamped.receivedAt!, greaterThanOrEqualTo(before));
+      expect(stamped.receivedAt!, lessThanOrEqualTo(after));
+    });
+  });
+
+  group('MostroService restore buffer preserve-if-present and flush timing',
+      () {
+    late NostrKeyPairs mostroKeyPair;
+    late NostrKeyPairs clientTradeKey;
+    late MockSettings liveSettings;
+    late MockMostroStorage capturingStorage;
+    late Database eventDb;
+    late EventStorage realEventStorage;
+
+    setUp(() async {
+      mostroKeyPair = NostrUtils.generateKeyPair();
+      clientTradeKey = NostrUtils.generateKeyPair();
+
+      liveSettings = MockSettings();
+      when(liveSettings.mostroPublicKey).thenReturn(mostroKeyPair.public);
+      when(mockRef.read(settingsProvider)).thenReturn(liveSettings);
+
+      capturingStorage = MockMostroStorage();
+      when(capturingStorage.addMessage(any, any))
+          .thenAnswer((_) async {});
+      when(mockRef.read(mostroStorageProvider)).thenReturn(capturingStorage);
+
+      eventDb = await databaseFactoryMemory.openDatabase(
+        'mostro_service_test_restore_${DateTime.now().microsecondsSinceEpoch}.db',
+      );
+      realEventStorage = EventStorage(db: eventDb);
+      when(mockRef.read(eventStorageProvider)).thenReturn(realEventStorage);
+
+      final session = Session(
+        startTime: DateTime.now(),
+        masterKey: clientTradeKey,
+        keyIndex: 1,
+        tradeKey: clientTradeKey,
+        fullPrivacy: true,
+      );
+      when(mockRef.read(sessionNotifierProvider)).thenReturn([session]);
+
+      mostroService = MostroService(mockRef);
+    });
+
+    test(
+        'redelivering the same event id while restoring preserves the '
+        'first-buffered receivedAtMs', () async {
+      when(mockRef.read(isRestoringProvider)).thenReturn(true);
+
+      final message = MostroMessage(action: Action.fiatSent, id: 'order-d');
+      final event = await buildLiveDaemonEvent(
+        mostroKeyPair: mostroKeyPair,
+        recipientTradeKey: clientTradeKey,
+        message: message,
+      );
+
+      final beforeFirst = DateTime.now().millisecondsSinceEpoch;
+      await mostroService.onDataForTesting(event);
+      final firstStamp =
+          mostroService.restoreBufferForTesting[event.id]!.receivedAtMs;
+      expect(firstStamp, greaterThanOrEqualTo(beforeFirst));
+
+      await Future.delayed(const Duration(milliseconds: 5));
+      final beforeSecond = DateTime.now().millisecondsSinceEpoch;
+
+      // Redeliver the same event id: production code releases the dedup
+      // reservation after buffering, so this re-enters _onData.
+      await mostroService.onDataForTesting(event);
+      final secondStamp =
+          mostroService.restoreBufferForTesting[event.id]!.receivedAtMs;
+
+      expect(secondStamp, equals(firstStamp));
+      expect(secondStamp, lessThan(beforeSecond));
+    });
+  });
+
+  group('MostroService restore buffer and reorder', () {
+    late MockRef restoreRef;
+    late MockSettings restoreSettings;
+    late MockEventStorage mockEventStorage;
+    late MockMostroStorage mockMostroStorage;
+    late MockSubscriptionManager restoreSubscriptionManager;
+    late MostroService restoreService;
+    late NostrKeyPairs mostroRestoreKeyPair;
+    late NostrKeyPairs userTradeKeyPair;
+    late List<List<dynamic>> addedMessages;
+    late Set<String> reservedEventIds;
+
+    setUp(() {
+      restoreRef = MockRef();
+      restoreSettings = MockSettings();
+      mockEventStorage = MockEventStorage();
+      mockMostroStorage = MockMostroStorage();
+      addedMessages = [];
+      reservedEventIds = <String>{};
+
+      mostroRestoreKeyPair = NostrUtils.generateKeyPair();
+      userTradeKeyPair = NostrUtils.generateKeyPair();
+
+      when(restoreSettings.mostroPublicKey)
+          .thenReturn(mostroRestoreKeyPair.public);
+      when(restoreRef.read(settingsProvider)).thenReturn(restoreSettings);
+
+      // Real in-memory dedup semantics, so the buffer/flush/replay tests don't
+      // need per-test re-stubbing of hasItem/putItem/deleteItem.
+      when(restoreRef.read(eventStorageProvider)).thenReturn(mockEventStorage);
+      when(mockEventStorage.hasItem(any)).thenAnswer((invocation) async {
+        final id = invocation.positionalArguments[0] as String;
+        return reservedEventIds.contains(id);
+      });
+      when(mockEventStorage.putItem(any, any)).thenAnswer((invocation) async {
+        final id = invocation.positionalArguments[0] as String;
+        reservedEventIds.add(id);
+      });
+      when(mockEventStorage.deleteItem(any)).thenAnswer((invocation) async {
+        final id = invocation.positionalArguments[0] as String;
+        reservedEventIds.remove(id);
+      });
+
+      when(restoreRef.read(mostroStorageProvider))
+          .thenReturn(mockMostroStorage);
+      when(mockMostroStorage.addMessage(any, any))
+          .thenAnswer((invocation) async {
+        addedMessages.add(invocation.positionalArguments);
+      });
+
+      when(restoreRef.read(sessionNotifierProvider)).thenReturn(<Session>[]);
+      when(restoreRef.read(isRestoringProvider)).thenReturn(false);
+
+      // SubscriptionManager's constructor (which MockSubscriptionManager
+      // inherits unchanged) registers a session listener eagerly and reads
+      // the connected node's info stream.
+      when(restoreRef.listen<List<Session>>(
+        any,
+        any,
+        onError: anyNamed('onError'),
+        fireImmediately: anyNamed('fireImmediately'),
+      )).thenReturn(MockProviderSubscription<List<Session>>());
+
+      final restoreOrderRepo = MockOpenOrdersRepository();
+      when(restoreOrderRepo.mostroInstanceStream)
+          .thenAnswer((_) => const Stream.empty());
+      when(restoreRef.read(orderRepositoryProvider))
+          .thenReturn(restoreOrderRepo);
+
+      restoreSubscriptionManager = MockSubscriptionManager(restoreRef);
+      when(restoreRef.read(subscriptionManagerProvider))
+          .thenReturn(restoreSubscriptionManager);
+
+      // init() registers a ref.listen<bool>(isRestoringProvider, ...) callback;
+      // it must be stubbed for init() to succeed, even though these tests
+      // drive the flush directly via flushRestoreBufferForTesting() rather
+      // than through the reactive listener.
+      when(restoreRef.listen<bool>(isRestoringProvider, any))
+          .thenReturn(MockProviderSubscription<bool>());
+
+      restoreService = MostroService(restoreRef);
+      restoreService.init();
+
+      // SubscriptionManager's constructor makes its own unrelated reads of
+      // sessionNotifierProvider (e.g. _initializeExistingSessions); clear that
+      // interaction history so verifyNever assertions below only observe
+      // calls made by the test body itself.
+      clearInteractions(restoreRef);
+    });
+
+    tearDown(() {
+      restoreService.dispose();
+      restoreSubscriptionManager.dispose();
+    });
+
+    void setMatchingSession() {
+      final session = Session(
+        startTime: DateTime.now(),
+        masterKey: NostrUtils.generateKeyPair(),
+        keyIndex: 1,
+        tradeKey: userTradeKeyPair,
+        fullPrivacy: false,
+      );
+      when(restoreRef.read(sessionNotifierProvider)).thenReturn([session]);
+    }
+
+    NostrEvent bareEvent({required int kind, required String id}) {
+      return NostrEvent(
+        id: id,
+        kind: kind,
+        content: 'irrelevant-not-decrypted-while-buffered',
+        pubkey: mostroRestoreKeyPair.public,
+        sig: '',
+        createdAt: DateTime.now(),
+        tags: [
+          ['p', userTradeKeyPair.public],
+        ],
+      );
+    }
+
+    test('buffers a v1 kind-1059 event during restore without processing it',
+        () async {
+      when(restoreRef.read(isRestoringProvider)).thenReturn(true);
+      final event = bareEvent(kind: 1059, id: 'evt-v1-buffer');
+
+      await restoreService.onDataForTesting(event);
+
+      expect(
+        restoreService.restoreBufferForTesting.keys,
+        contains('evt-v1-buffer'),
+      );
+      expect(addedMessages, isEmpty);
+      verifyNever(restoreRef.read(sessionNotifierProvider));
+    });
+
+    test(
+        'buffers an event before the session-match check, even when no session exists yet',
+        () async {
+      when(restoreRef.read(isRestoringProvider)).thenReturn(true);
+      when(restoreRef.read(sessionNotifierProvider)).thenReturn(<Session>[]);
+      final event = bareEvent(kind: 1059, id: 'evt-no-session');
+
+      await restoreService.onDataForTesting(event);
+
+      expect(
+        restoreService.restoreBufferForTesting.keys,
+        contains('evt-no-session'),
+        reason:
+            'reorder fix: buffering must precede the matchingSession==null early return',
+      );
+    });
+
+    test(
+        'replays buffered events in arrival order, clearing dedup before each replay',
+        () async {
+      setMatchingSession();
+      when(restoreRef.read(isRestoringProvider)).thenReturn(true);
+
+      final eventA = await MostroMessage(action: Action.newOrder, id: 'order-a')
+          .wrap(tradeKey: mostroRestoreKeyPair, recipientPubKey: userTradeKeyPair.public);
+      final eventB = await MostroMessage(action: Action.newOrder, id: 'order-b')
+          .wrap(tradeKey: mostroRestoreKeyPair, recipientPubKey: userTradeKeyPair.public);
+      final eventC = await MostroMessage(action: Action.newOrder, id: 'order-c')
+          .wrap(tradeKey: mostroRestoreKeyPair, recipientPubKey: userTradeKeyPair.public);
+
+      await restoreService.onDataForTesting(eventA);
+      await restoreService.onDataForTesting(eventB);
+      await restoreService.onDataForTesting(eventC);
+      expect(
+        restoreService.restoreBufferForTesting.keys.toList(),
+        [eventA.id, eventB.id, eventC.id],
+      );
+
+      when(restoreRef.read(isRestoringProvider)).thenReturn(false);
+      await restoreService.flushRestoreBufferForTesting();
+
+      verifyInOrder([
+        mockEventStorage.deleteItem(eventA.id!),
+        mockEventStorage.deleteItem(eventB.id!),
+        mockEventStorage.deleteItem(eventC.id!),
+      ]);
+      expect(restoreService.restoreBufferForTesting, isEmpty);
+      expect(
+        addedMessages.map((args) => (args[1] as MostroMessage).id).toList(),
+        ['order-a', 'order-b', 'order-c'],
+      );
+    });
+
+    test(
+        "v1 replayed event uses the inner rumor's real timestamp, never the gift-wrap outer time",
+        () async {
+      setMatchingSession();
+      when(restoreRef.read(isRestoringProvider)).thenReturn(true);
+
+      final message = MostroMessage(action: Action.newOrder, id: 'order-ts-v1');
+      final event = await message.wrap(
+        tradeKey: mostroRestoreKeyPair,
+        recipientPubKey: userTradeKeyPair.public,
+      );
+      final expectedInnerCreatedAt =
+          (await event.unWrap(userTradeKeyPair.private))
+              .createdAt!
+              .millisecondsSinceEpoch;
+
+      await restoreService.onDataForTesting(event);
+
+      when(restoreRef.read(isRestoringProvider)).thenReturn(false);
+      await restoreService.flushRestoreBufferForTesting();
+
+      expect(addedMessages, hasLength(1));
+      final replayedMessage = addedMessages.first[1] as MostroMessage;
+      expect(replayedMessage.timestamp, expectedInnerCreatedAt);
+      expect(
+        replayedMessage.timestamp,
+        isNot(event.createdAt!.millisecondsSinceEpoch),
+        reason:
+            'the outer gift-wrap timestamp is NIP-59 randomized and must not be used for ordering',
+      );
     });
   });
 }
