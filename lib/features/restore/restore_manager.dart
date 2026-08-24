@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:dart_nostr/nostr/core/key_pairs.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
@@ -732,15 +733,15 @@ class RestoreService {
               .where((d) => d.orderId == orderDetail.id)
               .firstOrNull;
 
+          final session = ref
+              .read(sessionNotifierProvider.notifier)
+              .getSessionByOrderId(orderDetail.id);
+
           // Determine action and create dispute if needed
           Action action;
           Dispute? dispute;
 
           if (restoredDispute != null && order.status == Status.dispute) {
-            final session = ref
-                .read(sessionNotifierProvider.notifier)
-                .getSessionByOrderId(orderDetail.id);
-
             final initiator = restoredDispute.initiator;
             final bool userInitiated =
                 (initiator == 'buyer' && session?.role == Role.buyer) ||
@@ -766,9 +767,6 @@ class RestoreService {
             logger.i('Restore: dispute found for order ${orderDetail.id}');
           } else {
             // Regular order without dispute
-            final session = ref
-                .read(sessionNotifierProvider.notifier)
-                .getSessionByOrderId(orderDetail.id);
             action = _getActionFromStatus(order.status, session?.role);
           }
 
@@ -838,19 +836,38 @@ class RestoreService {
               }
             }
 
+            // `settled-hold-invoice` is overloaded for the buyer (see issue
+            // #615): it covers both "hold settled, sats in flight" and "payout
+            // failed, awaiting a new invoice", so rebuilding from the snapshot
+            // status alone always lands on the "paying sats" screen. Resolve
+            // the substate from the stored history instead.
+            final replay = await restoreReplayPlan(
+              snapshotAction: action,
+              snapshotTimestamp: orderDetail.createdAt ??
+                  DateTime.now().millisecondsSinceEpoch,
+              status: order.status,
+              role: session?.role,
+              loadStoredMessages: () =>
+                  storage.getAllMessagesForOrderId(orderDetail.id),
+            );
+            if (replay.action != action) {
+              logger.i(
+                'Restore: detected failed payout for order ${orderDetail.id}, '
+                'replaying ${replay.action.value} instead of ${action.value}',
+              );
+            }
+
             // Create regular order message with Order payload
             final mostroMessage = MostroMessage<Order>(
               id: orderDetail.id,
-              action: action,
+              action: replay.action,
               payload: order,
-              timestamp:
-                  orderDetail.createdAt ??
-                  DateTime.now().millisecondsSinceEpoch,
+              timestamp: replay.timestamp,
             );
 
             // Save order message to storage
             final key =
-                '${orderDetail.id}_restore_${action.value}_${DateTime.now().millisecondsSinceEpoch}';
+                '${orderDetail.id}_restore_${replay.action.value}_${DateTime.now().millisecondsSinceEpoch}';
             await storage.addMessage(key, mostroMessage);
 
             // Update state with order message
@@ -1168,6 +1185,73 @@ Future<Map<String, dynamic>> decodeRestoreMessage(
     throw Exception('Restore message tuple is empty');
   }
   return contentList[0] as Map<String, dynamic>;
+}
+
+/// Detects the "payout failed, awaiting a new invoice" substate of an order
+/// that Mostro reports as `settled-hold-invoice`. See issue #615.
+///
+/// `settled-hold-invoice` is overloaded for the buyer: it covers both "hold
+/// settled, sats in flight" and "payout failed, awaiting a new invoice", so the
+/// snapshot status alone cannot recover the failed substate. Only the stored
+/// message history can, through two independent signals:
+///
+/// - `Action.paymentFailed`, which Mostro sends on the first failed payout, is
+///   definitive on its own. (The *status* `payment-failed` is client-side and
+///   never travels on the wire; the action does.) It is not sent on retries, so
+///   a restored history may well be missing it.
+/// - `Action.addInvoice`, which Mostro reuses to ask for a payout invoice after
+///   a failed payment. The same action also opens the normal buyer flow, so it
+///   is a signal only when its payload carries `settled-hold-invoice`; the
+///   early one carries `waiting-buyer-invoice`. This is the discriminator
+///   [OrderState.updateWith] already uses.
+///
+/// Reading the payload rather than the position in the history keeps this
+/// correct no matter how complete or how ordered the relay-replayed history
+/// that reaches storage during the restore window happens to be.
+bool restoreHasFailedPayoutSignal(List<MostroMessage> messages) => messages.any(
+      (m) =>
+          m.action == Action.paymentFailed ||
+          (m.action == Action.addInvoice &&
+              m.getPayload<Order>()?.status == Status.settledHoldInvoice),
+    );
+
+/// Picks the action and timestamp restore replays to rebuild one snapshot
+/// order, resolving the overloaded `settled-hold-invoice` status for the buyer.
+///
+/// Returns the snapshot's own action untouched unless the order is a buyer's
+/// `settled-hold-invoice` whose history carries a failed-payout signal (see
+/// [restoreHasFailedPayoutSignal]). In that case it replays `add-invoice`
+/// instead, which [OrderState.updateWith] maps to `payment-failed` because the
+/// payload carries `settled-hold-invoice` — landing the order on the
+/// new-invoice prompt rather than the "paying sats" screen.
+///
+/// [loadStoredMessages] is a callback so the history is read only for the
+/// orders that can need it.
+Future<({Action action, int timestamp})> restoreReplayPlan({
+  required Action snapshotAction,
+  required int snapshotTimestamp,
+  required Status status,
+  required Role? role,
+  required Future<List<MostroMessage>> Function() loadStoredMessages,
+}) async {
+  if (status != Status.settledHoldInvoice || role != Role.buyer) {
+    return (action: snapshotAction, timestamp: snapshotTimestamp);
+  }
+
+  final stored = await loadStoredMessages();
+  if (!restoreHasFailedPayoutSignal(stored)) {
+    return (action: snapshotAction, timestamp: snapshotTimestamp);
+  }
+
+  // Stamp the replay after every message already in storage. A later
+  // OrderNotifier.sync() replays storage sorted by timestamp, so seeding from
+  // the order creation time instead would let an older re-delivered
+  // `released`/`settled` replay last and drag the buyer back to "paying sats",
+  // making the fix non-persistent across provider recreation or app restart.
+  final latest = stored
+      .map((m) => m.timestamp ?? 0)
+      .fold(snapshotTimestamp, math.max);
+  return (action: Action.addInvoice, timestamp: latest + 1);
 }
 
 /// Thrown when Mostro responds with cant-do: invalid_trade_index to
