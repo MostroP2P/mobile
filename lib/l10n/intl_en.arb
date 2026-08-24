@@ -1814,6 +1814,8 @@
         }
     },
     "invoiceNotPayableTitle": "This invoice cannot be paid",
+    "invoiceTermsUnverifiedTitle": "Amount not verified",
+    "invoiceTermsUnverifiedBody": "The order terms the node published have not arrived, so this amount could not be checked against them. Check it yourself before continuing.",
     "invoiceTermsMismatchBody": "The invoice asks for {invoiceAmount} sats, but this order is for {orderAmount} sats. It cannot be paid from here.",
     "@invoiceTermsMismatchBody": {
         "description": "Shown when the invoice amount does not match the order amount",

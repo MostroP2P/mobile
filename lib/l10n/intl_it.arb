@@ -1810,6 +1810,8 @@
         }
     },
     "invoiceNotPayableTitle": "Questa fattura non può essere pagata",
+    "invoiceTermsUnverifiedTitle": "Importo non verificato",
+    "invoiceTermsUnverifiedBody": "I termini dell'ordine pubblicati dal nodo non sono arrivati, quindi questo importo non ha potuto essere verificato. Controllalo tu prima di continuare.",
     "invoiceTermsMismatchBody": "La fattura chiede {invoiceAmount} sats, ma questo ordine è di {orderAmount} sats. Non può essere pagata da qui.",
     "invoiceUnreadableBody": "Non è stato possibile leggere questa fattura, quindi non c’è modo di confermare cosa pagherebbe. Non può essere pagata da qui.",
     "invoiceAmountMissingBody": "Questa fattura non fissa un importo, il che lascerebbe al portafoglio decidere quanto inviare. Non può essere pagata da qui.",

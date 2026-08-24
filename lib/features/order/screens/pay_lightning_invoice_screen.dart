@@ -10,6 +10,7 @@ import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/invoice_header.dart';
+import 'package:mostro_mobile/shared/widgets/invoice_notice.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_payment_widget.dart';
 import 'package:mostro_mobile/shared/widgets/pay_lightning_invoice_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -49,15 +50,16 @@ class _PayLightningInvoiceScreenState
     // the race, so treating "cannot derive" as "wrong" would refuse correct
     // payments on a slow relay. The fallback still reconciles the figure on
     // screen against the invoice, which is what a wallet will actually send.
-    final expectedSats =
-        ref.watch(anchoredSellerAmountProvider(widget.orderId)) ??
-            orderState.order?.amount;
+    final anchoredSats = ref.watch(anchoredSellerAmountProvider(widget.orderId));
+    final expectedSats = anchoredSats ?? orderState.order?.amount;
 
     final terms = InvoiceTerms.check(
       invoice: lnInvoice,
       expectedSats: expectedSats,
     );
     final blocked = lnInvoice.isNotEmpty && !terms.isPayable;
+    final unverified =
+        lnInvoice.isNotEmpty && !blocked && anchoredSats == null;
     final fiatAmount = orderState.order?.fiatAmount.toString() ?? '0';
     final fiatCode = orderState.order?.fiatCode ?? '';
     final orderNotifier =
@@ -104,6 +106,13 @@ class _PayLightningInvoiceScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (unverified) ...[
+              InvoiceNotice.caution(
+                title: S.of(context)!.invoiceTermsUnverifiedTitle,
+                body: S.of(context)!.invoiceTermsUnverifiedBody,
+              ),
+              const SizedBox(height: 16),
+            ],
             if (blocked) ...[
               header,
               const SizedBox(height: 24),
@@ -230,49 +239,9 @@ class _InvoiceTermsNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.statusError.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppTheme.statusError.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.warning_amber_rounded,
-            color: AppTheme.statusError,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  S.of(context)!.invoiceNotPayableTitle,
-                  style: const TextStyle(
-                    color: AppTheme.statusError,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _body(context),
-                  style: const TextStyle(
-                    color: AppTheme.textSecondary,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return InvoiceNotice.refusal(
+      title: S.of(context)!.invoiceNotPayableTitle,
+      body: _body(context),
     );
   }
 }

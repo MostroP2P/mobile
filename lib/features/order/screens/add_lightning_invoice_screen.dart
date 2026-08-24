@@ -13,6 +13,7 @@ import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/widgets/add_lightning_invoice_widget.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_invoice_widget.dart';
 import 'package:mostro_mobile/shared/widgets/invoice_header.dart';
+import 'package:mostro_mobile/shared/widgets/invoice_notice.dart';
 import 'package:mostro_mobile/shared/widgets/ln_address_confirmation_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
@@ -94,6 +95,25 @@ class _AddLightningInvoiceScreenState
         final blocked =
             amount != null && expectedSats != null && amount != expectedSats;
 
+        // Nothing to derive from means the request goes unchecked. The node
+        // publishes both inputs and can withhold either, so this is a state
+        // it can put the screen into rather than only an unlucky race: say so
+        // instead of letting the absence of a refusal read as a confirmation.
+        final unverified = amount != null && expectedSats == null;
+        final headerBlock = unverified
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  header,
+                  const SizedBox(height: 16),
+                  InvoiceNotice.caution(
+                    title: S.of(context)!.invoiceTermsUnverifiedTitle,
+                    body: S.of(context)!.invoiceTermsUnverifiedBody,
+                  ),
+                ],
+              )
+            : header;
+
         final nwcState = ref.watch(nwcProvider);
         final isNwcConnected = nwcState.status == NwcStatus.connected;
         final showLnAddressConfirmation =
@@ -115,14 +135,18 @@ class _AddLightningInvoiceScreenState
             ),
             child: blocked
                 ? _buildBlockedFlow(
-                    header: header,
+                    header: headerBlock,
                     requestedSats: amount,
                     expectedSats: expectedSats,
                   )
                 : showLnAddressConfirmation
-                    ? _buildLnAddressConfirmation(header: header)
+                    ? _buildLnAddressConfirmation(header: headerBlock)
                     : showNwcInvoice
-                        ? _buildNwcInvoiceFlow(header: header)
+                        ? _buildNwcInvoiceFlow(
+                            header: headerBlock,
+                            amount: amount ?? 0,
+                            orderIdValue: orderIdValue,
+                          )
                         : AddLightningInvoiceWidget(
                             controller: invoiceController,
                             onSubmit: () async {
@@ -138,7 +162,7 @@ class _AddLightningInvoiceScreenState
                             fiatAmount: fiatAmount,
                             fiatCode: fiatCode,
                             orderId: orderIdValue,
-                            header: header,
+                            header: headerBlock,
                           ),
           ),
         );
@@ -188,9 +212,11 @@ class _AddLightningInvoiceScreenState
     }
   }
 
-  Widget _buildNwcInvoiceFlow({required InvoiceHeader header}) {
-    final amount = header.sats;
-    final orderIdValue = header.orderId;
+  Widget _buildNwcInvoiceFlow({
+    required Widget header,
+    required int amount,
+    required String orderIdValue,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -228,52 +254,12 @@ class _AddLightningInvoiceScreenState
       children: [
         header,
         const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.statusError.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: AppTheme.statusError.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.warning_amber_rounded,
-                color: AppTheme.statusError,
-                size: 20,
+        InvoiceNotice.refusal(
+          title: S.of(context)!.invoiceRequestMismatchTitle,
+          body: S.of(context)!.invoiceRequestMismatchBody(
+                requestedSats.toString(),
+                expectedSats.toString(),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      S.of(context)!.invoiceRequestMismatchTitle,
-                      style: const TextStyle(
-                        color: AppTheme.statusError,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      S.of(context)!.invoiceRequestMismatchBody(
-                            requestedSats.toString(),
-                            expectedSats.toString(),
-                          ),
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
         ),
         const Spacer(),
         _buildCancelButton(),

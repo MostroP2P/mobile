@@ -1769,6 +1769,8 @@
         }
     },
     "invoiceNotPayableTitle": "Cette facture ne peut pas être payée",
+    "invoiceTermsUnverifiedTitle": "Montant non vérifié",
+    "invoiceTermsUnverifiedBody": "Les termes de l’ordre publiés par le nœud ne sont pas arrivés, ce montant n’a donc pas pu être vérifié. Vérifiez-le vous-même avant de continuer.",
     "invoiceTermsMismatchBody": "La facture demande {invoiceAmount} sats, mais cet ordre porte sur {orderAmount} sats. Elle ne peut pas être payée ici.",
     "invoiceUnreadableBody": "Cette facture n’a pas pu être lue, il est donc impossible de confirmer ce qu’elle paierait. Elle ne peut pas être payée ici.",
     "invoiceAmountMissingBody": "Cette facture ne fixe aucun montant, ce qui laisserait le portefeuille décider du montant à envoyer. Elle ne peut pas être payée ici.",
