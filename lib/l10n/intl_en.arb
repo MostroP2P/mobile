@@ -1813,7 +1813,7 @@
             }
         }
     },
-    "invoiceTermsMismatchTitle": "This invoice does not match the order",
+    "invoiceNotPayableTitle": "This invoice cannot be paid",
     "invoiceTermsMismatchBody": "The invoice asks for {invoiceAmount} sats, but this order is for {orderAmount} sats. It cannot be paid from here.",
     "@invoiceTermsMismatchBody": {
         "description": "Shown when the invoice amount does not match the order amount",

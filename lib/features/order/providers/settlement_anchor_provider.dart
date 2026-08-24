@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/utils/settlement_amounts.dart';
@@ -27,12 +28,26 @@ final signedOrderAmountProvider = Provider.family<int?, String>((ref, orderId) {
 
 /// The node's fee rate, from its kind-38385 info event.
 ///
-/// Null when the info event has not arrived or does not carry the tag. The
-/// getter parses eagerly and throws on a missing tag, which is fine for the
-/// About screen it was written for and not for a payment check.
+/// Followed rather than sampled: the info event arrives asynchronously after
+/// the order subscription is opened, so a screen built first would otherwise
+/// hold a null read for the rest of the session and keep falling back to the
+/// weaker check.
+///
+/// The event is pinned to the node currently selected. Switching instances
+/// clears the repository's cached event without emitting the drop, so an
+/// unpinned fee rate would go on deriving amounts from the previous node's
+/// terms and refuse settlements that are in fact correct.
+///
+/// Null when the info event has not arrived, belongs to another node, or does
+/// not carry the tag. The getter parses eagerly and throws on a missing tag,
+/// which is fine for the About screen it was written for and not for a
+/// payment check.
 final nodeFeeRateProvider = Provider<double?>((ref) {
-  final info = ref.read(orderRepositoryProvider).mostroInstance;
-  if (info == null) return null;
+  final nodePubkey = ref.watch(
+    settingsProvider.select((settings) => settings.mostroPublicKey),
+  );
+  final info = ref.watch(mostroInfoEventProvider).valueOrNull;
+  if (info == null || info.pubkey != nodePubkey) return null;
   try {
     return info.fee;
   } catch (e) {

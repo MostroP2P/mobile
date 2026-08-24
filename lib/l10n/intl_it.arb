@@ -1809,7 +1809,7 @@
             }
         }
     },
-    "invoiceTermsMismatchTitle": "Questa fattura non corrisponde all’ordine",
+    "invoiceNotPayableTitle": "Questa fattura non può essere pagata",
     "invoiceTermsMismatchBody": "La fattura chiede {invoiceAmount} sats, ma questo ordine è di {orderAmount} sats. Non può essere pagata da qui.",
     "invoiceUnreadableBody": "Non è stato possibile leggere questa fattura, quindi non c’è modo di confermare cosa pagherebbe. Non può essere pagata da qui.",
     "invoiceAmountMissingBody": "Questa fattura non fissa un importo, il che lascerebbe al portafoglio decidere quanto inviare. Non può essere pagata da qui.",

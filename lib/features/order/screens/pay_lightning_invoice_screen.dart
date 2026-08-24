@@ -245,7 +245,7 @@ class _InvoiceTermsNotice extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  S.of(context)!.invoiceTermsMismatchTitle,
+                  S.of(context)!.invoiceNotPayableTitle,
                   style: const TextStyle(
                     color: AppTheme.statusError,
                     fontSize: 15,

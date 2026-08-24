@@ -1813,7 +1813,7 @@
             }
         }
     },
-    "invoiceTermsMismatchTitle": "Esta fatura não corresponde à ordem",
+    "invoiceNotPayableTitle": "Esta fatura não pode ser paga",
     "invoiceTermsMismatchBody": "A fatura pede {invoiceAmount} sats, mas esta ordem é de {orderAmount} sats. Não pode ser paga aqui.",
     "invoiceUnreadableBody": "Não foi possível ler esta fatura, portanto não há como confirmar o que ela pagaria. Não pode ser paga aqui.",
     "invoiceAmountMissingBody": "Esta fatura não define um valor, o que deixaria a carteira decidir quanto enviar. Não pode ser paga aqui.",

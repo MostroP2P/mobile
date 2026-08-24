@@ -87,10 +87,12 @@ class _AddLightningInvoiceScreenState
         // from the message asking for the invoice, and an invoice minted for
         // it is what the trade settles at.
         //
-        // Null means the events have not both arrived, not that the request
-        // is wrong, so the screen only refuses on an actual disagreement.
+        // Null on either side means a figure has not arrived yet, not that
+        // the request is wrong, so the screen only refuses on an actual
+        // disagreement between two amounts it holds.
         final expectedSats = ref.watch(anchoredBuyerAmountProvider(orderId));
-        final blocked = expectedSats != null && amount != expectedSats;
+        final blocked =
+            amount != null && expectedSats != null && amount != expectedSats;
 
         final nwcState = ref.watch(nwcProvider);
         final isNwcConnected = nwcState.status == NwcStatus.connected;
@@ -114,7 +116,7 @@ class _AddLightningInvoiceScreenState
             child: blocked
                 ? _buildBlockedFlow(
                     header: header,
-                    requestedSats: amount ?? 0,
+                    requestedSats: amount,
                     expectedSats: expectedSats,
                   )
                 : showLnAddressConfirmation

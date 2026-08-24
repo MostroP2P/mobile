@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +19,36 @@ final orderRepositoryProvider = Provider((ref) {
   });
 
   return orderRepo;
+});
+
+/// The connected node's kind-38385 info event, followed rather than sampled.
+///
+/// The repository keeps the event in a mutable field and also emits it on a
+/// stream. Reading the field alone caches whatever had arrived at that moment,
+/// which is not enough for a consumer built before the event: the info event
+/// lands asynchronously after the subscription is opened, and a fee rate read
+/// too early would stay missing for the rest of the session.
+///
+/// Null until the event arrives.
+final mostroInfoEventProvider = StreamProvider<NostrEvent?>((ref) {
+  final orderRepository = ref.watch(orderRepositoryProvider);
+
+  // Subscribe before sampling the current value. The repository's stream is a
+  // broadcast one, so an event fired between the two would be lost, leaving
+  // the provider serving a snapshot it has already outlived.
+  final controller = StreamController<NostrEvent?>();
+  final subscription = orderRepository.mostroInstanceStream.listen(
+    controller.add,
+    onError: controller.addError,
+  );
+  controller.add(orderRepository.mostroInstance);
+
+  ref.onDispose(() {
+    subscription.cancel();
+    controller.close();
+  });
+
+  return controller.stream;
 });
 
 final orderEventsProvider = StreamProvider<List<NostrEvent>>((ref) {
