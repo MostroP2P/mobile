@@ -75,7 +75,11 @@ class _PayLightningInvoiceScreenState
     final session = ref.watch(sessionProvider(widget.orderId));
     final header = InvoiceHeader(
       userIsSeller: session?.role == null || session!.role == Role.seller,
-      sats: sats,
+      // The summary states what the trade is, so it takes the re-derived
+      // figure over the one the message asserts. The two agree whenever the
+      // node is honest, and where they do not the message is the side with
+      // nothing behind it.
+      sats: expectedSats ?? sats,
       fiatAmount: fiatAmount,
       fiatCode: fiatCode,
       orderId: widget.orderId,
@@ -177,7 +181,11 @@ class _PayLightningInvoiceScreenState
                   await orderNotifier.cancelOrder();
                 },
                 lnInvoice: lnInvoice,
-                sats: sats,
+                // Read back off the invoice, as the NWC branch does. A wallet
+                // scanning the QR honours the invoice, so the figure printed
+                // next to it has to be the invoice's own or it is describing
+                // a different payment than the one being made.
+                sats: terms.amountSats ?? sats,
                 fiatAmount: fiatAmount,
                 fiatCode: fiatCode,
                 orderId: widget.orderId,
