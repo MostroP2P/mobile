@@ -1816,6 +1816,18 @@
     "invoiceNotPayableTitle": "This invoice cannot be paid",
     "invoiceTermsUnverifiedTitle": "Amount not verified",
     "invoiceTermsUnverifiedBody": "The order terms the node published have not arrived, so this amount could not be checked against them. Check it yourself before continuing.",
+    "invoiceOffMarketTitle": "Off the market rate",
+    "invoiceOffMarketBody": "This order settles at {settledSats} sats, but an independent rate prices it at about {quotedSats}. Nothing is proven wrong — rates differ and move — but check it before continuing.",
+    "@invoiceOffMarketBody": {
+      "placeholders": {
+        "settledSats": {
+          "type": "String"
+        },
+        "quotedSats": {
+          "type": "String"
+        }
+      }
+    },
     "invoiceTermsMismatchBody": "The invoice asks for {invoiceAmount} sats, but this order is for {orderAmount} sats. It cannot be paid from here.",
     "@invoiceTermsMismatchBody": {
         "description": "Shown when the invoice amount does not match the order amount",

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/features/order/providers/market_check_provider.dart';
 import 'package:mostro_mobile/features/order/providers/settlement_anchor_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
@@ -100,16 +101,35 @@ class _AddLightningInvoiceScreenState
         // it can put the screen into rather than only an unlucky race: say so
         // instead of letting the absence of a refusal read as a confirmation.
         final unverified = amount != null && expectedSats == null;
-        final headerBlock = unverified
+
+        // A market-price order's sats were resolved by the node after the
+        // take, so the check above only establishes that its own figures
+        // agree. Re-price it against a rate the node does not control.
+        final market = ref.watch(marketCheckProvider(orderId));
+        final offMarket = !blocked && (market?.isOffMarket ?? false);
+
+        final headerBlock = (unverified || offMarket)
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   header,
-                  const SizedBox(height: 16),
-                  InvoiceNotice.caution(
-                    title: S.of(context)!.invoiceTermsUnverifiedTitle,
-                    body: S.of(context)!.invoiceTermsUnverifiedBody,
-                  ),
+                  if (unverified) ...[
+                    const SizedBox(height: 16),
+                    InvoiceNotice.caution(
+                      title: S.of(context)!.invoiceTermsUnverifiedTitle,
+                      body: S.of(context)!.invoiceTermsUnverifiedBody,
+                    ),
+                  ],
+                  if (offMarket) ...[
+                    const SizedBox(height: 16),
+                    InvoiceNotice.caution(
+                      title: S.of(context)!.invoiceOffMarketTitle,
+                      body: S.of(context)!.invoiceOffMarketBody(
+                            market!.settledSats.toString(),
+                            market.quotedSats.toString(),
+                          ),
+                    ),
+                  ],
                 ],
               )
             : header;

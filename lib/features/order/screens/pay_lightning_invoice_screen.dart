@@ -14,6 +14,7 @@ import 'package:mostro_mobile/shared/widgets/invoice_notice.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_payment_widget.dart';
 import 'package:mostro_mobile/shared/widgets/pay_lightning_invoice_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/features/order/providers/market_check_provider.dart';
 import 'package:mostro_mobile/features/order/providers/settlement_anchor_provider.dart';
 import 'package:mostro_mobile/shared/utils/invoice_terms.dart';
 
@@ -60,6 +61,12 @@ class _PayLightningInvoiceScreenState
     final blocked = lnInvoice.isNotEmpty && !terms.isPayable;
     final unverified =
         lnInvoice.isNotEmpty && !blocked && anchoredSats == null;
+
+    // A market-price order's sats were resolved by the node after the take,
+    // so the checks above only establish that its own figures agree. Re-price
+    // it against a rate the node does not control.
+    final market = ref.watch(marketCheckProvider(widget.orderId));
+    final offMarket = !blocked && (market?.isOffMarket ?? false);
     final fiatAmount = orderState.order?.fiatAmount.toString() ?? '0';
     final fiatCode = orderState.order?.fiatCode ?? '';
     final orderNotifier =
@@ -110,6 +117,16 @@ class _PayLightningInvoiceScreenState
               InvoiceNotice.caution(
                 title: S.of(context)!.invoiceTermsUnverifiedTitle,
                 body: S.of(context)!.invoiceTermsUnverifiedBody,
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (offMarket) ...[
+              InvoiceNotice.caution(
+                title: S.of(context)!.invoiceOffMarketTitle,
+                body: S.of(context)!.invoiceOffMarketBody(
+                      market!.settledSats.toString(),
+                      market.quotedSats.toString(),
+                    ),
               ),
               const SizedBox(height: 16),
             ],

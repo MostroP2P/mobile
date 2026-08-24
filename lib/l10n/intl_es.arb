@@ -1746,6 +1746,8 @@
     "invoiceNotPayableTitle": "Esta factura no se puede pagar",
     "invoiceTermsUnverifiedTitle": "Monto no verificado",
     "invoiceTermsUnverifiedBody": "No llegaron los términos de la orden que publica el nodo, así que este monto no pudo verificarse contra ellos. Revisalo vos antes de continuar.",
+    "invoiceOffMarketTitle": "Fuera de la tasa de mercado",
+    "invoiceOffMarketBody": "Esta orden se liquida en {settledSats} sats, pero una tasa independiente la valúa en unos {quotedSats}. Nada está probado como incorrecto —las tasas difieren y se mueven— pero revisalo antes de continuar.",
     "invoiceTermsMismatchBody": "La factura pide {invoiceAmount} sats, pero esta orden es por {orderAmount} sats. No se puede pagar desde aquí.",
     "invoiceUnreadableBody": "No se pudo leer esta factura, así que no hay forma de confirmar qué pagaría. No se puede pagar desde aquí.",
     "invoiceAmountMissingBody": "Esta factura no fija un monto, lo que dejaría que la billetera decida cuánto enviar. No se puede pagar desde aquí.",

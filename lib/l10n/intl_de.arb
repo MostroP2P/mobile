@@ -1771,6 +1771,8 @@
     "invoiceNotPayableTitle": "Diese Rechnung kann nicht bezahlt werden",
     "invoiceTermsUnverifiedTitle": "Betrag nicht verifiziert",
     "invoiceTermsUnverifiedBody": "Die vom Node veröffentlichten Orderbedingungen sind nicht eingetroffen, daher konnte dieser Betrag nicht dagegen geprüft werden. Prüfe ihn selbst, bevor du fortfährst.",
+    "invoiceOffMarketTitle": "Abweichung vom Marktkurs",
+    "invoiceOffMarketBody": "Diese Order wird mit {settledSats} sats abgerechnet, ein unabhängiger Kurs bewertet sie aber mit etwa {quotedSats}. Das beweist keinen Fehler — Kurse unterscheiden sich und bewegen sich — aber prüfe es, bevor du fortfährst.",
     "invoiceTermsMismatchBody": "Die Rechnung fordert {invoiceAmount} Sats, diese Order lautet aber über {orderAmount} Sats. Sie kann hier nicht bezahlt werden.",
     "invoiceUnreadableBody": "Diese Rechnung konnte nicht gelesen werden, daher lässt sich nicht bestätigen, was sie bezahlen würde. Sie kann hier nicht bezahlt werden.",
     "invoiceAmountMissingBody": "Diese Rechnung legt keinen Betrag fest; die Wallet würde entscheiden, wie viel gesendet wird. Sie kann hier nicht bezahlt werden.",
