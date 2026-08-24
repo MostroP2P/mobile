@@ -22,6 +22,24 @@ class CommunityConfig {
   });
 }
 
+/// Country flag from a region label like '\u{1F1E7}\u{1F1F7} Brasil', when it starts with one.
+String? regionFlag(String? region) {
+  if (region == null || region.isEmpty) return null;
+  final first = region.split(' ').first;
+  final runes = first.runes.toList();
+  final isFlag =
+      runes.isNotEmpty && runes.every((r) => r >= 0x1F1E6 && r <= 0x1F1FF);
+  return isFlag ? first : null;
+}
+
+/// Appends the region flag to a Nostr profile name that does not carry it,
+/// so every community reads the same way regardless of its kind 0 name.
+String nameWithRegionFlag(String name, String? region) {
+  final flag = regionFlag(region);
+  if (flag == null || name.contains(flag)) return name;
+  return '$name $flag';
+}
+
 /// Default Mostro node pubkey (used when user skips community selection).
 const String defaultMostroPubkey =
     '82fa8cb978b43c79b2156585bac2c011176a21d2aead6d9f7c575c005be88390';
@@ -68,6 +86,23 @@ const List<CommunityConfig> trustedCommunities = [
         '000009ee1e4b1dc7add19ab30e4ef854d7b562e208b62686fd9002b50b24dabb',
     region: '\u{1F1FB}\u{1F1EA} Venezuela',
     social: [SocialLink(type: 'telegram', url: 'https://t.me/MostroVzla')],
+  ),
+  CommunityConfig(
+    pubkey:
+        'b3626fe91b602bdbca3673bec0855221f41dc8f6d0e4027e51eaa525d68d87f2',
+    region: '\u{1F1E6}\u{1F1F7} Argentina',
+    social: [
+      SocialLink(type: 'telegram', url: 'https://t.me/lacryptaok'),
+      SocialLink(type: 'x', url: 'https://x.com/LaCryptaOk'),
+    ],
+  ),
+  CommunityConfig(
+    pubkey:
+        '00037abd44e7a846689e230d5446abcd0d56a344fa81fff85c09d1929feda486',
+    region: '\u{1F1E7}\u{1F1F7} Brasil',
+    social: [
+      SocialLink(type: 'telegram', url: 'https://t.me/+GyVD_uH9-Gw0OGRh'),
+    ],
   ),
   CommunityConfig(
     pubkey: defaultMostroPubkey,

@@ -48,6 +48,21 @@ void main() {
       expect(node.displayName, 'My Node');
     });
 
+    test('displayName appends the region flag when the name lacks it', () {
+      final node = MostroNode(
+        pubkey: 'abcde12345fghij67890',
+        name: 'Mostro Brasil',
+        isTrusted: true,
+        region: '\u{1F1E7}\u{1F1F7} Brasil',
+      );
+      expect(node.displayName, 'Mostro Brasil \u{1F1E7}\u{1F1F7}');
+
+      final alreadyFlagged = node.withMetadata(
+        name: 'Mostro Brasil \u{1F1E7}\u{1F1F7}',
+      );
+      expect(alreadyFlagged.displayName, 'Mostro Brasil \u{1F1E7}\u{1F1F7}');
+    });
+
     test('displayName returns pubkey when no name', () {
       final node = MostroNode(pubkey: 'abcde12345fghij67890');
       expect(node.displayName, 'abcde12345fghij67890');

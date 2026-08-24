@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/core/config/communities.dart';
+
 /// Sentinel value to explicitly clear an optional field in [MostroNode.withMetadata].
 const String _clearField = '__clear__';
 
@@ -10,6 +12,10 @@ class MostroNode {
   final bool isTrusted;
   final DateTime? addedAt;
 
+  /// Region label from the trusted config, e.g. '\u{1F1E7}\u{1F1F7} Brasil'.
+  /// Null for custom nodes.
+  final String? region;
+
   MostroNode({
     required this.pubkey,
     this.name,
@@ -18,6 +24,7 @@ class MostroNode {
     this.about,
     this.isTrusted = false,
     this.addedAt,
+    this.region,
   });
 
   /// Sentinel value to explicitly clear a metadata field.
@@ -30,7 +37,13 @@ class MostroNode {
   /// Returns true if [value] is a valid 64-character hex public key.
   static bool isValidHexPubkey(String value) => hexPubkeyRegex.hasMatch(value);
 
-  String get displayName => name ?? pubkey;
+  /// Display name: profile name with the region flag appended when the
+  /// Nostr profile name does not already carry it, or the pubkey as fallback.
+  String get displayName {
+    final current = name;
+    if (current == null || current.isEmpty) return pubkey;
+    return nameWithRegionFlag(current, region);
+  }
 
   /// Returns a copy with updated metadata fields.
   /// - Pass a value to set it.
@@ -50,6 +63,7 @@ class MostroNode {
       about: about == _clearField ? null : (about ?? this.about),
       isTrusted: isTrusted,
       addedAt: addedAt,
+      region: region,
     );
   }
 
@@ -62,6 +76,7 @@ class MostroNode {
       'about': about,
       'isTrusted': isTrusted,
       'addedAt': addedAt?.millisecondsSinceEpoch,
+      'region': region,
     };
   }
 
@@ -76,6 +91,7 @@ class MostroNode {
       addedAt: json['addedAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(json['addedAt'] as int)
           : null,
+      region: json['region'] as String?,
     );
   }
 

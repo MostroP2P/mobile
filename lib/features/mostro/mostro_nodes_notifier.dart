@@ -22,6 +22,7 @@ class MostroNodesNotifier extends StateNotifier<List<MostroNode>> {
         pubkey: entry['pubkey']!,
         name: entry['name'],
         isTrusted: true,
+        region: entry['name'],
       );
     }).toList();
 
