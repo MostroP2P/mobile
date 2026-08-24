@@ -93,6 +93,18 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               logger.i('Received message with action: ${msg?.action}');
             }
             if (msg != null) {
+              // Decided before anything treats this message as a response:
+              // updateWith would drop it, so it must not count as one. Notably
+              // it must not cancel the orphan-session timer below — a forged
+              // admin-* during a take would otherwise disarm the cleanup that
+              // exists for Mostro never answering, and strand the session.
+              if (state.rejectsAdminDisputeMessage(msg)) {
+                logger.w(
+                    'Dropping side effects for rejected ${msg.action} on order $orderId');
+                onAdminResolutionRejected(msg);
+                return;
+              }
+
               // Cancel timer on ANY response from Mostro for this order
               cancelSessionTimeoutCleanup(orderId);
 
@@ -107,23 +119,8 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
               final wasUserInitiatedCancel = msg.action == Action.canceled &&
                   _userInitiatedCancels.remove(orderId);
 
-              // Evaluated before the state update, which is what consumes the
-              // dispute evidence this depends on.
-              final rejectedAdminAction =
-                  state.rejectsAdminDisputeMessage(msg);
-
               if (mounted) {
                 state = state.updateWith(msg);
-              }
-
-              // The state change was dropped; its side effects must go with it.
-              // Otherwise a forged admin resolution still reaches the user as a
-              // notification and a jump to the trade detail.
-              if (rejectedAdminAction) {
-                logger.w(
-                    'Dropping side effects for rejected ${msg.action} on order $orderId');
-                onAdminResolutionRejected(msg);
-                return;
               }
 
               if (msg.timestamp != null &&
@@ -810,6 +807,11 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
     logger.i('Started 10s timeout timer for requestId: $requestId');
   }
+
+  /// Whether the orphan-session cleanup is still armed for [orderId].
+  @visibleForTesting
+  static bool hasSessionTimeoutCleanup(String orderId) =>
+      _sessionTimeouts.containsKey(orderId);
 
   /// Cancels the timeout timer for a specific orderId
   static void cancelSessionTimeoutCleanup(String orderId) {
