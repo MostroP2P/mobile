@@ -1,4 +1,5 @@
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
@@ -16,7 +17,10 @@ class OrderNotifier extends AbstractMostroNotifier {
   bool _isSyncing = false; // Only for sync() method
   bool _hydrated = false; // A sync() has read the history successfully
   bool _resyncRequested = false; // A sync() was asked for while one was running
-  int _resyncAttempts = 0;
+
+  /// Replays chained within the current recovery generation.
+  @visibleForTesting
+  int resyncAttempts = 0;
 
   /// Bounds the chain of replays a single startup may schedule. Rejected
   /// resolutions are hostile input, so the chain must not be paced by how fast
@@ -53,6 +57,14 @@ class OrderNotifier extends AbstractMostroNotifier {
     if (_hydrated) return;
     logger.i(
         'Re-syncing order $orderId: ${message.action} arrived before hydration completed');
+
+    // The cap bounds one contiguous replay chain, not the notifier's lifetime.
+    // A rejection arriving outside a running pass is a new recovery generation
+    // and gets a fresh budget: otherwise an exhausted counter would strand
+    // every later resolution, since the queued replay that would have picked
+    // up the just-persisted message is the one being refused.
+    if (!_isSyncing) resyncAttempts = 0;
+
     sync();
   }
 
@@ -112,14 +124,14 @@ class OrderNotifier extends AbstractMostroNotifier {
       final completion = resolveSyncCompletion(
         succeeded: succeeded,
         resyncRequested: _resyncRequested,
-        resyncAttempts: _resyncAttempts,
+        resyncAttempts: resyncAttempts,
         maxChainedResyncs: _maxChainedResyncs,
       );
       _resyncRequested = false;
 
       switch (completion) {
         case SyncCompletion.replay:
-          _resyncAttempts++;
+          resyncAttempts++;
           sync();
         case SyncCompletion.hydrated:
           _hydrated = true;
