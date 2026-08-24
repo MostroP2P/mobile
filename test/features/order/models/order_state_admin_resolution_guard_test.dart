@@ -184,6 +184,25 @@ void main() {
       expect(updated.dispute!.status, equals('resolved'));
     });
 
+    test('a rejected resolution is dropped before it can write a reputation',
+        () {
+      // A Peer payload with an empty pubkey is read as a taker-reputation
+      // notice, which has its own early return in updateWith. The admin guard
+      // is checked first on purpose: a forgery must write nothing at all, not
+      // fall through and leave a reputation snapshot behind.
+      final state = _stateWithoutDispute();
+
+      final updated = state.updateWith(
+        _message(
+          Action.adminTookDispute,
+          payload: Peer(publicKey: '', reputation: null),
+        ),
+      );
+
+      expect(identical(updated, state), isTrue,
+          reason: 'the forged resolution must not write any field');
+    });
+
     test('a bare dispute message is not evidence for the resolution behind it',
         () {
       // Two-step forgery: Action.dispute maps to Status.dispute without
