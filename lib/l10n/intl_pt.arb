@@ -346,6 +346,21 @@
             }
         }
     },
+    "payoutInvoiceInstruction": "Adicione uma fatura Lightning de {sats} sats, equivalente a {fiat_amount} {fiat_code}, para receber o pagamento da sua compra.",
+    "@payoutInvoiceInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "collectYourSats": "Receber Seus Sats",
     "reputationReviewsCount": "{count, plural, =1{1 avaliação} other{{count} avaliações}}",
     "@reputationReviewsCount": {
         "placeholders": {
@@ -657,6 +672,7 @@
     "yourSharedKey": "Sua Chave Compartilhada:",
     "payInvoiceButton": "PAGAR FATURA",
     "addInvoiceButton": "ADICIONAR FATURA",
+    "collectSatsButton": "RECEBER SATS",
     "release": "LIBERAR",
     "takeSell": "ACEITAR VENDA",
     "takeBuy": "ACEITAR COMPRA",

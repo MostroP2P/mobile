@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/screens/payout_invoice_screen.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/features/wallet/providers/nwc_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
@@ -55,6 +56,18 @@ class _AddLightningInvoiceScreenState
     return mostroOrderAsync.when(
       data: (mostroMessage) {
         final orderPayload = mostroMessage?.getPayload<Order>();
+        final orderState = ref.watch(orderNotifierProvider(orderId));
+        // A settled order is not asking for the invoice a take requires, but
+        // for the payout one, which has its own screen. It deliberately ignores
+        // `lnAddress`: the address may be what broke the payout to begin with.
+        if (orderState.status.isPayoutInvoice) {
+          return PayoutInvoiceScreen(
+            orderId: orderId,
+            // The stream only matches messages whose payload is an Order; the
+            // notifier also keeps one carried by a PaymentRequest.
+            order: orderPayload ?? orderState.order,
+          );
+        }
         final amount = orderPayload?.amount;
         final fiatAmount = orderPayload?.fiatAmount.toString() ?? '0';
         final fiatCode = orderPayload?.fiatCode ?? '';
@@ -62,10 +75,8 @@ class _AddLightningInvoiceScreenState
         // Trade summary shown by every flow: trade type, who took the order,
         // amounts, order id and the counterpart reputation (when received).
         // Adding an invoice always means the user is the buyer, but not always
-        // the maker: taking a sell order and retrying after a failed payout
-        // land here too.
+        // the maker: taking a sell order lands here too.
         final session = ref.watch(sessionProvider(orderId));
-        final orderState = ref.watch(orderNotifierProvider(orderId));
         final header = InvoiceHeader(
           userIsSeller: session?.role == Role.seller,
           sats: amount ?? 0,

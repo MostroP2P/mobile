@@ -12,8 +12,7 @@ import 'package:mostro_mobile/shared/widgets/order_cards.dart';
 /// It only ever is for the maker, at the handoff right after a take. Both
 /// invoice screens are also reached by takers — taking a buy order means
 /// paying the hold invoice, taking a sell one means adding an invoice — and
-/// by the buyer asked for a fresh invoice after a failed payout, and for
-/// them nobody took anything.
+/// for them nobody took anything.
 ///
 /// A sell order is published by its seller and a buy order by its buyer, so
 /// matching the order kind against the user's role identifies the maker.
@@ -47,8 +46,7 @@ class InvoiceHeader extends StatelessWidget {
   final UserInfo? reputation;
 
   /// Whether to open with the "someone took your order" line. False for
-  /// takers and for the post-payment-failure retry — see
-  /// [counterpartTookYourOrder].
+  /// takers — see [counterpartTookYourOrder].
   final bool takenByCounterpart;
 
   const InvoiceHeader({

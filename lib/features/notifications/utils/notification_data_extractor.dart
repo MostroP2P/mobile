@@ -44,7 +44,7 @@ class NotificationDataExtractor {
         
       case Action.addInvoice:
         final order = event.getPayload<Order>();
-        final isAfterPaymentFailure = order?.status == Status.settledHoldInvoice;
+        final isAfterPaymentFailure = order?.status.isPayoutInvoice ?? false;
         
         if (isAfterPaymentFailure) {
           final now = DateTime.now();

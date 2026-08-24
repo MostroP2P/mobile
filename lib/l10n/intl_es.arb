@@ -521,6 +521,7 @@
     "yourSharedKey": "Tu clave compartida:",
     "payInvoiceButton": "PAGAR FACTURA",
     "addInvoiceButton": "AGREGAR FACTURA",
+    "collectSatsButton": "COBRAR SATS",
     "release": "LIBERAR",
     "takeSell": "TOMAR VENTA",
     "takeBuy": "TOMAR COMPRA",
@@ -782,6 +783,21 @@
             }
         }
     },
+    "payoutInvoiceInstruction": "Agrega una factura Lightning de {sats} sats, equivalentes a {fiat_amount} {fiat_code}, para recibir el pago de tu compra.",
+    "@payoutInvoiceInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "collectYourSats": "Cobrar Tus Sats",
     "reputationReviewsCount": "{count, plural, =1{1 reseña} other{{count} reseñas}}",
     "@reputationReviewsCount": {
         "placeholders": {
