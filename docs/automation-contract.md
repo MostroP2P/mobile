@@ -13,6 +13,14 @@ owners.
 Every actionable control and business-critical state carries a stable
 identifier from `lib/core/automation/automation_ids.dart`, attached with the
 `.withAutomationId()` extension (`lib/core/automation/automation_id.dart`).
+
+**Declaring an identifier is not attaching it.** A shell identifier such as
+`appbar.back` belongs to every screen that offers that control, and a screen
+that builds its own `AppBar` owns the job of naming its leading button. The
+contract test checks that identifiers are declared, unique and namespaced --
+it cannot see which screens attached them -- so a screen that forgets one
+leaves the suite green and the driver with no way out. `settings` shipped
+that way: the only exit from the screen was invisible to accessibility.
 Flutter exposes it as `Semantics.identifier`, which Android surfaces as the
 accessibility `resource-id`; drivers locate it with a UiAutomator
 `resourceId("<id>")` selector. Identifiers are namespaced
