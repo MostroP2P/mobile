@@ -10,6 +10,7 @@ import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mostro_mobile/core/app.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/order.dart';
@@ -384,11 +385,11 @@ Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) a
   final mostroMessage = MostroMessage.fromJson(result[0]);
   mostroMessage.timestamp = event.createdAt?.millisecondsSinceEpoch;
 
-  // If this is the new-order confirmation for a pending range-order child
-  // session, link it to the child order id right here. The foreground link
+  // If this message belongs to a pending range-order child session, link it to
+  // the child order id right here. The foreground link
   // (MostroService._maybeLinkChildOrder) never runs while the app is
-  // backgrounded or killed, and later events for the child order need the
-  // session stored under its orderId (e.g. role-gated notifications).
+  // backgrounded or killed, and this and later events for the child order need
+  // the session stored under its orderId (e.g. role-gated notifications).
   await _maybeLinkChildOrder(mostroMessage, session);
 
   // If this event transitions the order to Active, learn the counterpart's
@@ -403,41 +404,42 @@ Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) a
 }
 
 /// Links a pending range-order child session to its concrete child order id
-/// when the new-order confirmation arrives while the app is backgrounded.
+/// when a message for that child arrives while the app is backgrounded.
 /// Mirrors MostroService._maybeLinkChildOrder for the background isolate:
 /// stores the session under its orderId and drops the pending record.
+///
+/// The trigger is any message carrying an order id, not just the child
+/// new-order confirmation: the device may well be woken (FCM) by a later
+/// event — the very take-order message this notification path exists for —
+/// while the new-order message was never delivered to this isolate. The child
+/// trade key is used by exactly one order, so any id other than the parent's
+/// identifies it.
 Future<void> _maybeLinkChildOrder(
   MostroMessage message,
   Session session,
 ) async {
-  if (message.action != mostro_action.Action.newOrder || message.id == null) {
-    return;
-  }
-  if (session.orderId != null || session.parentOrderId == null) {
-    return;
-  }
+  final childOrderId = message.id;
+  if (childOrderId == null || childOrderId.isEmpty) return;
+  if (session.orderId != null || session.parentOrderId == null) return;
+  if (childOrderId == session.parentOrderId) return;
 
   try {
-    session.orderId = message.id;
+    session.orderId = childOrderId;
 
-    final db = await openMostroDatabase('mostro.db');
-    const secureStorage = FlutterSecureStorage();
-    final sharedPrefs = SharedPreferencesAsync();
-    final keyStorage = KeyStorage(
-      secureStorage: secureStorage,
-      sharedPrefs: sharedPrefs,
-    );
-    final keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
-    final keyManager = KeyManager(keyStorage, keyDerivator);
-    await keyManager.init();
-    final sessionStorage = SessionStorage(keyManager, db: db);
-    await sessionStorage.putSession(session);
-    await sessionStorage.deletePendingChildSession(session.tradeKey.public);
+    final sessionStorage = await _openSessionStorage();
+    // Store under the orderId and drop the pending record in one transaction
+    // so a crash in between cannot lose the session.
+    await sessionStorage.promotePendingChildSession(session);
+    // Local write: the cached session list is stale now.
+    backgroundSessionCache.invalidate();
 
     logger.i(
-      'Background linked child order ${message.id} to parent ${session.parentOrderId}',
+      'Background linked child order $childOrderId to parent ${session.parentOrderId}',
     );
   } catch (e, stackTrace) {
+    // Keep the in-memory session pending so the next attempt (background or
+    // foreground) retries the link instead of assuming a stored orderId.
+    session.orderId = null;
     logger.e(
       'Failed to link child order in background: $e',
       stackTrace: stackTrace,
@@ -491,17 +493,7 @@ Future<void> _maybeUpdateSessionWithPeer(
     // Setting peer on the session computes the shared key via ECDH.
     session.peer = Peer(publicKey: peerPubkey);
 
-    final db = await openMostroDatabase('mostro.db');
-    const secureStorage = FlutterSecureStorage();
-    final sharedPrefs = SharedPreferencesAsync();
-    final keyStorage = KeyStorage(
-      secureStorage: secureStorage,
-      sharedPrefs: sharedPrefs,
-    );
-    final keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
-    final keyManager = KeyManager(keyStorage, keyDerivator);
-    await keyManager.init();
-    final sessionStorage = SessionStorage(keyManager, db: db);
+    final sessionStorage = await _openSessionStorage();
     await sessionStorage.putSession(session);
     // Local write: the cached session list is stale now.
     backgroundSessionCache.invalidate();
@@ -598,17 +590,26 @@ Future<String?> _loadMostroPubkey() async {
 /// Isolate-wide cache: reads go through it, local writes invalidate it.
 final BackgroundSessionCache backgroundSessionCache = BackgroundSessionCache();
 
+/// Opens a SessionStorage bound to the background isolate's own database and
+/// key manager handles. The isolate has no Riverpod container, so every
+/// persistence helper here has to build its own.
+Future<SessionStorage> _openSessionStorage() async {
+  final db = await openMostroDatabase('mostro.db');
+  const secureStorage = FlutterSecureStorage();
+  final sharedPrefs = SharedPreferencesAsync();
+  final keyStorage = KeyStorage(
+    secureStorage: secureStorage,
+    sharedPrefs: sharedPrefs,
+  );
+  final keyDerivator = KeyDerivator(Config.keyDerivationPath);
+  final keyManager = KeyManager(keyStorage, keyDerivator);
+  await keyManager.init();
+  return SessionStorage(keyManager, db: db);
+}
+
 Future<List<Session>> _loadSessionsFromDatabase() async {
   try {
-    final db = await openMostroDatabase('mostro.db');
-    const secureStorage = FlutterSecureStorage();
-    final sharedPrefs = SharedPreferencesAsync();
-    final keyStorage = KeyStorage(secureStorage: secureStorage, sharedPrefs: sharedPrefs);
-    final keyDerivator = KeyDerivator("m/44'/1237'/38383'/0");
-    final keyManager = KeyManager(keyStorage, keyDerivator);
-    
-    await keyManager.init();
-    final sessionStorage = SessionStorage(keyManager, db: db);
+    final sessionStorage = await _openSessionStorage();
     return await sessionStorage.getAll();
   } catch (e) {
     // Rethrow: an empty list is a valid answer the cache keeps for a whole TTL

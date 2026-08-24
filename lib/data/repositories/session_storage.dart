@@ -73,6 +73,23 @@ class SessionStorage extends BaseStorage<Session> {
     await putItem('$pendingChildKeyPrefix${session.tradeKey.public}', session);
   }
 
+  /// Stores a linked child session under its orderId and removes its pending
+  /// record in a single transaction. Doing both atomically means a crash in
+  /// between can neither lose the session (pending gone, order not yet
+  /// written) nor leave the same session stored twice.
+  Future<void> promotePendingChildSession(Session session) async {
+    final orderId = session.orderId;
+    if (orderId == null) {
+      throw ArgumentError('Cannot promote a child session without an orderId');
+    }
+    final jsonMap = toDbMap(session);
+    final pendingKey = '$pendingChildKeyPrefix${session.tradeKey.public}';
+    await db.transaction((txn) async {
+      await store.record(orderId).put(txn, jsonMap);
+      await store.record(pendingKey).delete(txn);
+    });
+  }
+
   /// Removes the pending child session record for [tradeKeyPublic], if any.
   /// Called once the child order id is known and the session is re-stored
   /// under its orderId, or when an expired pending child is cleaned up.

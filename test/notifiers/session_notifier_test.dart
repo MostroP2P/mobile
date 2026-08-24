@@ -50,6 +50,7 @@ void main() {
         .thenAnswer((_) async => derivedTradeKey);
     when(mockStorage.putPendingChildSession(any)).thenAnswer((_) async {});
     when(mockStorage.deletePendingChildSession(any)).thenAnswer((_) async {});
+    when(mockStorage.promotePendingChildSession(any)).thenAnswer((_) async {});
 
     notifier = SessionNotifier(
       mockRef,

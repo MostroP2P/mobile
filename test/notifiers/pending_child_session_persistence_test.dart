@@ -1,7 +1,9 @@
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
@@ -11,6 +13,17 @@ import 'package:sembast/sembast_memory.dart';
 
 import '../mocks.mocks.dart';
 
+/// SessionStorage whose pending-child write always fails, to exercise the
+/// persistence error path of createChildOrderSession.
+class _FailingPendingChildStorage extends SessionStorage {
+  _FailingPendingChildStorage(super.keyManager, {required super.db});
+
+  @override
+  Future<void> putPendingChildSession(Session session) async {
+    throw StateError('disk full');
+  }
+}
+
 void main() {
   late MockRef mockRef;
   late MockKeyManager mockKeyManager;
@@ -18,12 +31,10 @@ void main() {
 
   // Dummy private keys for testing purposes only
   final masterKey = NostrKeyPairs(
-    private:
-        '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    private: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
   );
   final childTradeKey = NostrKeyPairs(
-    private:
-        'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+    private: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
   );
   const childKeyIndex = 5;
 
@@ -42,6 +53,17 @@ void main() {
         storage,
         buildSettings(sessionExpirationHours: sessionExpirationHours),
       );
+
+  /// Rewrites the persisted pending child record with an older start time,
+  /// simulating a record that has been sitting on disk for [age].
+  Future<void> agePendingChildRecord(Duration age) async {
+    final key =
+        '${SessionStorage.pendingChildKeyPrefix}${childTradeKey.public}';
+    final stored = await storage.store.record(key).get(storage.db);
+    final aged = Map<String, dynamic>.from(stored!)
+      ..['start_time'] = DateTime.now().subtract(age).toIso8601String();
+    await storage.store.record(key).put(storage.db, aged);
+  }
 
   setUpAll(() {
     provideDummy<KeyManager>(MockKeyManager());
@@ -109,21 +131,13 @@ void main() {
     test('drops an expired pending child session on init', () async {
       // Arrange: persist a pending child, then age it beyond expiration
       final notifier = buildNotifier();
-      final session = await notifier.createChildOrderSession(
+      await notifier.createChildOrderSession(
         tradeKey: childTradeKey,
         keyIndex: childKeyIndex,
         parentOrderId: 'parent-order-id',
         role: Role.seller,
       );
-      final aged = session.toJson()
-        ..['start_time'] = DateTime.now()
-            .subtract(const Duration(hours: 3))
-            .toIso8601String();
-      await storage.store
-          .record(
-            '${SessionStorage.pendingChildKeyPrefix}${childTradeKey.public}',
-          )
-          .put(storage.db, aged);
+      await agePendingChildRecord(const Duration(hours: 3));
 
       // Act: restart with a 1-hour expiration window
       final restarted = buildNotifier(sessionExpirationHours: 1);
@@ -189,7 +203,174 @@ void main() {
     });
   });
 
+  group('pending child bounded lifetime', () {
+    test('keeps a pending child when session expiration is disabled', () async {
+      // Arrange: expiration disabled (0 == forever) and an old-ish record
+      final notifier = buildNotifier(sessionExpirationHours: 0);
+      await notifier.createChildOrderSession(
+        tradeKey: childTradeKey,
+        keyIndex: childKeyIndex,
+        parentOrderId: 'parent-order-id',
+        role: Role.seller,
+      );
+      await agePendingChildRecord(const Duration(hours: 3));
+
+      // Act
+      final restarted = buildNotifier(sessionExpirationHours: 0);
+      await restarted.init();
+
+      // Assert
+      expect(restarted.state, hasLength(1));
+      expect(await storage.getAllSessions(), hasLength(1));
+    });
+
+    test('drops a pending child past its own TTL even with expiration disabled',
+        () async {
+      // Arrange: a pending child that was never linked. With expiration
+      // disabled it would otherwise stay on disk (and in the orders filter)
+      // forever, so the bounded TTL has to apply on its own.
+      final notifier = buildNotifier(sessionExpirationHours: 0);
+      await notifier.createChildOrderSession(
+        tradeKey: childTradeKey,
+        keyIndex: childKeyIndex,
+        parentOrderId: 'parent-order-id',
+        role: Role.seller,
+      );
+      await agePendingChildRecord(
+        Duration(hours: Config.pendingChildSessionExpirationHours + 1),
+      );
+
+      // Act
+      final restarted = buildNotifier(sessionExpirationHours: 0);
+      await restarted.init();
+
+      // Assert
+      expect(restarted.state, isEmpty);
+      expect(await storage.getAllSessions(), isEmpty);
+    });
+
+    test('drops a stored record with neither orderId nor parentOrderId',
+        () async {
+      // Arrange: only pending children are stored without an orderId; any
+      // other such record can never be linked.
+      final notifier = buildNotifier();
+      await notifier.createChildOrderSession(
+        tradeKey: childTradeKey,
+        keyIndex: childKeyIndex,
+        parentOrderId: 'parent-order-id',
+        role: Role.seller,
+      );
+      final key =
+          '${SessionStorage.pendingChildKeyPrefix}${childTradeKey.public}';
+      final stored = await storage.store.record(key).get(storage.db);
+      await storage.store.record(key).put(
+            storage.db,
+            Map<String, dynamic>.from(stored!)..['parent_order_id'] = null,
+          );
+
+      // Act
+      final restarted = buildNotifier();
+      await restarted.init();
+
+      // Assert
+      expect(restarted.state, isEmpty);
+      expect(await storage.getAllSessions(), isEmpty);
+    });
+
+    test('saveSession drops the pending record once the order id is known',
+        () async {
+      // Arrange
+      final notifier = buildNotifier();
+      final session = await notifier.createChildOrderSession(
+        tradeKey: childTradeKey,
+        keyIndex: childKeyIndex,
+        parentOrderId: 'parent-order-id',
+        role: Role.seller,
+      );
+
+      // Act: the child session is saved through the generic path instead of
+      // linkChildSessionToOrderId
+      session.orderId = 'child-order-id';
+      await notifier.saveSession(session);
+
+      // Assert
+      final stored = await storage.getAllSessions();
+      expect(stored, hasLength(1));
+      expect(stored.first.orderId, 'child-order-id');
+    });
+
+    test(
+        'createChildOrderSession rethrows a persistence failure and leaves no '
+        'pending session behind', () async {
+      // Arrange
+      final failingStorage = _FailingPendingChildStorage(
+        mockKeyManager,
+        db: storage.db,
+      );
+      final notifier =
+          SessionNotifier(mockRef, failingStorage, buildSettings());
+
+      // Act
+      Future<Session> create() => notifier.createChildOrderSession(
+            tradeKey: childTradeKey,
+            keyIndex: childKeyIndex,
+            parentOrderId: 'parent-order-id',
+            role: Role.seller,
+          );
+
+      // Assert: the caller must not proceed as if the child were ready
+      await expectLater(create, throwsStateError);
+      expect(notifier.state, isEmpty);
+      expect(notifier.getSessionByTradeKey(childTradeKey.public), isNull);
+      expect(await storage.getAllSessions(), isEmpty);
+    });
+  });
+
   group('SessionStorage pending child records', () {
+    test(
+        'promotePendingChildSession stores the session under its orderId and '
+        'drops the pending record in one step', () async {
+      // Arrange
+      final notifier = buildNotifier();
+      final session = await notifier.createChildOrderSession(
+        tradeKey: childTradeKey,
+        keyIndex: childKeyIndex,
+        parentOrderId: 'parent-order-id',
+        role: Role.seller,
+      );
+      session.orderId = 'child-order-id';
+
+      // Act
+      await storage.promotePendingChildSession(session);
+
+      // Assert
+      final pendingKey =
+          '${SessionStorage.pendingChildKeyPrefix}${childTradeKey.public}';
+      expect(
+          await storage.store.record(pendingKey).exists(storage.db), isFalse);
+      expect(await storage.store.record('child-order-id').exists(storage.db),
+          isTrue);
+      expect(await storage.getAllSessions(), hasLength(1));
+    });
+
+    test('promotePendingChildSession rejects sessions without an orderId',
+        () async {
+      final notifier = buildNotifier();
+      final session = await notifier.createChildOrderSession(
+        tradeKey: childTradeKey,
+        keyIndex: childKeyIndex,
+        parentOrderId: 'parent-order-id',
+        role: Role.seller,
+      );
+
+      expect(
+        () => storage.promotePendingChildSession(session),
+        throwsArgumentError,
+      );
+      // The pending record is untouched by a rejected promotion.
+      expect(await storage.getAll(), hasLength(1));
+    });
+
     test('putPendingChildSession rejects sessions that have an orderId',
         () async {
       final notifier = buildNotifier();
