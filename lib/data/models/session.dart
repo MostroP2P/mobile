@@ -41,6 +41,20 @@ class Session {
   /// [pinnedAmountSats].
   double? pinnedFeeRate;
 
+  /// Whether the terms were pinned when this session committed.
+  ///
+  /// Separates a session that pinned whatever there was to pin — possibly
+  /// nothing, for a market-price order with no resolved sats, or for a
+  /// commitment made before the info event arrived — from one written before
+  /// pinning existed at all. Only the second has any business reading a term
+  /// the node publishes later; for the first, an absent figure means the node
+  /// could not supply it at the moment of agreement, and letting it supply
+  /// one afterwards is the move pinning exists to stop.
+  ///
+  /// False for every session written by an earlier version, which keeps them
+  /// behaving as they did.
+  final bool termsPinned;
+
   /// Transient marker (never persisted): set while a maker-created order is in
   /// the anti-abuse bond limbo, so the shared pay-bond handler skips persisting
   /// the still-uncommitted session. Cleared and persisted on confirmation.
@@ -58,6 +72,7 @@ class Session {
     this.disputeId,
     int? pinnedAmountSats,
     double? pinnedFeeRate,
+    this.termsPinned = false,
     Peer? peer,
     String? adminPubkey,
   }) {
@@ -98,6 +113,7 @@ class Session {
         'dispute_id': disputeId,
         'pinned_amount_sats': pinnedAmountSats,
         'pinned_fee_rate': pinnedFeeRate,
+        'terms_pinned': termsPinned,
       };
 
   factory Session.fromJson(Map<String, dynamic> json) {
@@ -226,6 +242,13 @@ class Session {
         pinnedAmountSats = int.tryParse(pinnedAmountValue);
       }
 
+      final termsPinnedValue = json['terms_pinned'];
+      final termsPinned = termsPinnedValue is bool
+          ? termsPinnedValue
+          : termsPinnedValue is String
+              ? termsPinnedValue.toLowerCase() == 'true'
+              : false;
+
       final pinnedFeeValue = json['pinned_fee_rate'];
       double? pinnedFeeRate;
       if (pinnedFeeValue is num) {
@@ -248,6 +271,7 @@ class Session {
         disputeId: disputeId,
         pinnedAmountSats: pinnedAmountSats,
         pinnedFeeRate: pinnedFeeRate,
+        termsPinned: termsPinned,
       );
     } catch (e) {
       throw FormatException('Failed to parse Session from JSON: $e');

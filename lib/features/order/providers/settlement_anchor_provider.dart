@@ -88,12 +88,17 @@ final orderFeeRateProvider = Provider.family<double?, String>((ref, orderId) {
   final pinned = session?.pinnedFeeRate;
   if (pinned != null) return pinned;
 
-  // A session holding an amount but no rate is one that committed while the
-  // info event was still missing: pinning ran, and there was nothing to pin.
-  // Reading the live rate here would let the node publish the term after the
-  // fact, which is the whole of what pinning exists to prevent. Report it
-  // unknown instead and let the screen say the check could not be made.
-  if (session?.pinnedAmountSats != null) return null;
+  // Pinning ran for this session and came up with no rate, so the node had
+  // none to offer at the moment of agreement. Reading the live rate here
+  // would let it supply the term afterwards, which is the whole of what
+  // pinning exists to prevent. Report it unknown instead and let the screen
+  // say the check could not be made.
+  //
+  // This cannot be inferred from a pinned amount being present: a
+  // market-price order resolves no sats until after the take, so it pins
+  // none, and inferring from that would leave exactly those orders following
+  // whatever rate the node publishes next.
+  if (session?.termsPinned == true) return null;
 
   return ref.watch(nodeFeeRateProvider);
 });

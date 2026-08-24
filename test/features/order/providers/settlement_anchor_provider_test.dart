@@ -53,7 +53,16 @@ final _keyPair = NostrKeyPairs(
 );
 
 /// The session for [_orderId], carrying whatever it pinned when it committed.
-Session _session({int? pinnedAmountSats, double? pinnedFeeRate}) => Session(
+///
+/// [termsPinned] defaults to true: every session this build creates has been
+/// through pinning, whether or not there was anything to pin. Pass false to
+/// stand for one written before pinning existed.
+Session _session({
+  int? pinnedAmountSats,
+  double? pinnedFeeRate,
+  bool termsPinned = true,
+}) =>
+    Session(
       masterKey: _keyPair,
       tradeKey: _keyPair,
       keyIndex: 0,
@@ -62,6 +71,7 @@ Session _session({int? pinnedAmountSats, double? pinnedFeeRate}) => Session(
       orderId: _orderId,
       pinnedAmountSats: pinnedAmountSats,
       pinnedFeeRate: pinnedFeeRate,
+      termsPinned: termsPinned,
     );
 
 /// Settings that can be pointed at another node without touching storage.
@@ -237,8 +247,9 @@ void main() {
       expect(container.read(anchoredSellerAmountProvider(_orderId)), 100300);
     });
 
-    test('resolves from the live events when nothing was pinned', () async {
-      session = _session();
+    test('resolves from the live events for a session written before the pin',
+        () async {
+      session = _session(termsPinned: false);
       build();
 
       container.read(anchoredSellerAmountProvider(_orderId));
@@ -255,7 +266,7 @@ void main() {
       // Normalized to "nothing pinned" on the way in, so the trade falls back
       // to the live events rather than being held to a figure that anchors
       // nothing.
-      session = _session(pinnedAmountSats: 0);
+      session = _session(pinnedAmountSats: 0, termsPinned: false);
       expect(session!.pinnedAmountSats, isNull);
       build();
 
@@ -265,6 +276,39 @@ void main() {
       await flush();
 
       expect(container.read(anchoredSellerAmountProvider(_orderId)), 100300);
+    });
+
+    test('a market-price take with no rate at commitment stays unknown',
+        () async {
+      // Nothing to pin on either side: the sats are unresolved until a taker
+      // fixes them, and the info event had not arrived. The absent rate must
+      // not be filled in from a later event.
+      session = _session();
+      build();
+
+      container.read(anchoredSellerAmountProvider(_orderId));
+      orderEvents.add([_orderEvent()]);
+      infoEvents.add(_infoEvent(fee: '0.1'));
+      await flush();
+
+      expect(container.read(orderFeeRateProvider(_orderId)), isNull);
+      expect(container.read(anchoredSellerAmountProvider(_orderId)), isNull);
+    });
+
+    test('a range remainder inherits the absence its parent committed to',
+        () async {
+      // The child session carries the parent's pinned rate, which is none.
+      // Reading one now would promote an event published after the agreement
+      // into a term of it.
+      session = _session(pinnedFeeRate: null);
+      build();
+
+      container.read(anchoredSellerAmountProvider(_orderId));
+      orderEvents.add([_orderEvent()]);
+      infoEvents.add(_infoEvent(fee: '0.05'));
+      await flush();
+
+      expect(container.read(orderFeeRateProvider(_orderId)), isNull);
     });
   });
 }

@@ -15,7 +15,6 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
-import 'package:mostro_mobile/features/order/providers/settlement_anchor_provider.dart';
 
 class MostroService {
   final Ref ref;
@@ -324,8 +323,8 @@ class MostroService {
         keyIndex: nextKeyIndex,
         parentOrderId: orderId,
         role: currentSession.role!,
-        pinnedFeeRate:
-            currentSession.pinnedFeeRate ?? ref.read(nodeFeeRateProvider),
+        pinnedFeeRate: currentSession.pinnedFeeRate,
+        termsPinned: currentSession.termsPinned,
       );
       logger.i(
         '[$callerLabel] Prepared child session for $orderId using key index $nextKeyIndex',

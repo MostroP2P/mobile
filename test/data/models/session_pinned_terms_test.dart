@@ -102,5 +102,35 @@ void main() {
         isNull,
       );
     });
+
+    test('records that pinning ran, and survives a round trip', () {
+      final session = Session(
+        masterKey: keyPair,
+        tradeKey: keyPair,
+        keyIndex: 0,
+        fullPrivacy: false,
+        startTime: DateTime.parse('2026-06-03T12:00:00.000'),
+        orderId: 'order-1',
+        termsPinned: true,
+      );
+
+      final restored = Session.fromJson({
+        ...session.toJson(),
+        'master_key': keyPair,
+        'trade_key': keyPair,
+      });
+
+      expect(restored.termsPinned, isTrue);
+    });
+
+    test('a session written before the marker existed reads as unpinned', () {
+      expect(decode(const {}).termsPinned, isFalse);
+      expect(decode(const {'terms_pinned': null}).termsPinned, isFalse);
+    });
+
+    test('a string-encoded marker is read', () {
+      expect(decode(const {'terms_pinned': 'true'}).termsPinned, isTrue);
+      expect(decode(const {'terms_pinned': 'false'}).termsPinned, isFalse);
+    });
   });
 }
