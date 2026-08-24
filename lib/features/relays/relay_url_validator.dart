@@ -1,7 +1,8 @@
 /// Why a user-entered relay URL was rejected by [RelayUrlValidator].
 enum RelayUrlRejection {
   /// Plain `ws://` is not allowed in this build, or it targets a non-local
-  /// host (plain text is only ever accepted towards `localhost`/IPv4).
+  /// host (plain text is only ever accepted towards `localhost` or a private
+  /// IPv4 address).
   insecureScheme,
 
   /// `http://` / `https://` are never relay URLs.
@@ -31,9 +32,10 @@ class RelayUrlValidation {
 /// Policy:
 /// - `wss://` (or a bare host, which gets `wss://` prepended) to a public
 ///   domain name is always accepted. An optional `:port` is allowed.
-/// - With [allowInsecure], local hosts (`localhost` or a dotted IPv4, optional
-///   `:port`) are accepted too, and plain `ws://` is accepted **only** towards
-///   those local hosts. Plain text to a public relay is never accepted.
+/// - With [allowInsecure], local hosts (`localhost` or a private IPv4 address
+///   as defined in [_isPrivateIPv4], optional `:port`) are accepted too, and
+///   plain `ws://` is accepted **only** towards those local hosts. Neither a
+///   public IPv4 address nor plain text to a public relay is ever accepted.
 /// - `http(s)://` is always rejected.
 ///
 /// Callers decide when [allowInsecure] is acceptable: see
@@ -54,8 +56,9 @@ class RelayUrlValidator {
       r'^(?<host>[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*)'
       r'(?::(?<port>\d{1,5}))?$');
 
-  /// `localhost` or a dotted IPv4 address with an optional `:port`. Octet and
-  /// port ranges are checked in [_isValidLocalHost].
+  /// `localhost` or a dotted IPv4 address with an optional `:port`. Octet
+  /// ranges, the private-address requirement and the port range are checked
+  /// in [_isValidLocalHost].
   static final RegExp _localHostRegex = RegExp(
       r'^(?<host>localhost|\d{1,3}(\.\d{1,3}){3})(?::(?<port>\d{1,5}))?$');
 
@@ -131,20 +134,31 @@ class RelayUrlValidator {
         _isValidPort(match.namedGroup('port'));
   }
 
-  /// `localhost` or IPv4 with octets in 0-255 and, if given, a port in
-  /// 1-65535.
+  /// `localhost` or a private IPv4 address with octets in 0-255 and, if
+  /// given, a port in 1-65535. A public IPv4 address is not a local host: it
+  /// must not be reachable over plain text just because the build allows
+  /// insecure relays.
   static bool _isValidLocalHost(String host) {
     final match = _localHostRegex.firstMatch(host);
     if (match == null) return false;
 
     final name = match.namedGroup('host')!;
     if (name != 'localhost') {
-      final octetsInRange =
-          name.split('.').every((octet) => int.parse(octet) <= _maxOctet);
-      if (!octetsInRange) return false;
+      final octets = name.split('.').map(int.parse).toList();
+      if (octets.any((octet) => octet > _maxOctet)) return false;
+      if (!_isPrivateIPv4(octets)) return false;
     }
     return _isValidPort(match.namedGroup('port'));
   }
+
+  /// Loopback and the RFC 1918 private ranges: 127.0.0.0/8, 10.0.0.0/8,
+  /// 172.16.0.0/12 and 192.168.0.0/16. Covers `10.0.2.2` (the Android
+  /// emulator's host) and a LAN address when testing on a physical device.
+  static bool _isPrivateIPv4(List<int> octets) =>
+      octets[0] == 127 ||
+      octets[0] == 10 ||
+      (octets[0] == 172 && octets[1] >= 16 && octets[1] <= 31) ||
+      (octets[0] == 192 && octets[1] == 168);
 
   static bool _isValidPort(String? port) {
     if (port == null) return true;

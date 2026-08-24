@@ -66,7 +66,7 @@ When implementing or debugging protocol-related features (order flows, actions, 
 
 ### Relay Management System
 - **Automatic Sync**: Real-time synchronization with Mostro instance relay lists via kind 10002 events
-- **Manual Addition**: Users can add custom relays with strict validation (wss:// to domain names with optional port, connectivity required). Non-release builds and the Mortsom test environment (`Config.allowInsecureRelays`) additionally accept local hosts (`localhost`, IPv4) and plain `ws://` **only** towards those local hosts
+- **Manual Addition**: Users can add custom relays with strict validation (wss:// to domain names with optional port, connectivity required). Non-release builds and the Mortsom test environment (`Config.allowInsecureRelays`) additionally accept local hosts (`localhost` or a private IPv4 address: loopback, 10/8, 172.16/12, 192.168/16) and plain `ws://` **only** towards those local hosts
 - **Instance Validation**: Author pubkey checking prevents relay contamination between Mostro instances  
 - **Two-tier Testing**: Nostr protocol + WebSocket connectivity validation
 - **Memory Safety**: Isolated test instances protect main app connectivity during validation
@@ -80,7 +80,7 @@ When implementing or debugging protocol-related features (order flows, actions, 
 #### Manual Relay Addition
 - Users can manually add relays via `addRelayWithSmartValidation()` method
 - Five sequential validations: URL normalization, duplicate check, domain validation, connectivity testing, blacklist management  
-- Security requirements: Only wss:// protocol to domain names (optional port), no IP addresses, mandatory connectivity test. When `Config.allowInsecureRelays` is true (debug/profile builds, Mortsom test environment) local hosts are also accepted and plain `ws://` is allowed only towards them; release builds never accept `ws://`
+- Security requirements: Only wss:// protocol to domain names (optional port), no IP addresses, mandatory connectivity test. When `Config.allowInsecureRelays` is true (debug/profile builds, Mortsom test environment) local hosts are also accepted and plain `ws://` is allowed only towards them; release builds never accept `ws://`. A public IPv4 address is never a local host, so it is rejected in every build
 - Validation logic lives in `lib/features/relays/relay_url_validator.dart` (`RelayUrlValidator.validate()` returns the URL or a typed `RelayUrlRejection` used to pick the error message)
 - Smart URL handling: Auto-adds "wss://" prefix if missing
 - Source tracking: Manual relays marked as `RelaySource.user`
@@ -99,7 +99,7 @@ When implementing or debugging protocol-related features (order flows, actions, 
 
 #### Relay Validation System  
 - Two-tier connectivity testing: Primary Nostr protocol test (REQ/EVENT/EOSE), WebSocket fallback
-- Domain-only policy in release builds: IP addresses rejected; local hosts (`localhost`, IPv4, optional port) accepted only when `Config.allowInsecureRelays` is true
+- Domain-only policy in release builds: IP addresses rejected; local hosts (`localhost` or a private IPv4 address, optional port) accepted only when `Config.allowInsecureRelays` is true. Public IPv4 addresses are rejected in every build
 - URL normalization: Trailing slash removal prevents duplicate entries
 - Instance-isolated testing: Test connections don't affect main app connectivity
 

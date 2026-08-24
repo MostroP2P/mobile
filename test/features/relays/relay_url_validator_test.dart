@@ -120,6 +120,30 @@ void main() {
       expect(insecure.normalize('ws://10.0.256.1'), isNull);
     });
 
+    test('accepts ws:// on loopback and the RFC 1918 ranges', () {
+      expect(insecure.normalize('ws://127.0.0.1'), 'ws://127.0.0.1');
+      expect(insecure.normalize('ws://10.0.2.2:7000'), 'ws://10.0.2.2:7000');
+      expect(insecure.normalize('ws://172.16.0.1:7000'),
+          'ws://172.16.0.1:7000');
+      expect(insecure.normalize('ws://172.31.255.255'), 'ws://172.31.255.255');
+      expect(insecure.normalize('ws://192.168.1.50:7000'),
+          'ws://192.168.1.50:7000');
+    });
+
+    test('rejects public IPv4 addresses: they are not local hosts', () {
+      expect(insecure.normalize('ws://8.8.8.8'), isNull);
+      expect(insecure.normalize('ws://203.0.113.10:7000'), isNull);
+      // Not acceptable over TLS either: the domain-only policy still holds
+      // for anything that is not a local host.
+      expect(insecure.normalize('wss://8.8.8.8'), isNull);
+      expect(insecure.normalize('wss://203.0.113.10:7000'), isNull);
+    });
+
+    test('rejects the addresses just outside 172.16.0.0/12', () {
+      expect(insecure.normalize('ws://172.15.0.1'), isNull);
+      expect(insecure.normalize('ws://172.32.0.1'), isNull);
+    });
+
     test('rejects ports above 65535 or zero', () {
       expect(insecure.normalize('ws://localhost:99999'), isNull);
       expect(insecure.normalize('ws://127.0.0.1:65536'), isNull);
@@ -148,6 +172,13 @@ void main() {
     test('ws:// to a public host is insecureScheme even when allowed', () {
       expect(reasonOf(insecure, 'ws://relay.example.com'),
           RelayUrlRejection.insecureScheme);
+    });
+
+    test('ws:// to a public IPv4 is invalidHost, not insecureScheme', () {
+      // An IP address is never a valid relay host, so blaming the scheme
+      // would suggest that wss:// towards it would work.
+      expect(reasonOf(insecure, 'ws://8.8.8.8'),
+          RelayUrlRejection.invalidHost);
     });
 
     test('ws:// with a bad port/octet is invalidHost when allowed', () {

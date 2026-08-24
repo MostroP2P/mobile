@@ -203,31 +203,32 @@ void _loadRelays() {
 
 ### Dual Storage Management System
 
-#### Storage Persistence (Lines 81-104)
+#### Storage Persistence (Lines 86-110)
 ```dart
 Future<void> _saveRelays() async {
-  // Get blacklisted relays
-  final blacklistedUrls = settings.state.blacklistedRelays;  // Line 83
+  // Get blacklisted relays (membership is checked through the canonical
+  // key: stored relay URLs may predate normalization)
+  final blacklistedUrls = settings.state.blacklistedRelays;  // Line 89
   
   // Include ALL active relays (Mostro/default + user) that are NOT blacklisted
   final allActiveRelayUrls = state
-      .where((r) => !blacklistedUrls.contains(r.url))        // Line 87
-      .map((r) => r.url)                                     // Line 88
-      .toList();                                             // Line 89
+      .where((r) => !_isBlacklisted(r.url))                  // Line 93
+      .map((r) => r.url)                                     // Line 94
+      .toList();                                             // Line 95
   
   // Separate user relays for metadata preservation
-  final userRelays = state.where((r) => r.source == RelaySource.user).toList(); // Line 92
+  final userRelays = state.where((r) => r.source == RelaySource.user).toList(); // Line 98
   
-  _logger.i('Saving ${allActiveRelayUrls.length} active relays (excluding ${blacklistedUrls.length} blacklisted) and ${userRelays.length} user relays metadata'); // Line 94
+  _logger.i('Saving ${allActiveRelayUrls.length} active relays (excluding ${blacklistedUrls.length} blacklisted) and ${userRelays.length} user relays metadata'); // Line 100
   
   // Save ALL active relays to settings.relays (NostrService will use these)
-  await settings.updateRelays(allActiveRelayUrls);           // Line 97
+  await settings.updateRelays(allActiveRelayUrls);           // Line 103
   
   // Save user relays metadata to settings.userRelays (for persistence/reconstruction)
-  final userRelaysJson = userRelays.map((r) => r.toJson()).toList(); // Line 100
-  await settings.updateUserRelays(userRelaysJson);           // Line 101
+  final userRelaysJson = userRelays.map((r) => r.toJson()).toList(); // Line 106
+  await settings.updateUserRelays(userRelaysJson);           // Line 107
   
-  _logger.i('Relays saved successfully');                    // Line 103
+  _logger.i('Relays saved successfully');                    // Line 109
 }
 ```
 
@@ -282,8 +283,10 @@ validated input.
 **Security Features**:
 - **Protocol Enforcement**: Release builds accept only `wss://`; plain `ws://`
   is never accepted towards a public host in any build
-- **Host Policy**: Domain names (optional port) always; `localhost`/IPv4 only
-  when `Config.allowInsecureRelays` is true
+- **Host Policy**: Domain names (optional port) always; `localhost` and
+  private IPv4 addresses (loopback, 10/8, 172.16/12, 192.168/16) only when
+  `Config.allowInsecureRelays` is true. Public IPv4 addresses are always
+  rejected
 - **Auto-prefix Addition**: Bare hosts get `wss://`, never `ws://`
 
 ### Two-Tier Connectivity Validation System
@@ -737,7 +740,7 @@ Future<void> removeRelayWithBlacklist(String url) async {
 #### Blacklist Toggle for Mostro Relays (Lines 794-812)
 ```dart
 Future<void> toggleMostroRelayBlacklist(String url) async {
-  final isCurrentlyBlacklisted = settings.state.blacklistedRelays.contains(url); // Line 795
+  final isCurrentlyBlacklisted = _isBlacklisted(url);        // Line 795
   
   if (isCurrentlyBlacklisted) {
     // Remove from blacklist and trigger sync to add back
@@ -830,18 +833,27 @@ Future<void> _cleanAllRelaysAndResync() async {
 String _normalizeRelayUrl(String url) => RelayUrlValidator.canonicalKey(url);
 ```
 
-#### Safety Validation (Lines 779-789)
+#### Safety Validation (Lines 772-789)
 ```dart
 bool wouldLeaveNoActiveRelays(String urlToBlacklist) {
-  final currentActiveRelays = state.map((r) => r.url).toList(); // Line 780
-  final currentBlacklist = settings.state.blacklistedRelays; // Line 781
-  
+  // Both sides go through the canonical key so a legacy stored URL still
+  // matches the relay it refers to
+  final currentActiveRelays =
+      state.map((r) => _normalizeRelayUrl(r.url)).toList();  // Line 774
+  final currentBlacklist =
+      settings.state.blacklistedRelays.map(_normalizeRelayUrl); // Line 776
+
   // Simulate what would happen if we blacklist this URL
-  final wouldBeBlacklisted = [...currentBlacklist, urlToBlacklist]; // Line 784
-  final wouldRemainActive = currentActiveRelays.where((url) => !wouldBeBlacklisted.contains(url)).toList(); // Line 785
+  final wouldBeBlacklisted = {                               // Line 779
+    ...currentBlacklist,                                     // Line 780
+    _normalizeRelayUrl(urlToBlacklist),                      // Line 781
+  };                                                         // Line 782
+  final wouldRemainActive = currentActiveRelays
+      .where((url) => !wouldBeBlacklisted.contains(url))     // Line 784
+      .toList();                                             // Line 785
   
   _logger.d('Current active: ${currentActiveRelays.length}, Would remain: ${wouldRemainActive.length}'); // Line 787
-  return wouldRemainActive.isEmpty;                         // Line 788
+  return wouldRemainActive.isEmpty;                          // Line 788
 }
 ```
 
@@ -1250,7 +1262,7 @@ Storage Persistence → UI Feedback
 - **Subscription Isolation**: Each Mostro instance gets isolated subscriptions
 
 ### Network Security
-- **Secure Connections Only**: Rejects http:// always. Insecure ws:// is rejected unless `Config.allowInsecureRelays` is true (non-release builds, or the Mortsom test environment: armed entry point plus `MORTSOM_TEST_ENV`), and even then only towards local hosts (`localhost`, IPv4)
+- **Secure Connections Only**: Rejects http:// always. Insecure ws:// is rejected unless `Config.allowInsecureRelays` is true (non-release builds, or the Mortsom test environment: armed entry point plus `MORTSOM_TEST_ENV`), and even then only towards local hosts (`localhost` or a private IPv4 address: loopback, 10/8, 172.16/12, 192.168/16)
 - **Connectivity Validation**: Mandatory connectivity testing before relay addition
 - **Test Instance Isolation**: Connectivity tests use separate Nostr instances
 

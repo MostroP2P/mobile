@@ -111,9 +111,10 @@ When enabled:
   list instead, so a disconnected local relay produces a test failure, not
   public-network traffic. A build that arms the test environment without
   `MORTSOM_RELAYS` fails at startup rather than starting with no relay;
-- plain `ws://` relays on local hosts (`localhost`, IPv4, optional port) are
-  accepted by the add-relay validation (`ws://` is never accepted towards a
-  public host). Non-release builds (debug and profile, see
+- plain `ws://` relays on local hosts (`localhost` or a private IPv4 address:
+  loopback, 10/8, 172.16/12, 192.168/16, optional port) are accepted by the
+  add-relay validation (`ws://` is never accepted towards a public host, and a
+  public IPv4 address is never a local host). Non-release builds (debug and profile, see
   `Config.allowInsecureRelays`) accept them too, independently of the test
   environment; a release build accepts them only inside the test environment
   (armed entry point plus the define), never on its own;
