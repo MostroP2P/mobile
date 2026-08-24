@@ -344,11 +344,17 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
   /// Create and register a child session that will represent the upcoming
   /// child order generated from a range order release.
+  /// [pinnedFeeRate] carries the fee the parent order committed to. The child
+  /// is the remainder of an order the user already made, so it is held to the
+  /// terms of that agreement rather than to whatever the node advertises by
+  /// the time the remainder settles. Its sats are not pinned: no taker has
+  /// resolved them yet, which is the market check's territory.
   Future<Session> createChildOrderSession({
     required NostrKeyPairs tradeKey,
     required int keyIndex,
     required String parentOrderId,
     required Role role,
+    double? pinnedFeeRate,
   }) async {
     final masterKey = ref.read(keyManagerProvider).masterKeyPair!;
 
@@ -360,6 +366,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       fullPrivacy: _settings.fullPrivacyMode,
       parentOrderId: parentOrderId,
       role: role,
+      pinnedFeeRate: pinnedFeeRate,
     );
 
     _pendingChildSessions[tradeKey.public] = session;
