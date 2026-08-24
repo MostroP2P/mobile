@@ -48,6 +48,8 @@ void main() {
     when(mockKeyManager.getCurrentKeyIndex()).thenAnswer((_) async => 1);
     when(mockKeyManager.deriveTradeKey())
         .thenAnswer((_) async => derivedTradeKey);
+    when(mockStorage.putPendingChildSession(any)).thenAnswer((_) async {});
+    when(mockStorage.deletePendingChildSession(any)).thenAnswer((_) async {});
 
     notifier = SessionNotifier(
       mockRef,
