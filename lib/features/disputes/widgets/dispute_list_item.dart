@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_icon.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_content.dart';
@@ -17,10 +19,13 @@ class DisputeListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () async {
-        // Mark dispute as read when user opens it
-        await DisputeReadStatusService.markDisputeAsRead(dispute.disputeId);
+      onTap: () {
+        // Open the dispute first: marking it as read is bookkeeping and must
+        // never be able to swallow the tap if storage is unavailable.
         onTap();
+        unawaited(
+          DisputeReadStatusService.markDisputeAsRead(dispute.disputeId),
+        );
       },
       child: Container(
         decoration: BoxDecoration(

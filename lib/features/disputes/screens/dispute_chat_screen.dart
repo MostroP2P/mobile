@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/enums.dart' as enums;
@@ -33,7 +35,7 @@ class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
     // Mark dispute as read when screen is opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      DisputeReadStatusService.markDisputeAsRead(widget.disputeId);
+      unawaited(DisputeReadStatusService.markDisputeAsRead(widget.disputeId));
       // Notify that the dispute has been marked as read
       ref.read(disputeReadStatusProvider(widget.disputeId).notifier).state =
           DateTime.now().millisecondsSinceEpoch;
