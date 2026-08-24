@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.4.0] - 2026-08-24
+
+### Added
+- feat(relays): allow insecure ws:// relays in debug builds (#666) (fd860328)
+- feat(communities): add Argentina and Brasil trusted communities (#678) (9c2e641a)
+- feat(trades): keep the invoice available while the order is settled (8dc4004c)
+- feat(order): dedicated screen to collect the sats of a settled order (525f5aac)
+
+### Fixed
+- fix(settings): the settings back control carries its automation identifier (#677) (e7b42935)
+- fix(disputes): reload dispute chats when the app returns to foreground (#675) (66b57889)
+- fix(order): keep the payout invoice reachable after the invoice-updated ack (2813313a)
+- fix: let the read-status service absorb its own storage failures (bf67637e)
+- fix(order): keep the order snapshot when the message stream has none (7cefdff9)
+- fix: never let marking a dispute read block opening it (c340a1a2)
+- fix(order): detect the payout add-invoice from the message payload (ca094cab)
+- fix(trades): don't block order details waiting for the public event (9aebae00)
+
+### Changed
+- test(trades): cover the order detail without the public event (6d613ecc)
+
+
 ## [v1.3.3] - 2026-08-20
 
 ### Added
