@@ -34,6 +34,14 @@ class _PayLightningInvoiceScreenState
   /// Whether the user chose to pay manually (fallback from NWC).
   bool _manualMode = false;
 
+  /// Whether the user chose to pay a settlement the market check refused.
+  ///
+  /// The refusal rests on a third-party rate, which can be stale or simply
+  /// disagree, so it is not a verdict the screen should be able to impose
+  /// with no way past it. The way past is a deliberate second action, not a
+  /// banner over a live pay button.
+  bool _marketOverridden = false;
+
   /// Cancels the trade, and only leaves the screen once that has gone
   /// through. Navigating first would strand the failure: `cancelOrder`
   /// rethrows, the screen is already gone, and the user is told nothing while
@@ -91,6 +99,15 @@ class _PayLightningInvoiceScreenState
     // it against a rate the node does not control.
     final market = ref.watch(marketCheckProvider(widget.orderId));
     final offMarket = !blocked && (market?.isOffMarket ?? false);
+
+    // Paying the hold invoice is always the seller's side of the trade. A gap
+    // that runs against them is refused until they say otherwise, since the
+    // quote is the only protection a market-price settlement has; a gap in
+    // their favour is worth naming and not worth stopping.
+    final marketBlocked = offMarket &&
+        !_marketOverridden &&
+        market!.isAdverseTo(Role.seller);
+    final marketCaution = offMarket && !marketBlocked;
     final fiatAmount = orderState.order?.fiatAmount.toString() ?? '0';
     final fiatCode = orderState.order?.fiatCode ?? '';
     final nwcState = ref.watch(nwcProvider);
@@ -141,7 +158,7 @@ class _PayLightningInvoiceScreenState
               ),
               const SizedBox(height: 16),
             ],
-            if (offMarket) ...[
+            if (marketCaution) ...[
               InvoiceNotice.caution(
                 title: S.of(context)!.invoiceOffMarketTitle,
                 body: S.of(context)!.invoiceOffMarketBody(
@@ -168,6 +185,36 @@ class _PayLightningInvoiceScreenState
                     ),
                     child: Text(S.of(context)!.cancel),
                   ).withAutomationId(AutomationIds.payCancel),
+                ],
+              ),
+            ] else if (marketBlocked) ...[
+              header,
+              const SizedBox(height: 24),
+              InvoiceNotice.refusal(
+                title: S.of(context)!.invoiceOffMarketTitle,
+                body: S.of(context)!.invoiceOffMarketBlockedBody(
+                      market.settledSats.toString(),
+                      market.quotedSats.toString(),
+                    ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _cancelOrder,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.red,
+                    ),
+                    child: Text(S.of(context)!.cancel),
+                  ).withAutomationId(AutomationIds.payCancel),
+                  const SizedBox(width: 12),
+                  TextButton(
+                    onPressed: () =>
+                        setState(() => _marketOverridden = true),
+                    child: Text(S.of(context)!.invoiceContinueAnyway),
+                  ),
                 ],
               ),
             ] else if (showNwcPayment) ...[

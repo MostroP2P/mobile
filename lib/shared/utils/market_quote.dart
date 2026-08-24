@@ -1,3 +1,5 @@
+import 'package:mostro_mobile/data/models/enums/role.dart';
+
 /// Re-prices a market-price order from an outside rate, so a settlement the
 /// user never saw a figure for is held to something the node did not choose.
 ///
@@ -94,8 +96,18 @@ class MarketCheck {
   bool get isOffMarket => deviation > MarketQuote.tolerance;
 
   /// Whether the order settles for fewer sats than the outside rate says it
-  /// should — the direction a skim takes.
+  /// should.
   bool get isBelowMarket => settledSats < quotedSats;
+
+  /// Whether the gap runs against the user holding [role].
+  ///
+  /// Which direction hurts depends on the side. A seller gives up sats for
+  /// fiat, so a settlement above the quote takes more from them than the
+  /// trade was for; a buyer receives sats for fiat, so one below the quote
+  /// hands them less. The other direction is a gap in the user's favour,
+  /// which is worth mentioning and not worth stopping.
+  bool isAdverseTo(Role role) =>
+      role == Role.seller ? !isBelowMarket : isBelowMarket;
 
   /// Re-prices [settledSats] against [fiatPerBtc], or returns null when there
   /// is not enough to compare.

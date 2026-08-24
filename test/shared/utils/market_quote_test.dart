@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/shared/utils/market_quote.dart';
 
 /// A market-price order states no sats until the node resolves them, so the
@@ -196,6 +197,30 @@ void main() {
         ),
         isNull,
       );
+    });
+  });
+
+  group('MarketCheck.isAdverseTo', () {
+    // Which direction hurts depends on the side of the trade.
+    const below = MarketCheck(
+      quotedSats: 200000,
+      settledSats: 180000,
+      deviation: 0.1,
+    );
+    const above = MarketCheck(
+      quotedSats: 200000,
+      settledSats: 220000,
+      deviation: 0.1,
+    );
+
+    test('a payout under the quote shorts the buyer', () {
+      expect(below.isAdverseTo(Role.buyer), isTrue);
+      expect(below.isAdverseTo(Role.seller), isFalse);
+    });
+
+    test('a settlement over the quote takes more from the seller', () {
+      expect(above.isAdverseTo(Role.seller), isTrue);
+      expect(above.isAdverseTo(Role.buyer), isFalse);
     });
   });
 }

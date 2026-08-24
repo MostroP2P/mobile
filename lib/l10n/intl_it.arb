@@ -1814,6 +1814,8 @@
     "invoiceTermsUnverifiedBody": "I termini dell'ordine pubblicati dal nodo non sono arrivati, quindi questo importo non ha potuto essere verificato. Controllalo tu prima di continuare.",
     "invoiceOffMarketTitle": "Fuori dal tasso di mercato",
     "invoiceOffMarketBody": "Questo ordine si regola a {settledSats} sats, ma un tasso indipendente lo valuta a circa {quotedSats}. Nulla è provato come errato — i tassi differiscono e si muovono — ma controlla prima di continuare.",
+    "invoiceOffMarketBlockedBody": "Questo ordine si regola a {settledSats} sats, ma un tasso indipendente lo valuta a circa {quotedSats}: la differenza favorisce il nodo. Controlla i termini prima di continuare.",
+    "invoiceContinueAnyway": "Continua comunque",
     "invoiceTermsMismatchBody": "La fattura chiede {invoiceAmount} sats, ma questo ordine è di {orderAmount} sats. Non può essere pagata da qui.",
     "invoiceUnreadableBody": "Non è stato possibile leggere questa fattura, quindi non c’è modo di confermare cosa pagherebbe. Non può essere pagata da qui.",
     "invoiceAmountMissingBody": "Questa fattura non fissa un importo, il che lascerebbe al portafoglio decidere quanto inviare. Non può essere pagata da qui.",

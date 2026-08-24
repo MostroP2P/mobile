@@ -1818,6 +1818,18 @@
     "invoiceTermsUnverifiedBody": "The order terms the node published have not arrived, so this amount could not be checked against them. Check it yourself before continuing.",
     "invoiceOffMarketTitle": "Off the market rate",
     "invoiceOffMarketBody": "This order settles at {settledSats} sats, but an independent rate prices it at about {quotedSats}. Nothing is proven wrong — rates differ and move — but check it before continuing.",
+    "invoiceOffMarketBlockedBody": "This order settles at {settledSats} sats, but an independent rate prices it at about {quotedSats} — a gap in the node's favour. Check the terms before continuing.",
+    "@invoiceOffMarketBlockedBody": {
+      "placeholders": {
+        "settledSats": {
+          "type": "String"
+        },
+        "quotedSats": {
+          "type": "String"
+        }
+      }
+    },
+    "invoiceContinueAnyway": "Continue anyway",
     "@invoiceOffMarketBody": {
       "placeholders": {
         "settledSats": {

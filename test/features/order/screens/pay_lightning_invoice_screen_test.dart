@@ -214,8 +214,10 @@ void main() {
       expect(find.text(s.invoiceOffMarketTitle), findsNothing);
     });
 
-    testWidgets('cautions when the order settles off the market rate',
+    testWidgets('cautions when the gap runs in the seller\'s favour',
         (tester) async {
+      // The seller gives up fewer sats than the market says the fiat is
+      // worth. Worth naming, not worth stopping.
       await pumpPayScreen(
         tester,
         lnInvoice: invoiceFor(50000),
@@ -229,6 +231,53 @@ void main() {
       );
 
       final s = _s(tester);
+      expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+      expect(find.text(s.invoiceContinueAnyway), findsNothing);
+      expect(find.byType(PayLightningInvoiceWidget), findsOneWidget);
+    });
+
+    testWidgets('refuses when the gap runs against the seller', (tester) async {
+      // The seller would give up twice the sats the market prices the fiat
+      // at, which is the direction a skim takes.
+      await pumpPayScreen(
+        tester,
+        lnInvoice: invoiceFor(100000),
+        messageSats: 100000,
+        anchoredSats: 100000,
+        market: const MarketCheck(
+          quotedSats: 50000,
+          settledSats: 100000,
+          deviation: 1.0,
+        ),
+      );
+
+      final s = _s(tester);
+      expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+      expect(find.byType(PayLightningInvoiceWidget), findsNothing);
+      expect(find.text(s.invoiceContinueAnyway), findsOneWidget);
+      expect(find.text(s.cancel), findsOneWidget);
+    });
+
+    testWidgets('lets the seller pay a refused settlement deliberately',
+        (tester) async {
+      await pumpPayScreen(
+        tester,
+        lnInvoice: invoiceFor(100000),
+        messageSats: 100000,
+        anchoredSats: 100000,
+        market: const MarketCheck(
+          quotedSats: 50000,
+          settledSats: 100000,
+          deviation: 1.0,
+        ),
+      );
+
+      await tester.tap(find.text(_s(tester).invoiceContinueAnyway));
+      await tester.pumpAndSettle();
+
+      final s = _s(tester);
+      expect(find.byType(PayLightningInvoiceWidget), findsOneWidget);
+      // The gap does not stop being true once it has been accepted.
       expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
     });
 

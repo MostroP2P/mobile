@@ -44,6 +44,13 @@ class _AddLightningInvoiceScreenState
   /// Whether the user chose to enter the invoice manually (fallback from NWC or LN address).
   bool _manualMode = false;
 
+  /// Whether the user chose to invoice for a payout the market check refused.
+  ///
+  /// The refusal rests on a third-party rate, which can be stale or simply
+  /// disagree, so it is not a verdict the screen should be able to impose
+  /// with no way past it.
+  bool _marketOverridden = false;
+
   @override
   void dispose() {
     invoiceController.dispose();
@@ -108,7 +115,16 @@ class _AddLightningInvoiceScreenState
         final market = ref.watch(marketCheckProvider(orderId));
         final offMarket = !blocked && (market?.isOffMarket ?? false);
 
-        final headerBlock = (unverified || offMarket)
+        // Adding an invoice is always the buyer's side of the trade. A payout
+        // below the quote is the direction that shorts them, and the quote is
+        // the only protection a market-price settlement has, so it is refused
+        // until they say otherwise.
+        final marketBlocked = offMarket &&
+            !_marketOverridden &&
+            market!.isAdverseTo(Role.buyer);
+        final marketCaution = offMarket && !marketBlocked;
+
+        final headerBlock = (unverified || marketCaution)
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -120,7 +136,7 @@ class _AddLightningInvoiceScreenState
                       body: S.of(context)!.invoiceTermsUnverifiedBody,
                     ),
                   ],
-                  if (offMarket) ...[
+                  if (marketCaution) ...[
                     const SizedBox(height: 16),
                     InvoiceNotice.caution(
                       title: S.of(context)!.invoiceOffMarketTitle,
@@ -153,21 +169,27 @@ class _AddLightningInvoiceScreenState
               16,
               16 + MediaQuery.of(context).viewPadding.bottom,
             ),
-            child: blocked
-                ? _buildBlockedFlow(
+            child: marketBlocked
+                ? _buildMarketBlockedFlow(
                     header: headerBlock,
-                    requestedSats: amount,
-                    expectedSats: expectedSats,
+                    settledSats: market.settledSats,
+                    quotedSats: market.quotedSats,
                   )
-                : showLnAddressConfirmation
-                    ? _buildLnAddressConfirmation(header: headerBlock)
-                    : showNwcInvoice
-                        ? _buildNwcInvoiceFlow(
-                            header: headerBlock,
-                            amount: amount ?? 0,
-                            orderIdValue: orderIdValue,
-                          )
-                        : AddLightningInvoiceWidget(
+                : blocked
+                    ? _buildBlockedFlow(
+                        header: headerBlock,
+                        requestedSats: amount,
+                        expectedSats: expectedSats,
+                      )
+                    : showLnAddressConfirmation
+                        ? _buildLnAddressConfirmation(header: headerBlock)
+                        : showNwcInvoice
+                            ? _buildNwcInvoiceFlow(
+                                header: headerBlock,
+                                amount: amount ?? 0,
+                                orderIdValue: orderIdValue,
+                              )
+                            : AddLightningInvoiceWidget(
                             controller: invoiceController,
                             onSubmit: () async {
                               final invoice = invoiceController.text.trim();
@@ -264,6 +286,53 @@ class _AddLightningInvoiceScreenState
   /// A refusal rather than a warning: an invoice minted here is what the
   /// trade settles at, and there is no confirming a figure the signed terms
   /// contradict.
+  /// Shown when the settlement sits off the market rate in the node's favour.
+  ///
+  /// A refusal with a way past it: the quote comes from a third party and can
+  /// be stale or simply disagree, so the screen states the gap and leaves the
+  /// decision with the user rather than making it for them.
+  Widget _buildMarketBlockedFlow({
+    required Widget header,
+    required int settledSats,
+    required int quotedSats,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        header,
+        const SizedBox(height: 24),
+        InvoiceNotice.refusal(
+          title: S.of(context)!.invoiceOffMarketTitle,
+          body: S.of(context)!.invoiceOffMarketBlockedBody(
+                settledSats.toString(),
+                quotedSats.toString(),
+              ),
+        ),
+        const Spacer(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () async {
+                await _cancelOrder();
+              },
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: Colors.red,
+              ),
+              child: Text(S.of(context)!.cancel),
+            ),
+            const SizedBox(width: 12),
+            TextButton(
+              onPressed: () => setState(() => _marketOverridden = true),
+              child: Text(S.of(context)!.invoiceContinueAnyway),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildBlockedFlow({
     required Widget header,
     required int requestedSats,

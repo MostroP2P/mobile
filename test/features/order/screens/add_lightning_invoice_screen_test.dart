@@ -151,7 +151,47 @@ void main() {
       expect(find.text(_s(tester).invoiceOffMarketTitle), findsNothing);
     });
 
-    testWidgets('cautions when the order settles off the market rate',
+    testWidgets('cautions when the gap runs in the buyer\'s favour',
+        (tester) async {
+      // The buyer receives more sats than the market prices the fiat at.
+      await pumpAddScreen(
+        tester,
+        requestedSats: 99700,
+        anchoredSats: 99700,
+        market: const MarketCheck(
+          quotedSats: 50000,
+          settledSats: 100000,
+          deviation: 1.0,
+        ),
+      );
+
+      final s = _s(tester);
+      expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+      expect(find.text(s.invoiceContinueAnyway), findsNothing);
+      expect(find.byType(AddLightningInvoiceWidget), findsOneWidget);
+    });
+
+    testWidgets('refuses when the gap runs against the buyer', (tester) async {
+      // The payout is half what the market prices the fiat at — the shave the
+      // sibling finding describes.
+      await pumpAddScreen(
+        tester,
+        requestedSats: 99700,
+        anchoredSats: 99700,
+        market: const MarketCheck(
+          quotedSats: 200000,
+          settledSats: 100000,
+          deviation: 0.5,
+        ),
+      );
+
+      final s = _s(tester);
+      expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+      expect(find.byType(AddLightningInvoiceWidget), findsNothing);
+      expect(find.text(s.invoiceContinueAnyway), findsOneWidget);
+    });
+
+    testWidgets('lets the buyer invoice a refused payout deliberately',
         (tester) async {
       await pumpAddScreen(
         tester,
@@ -164,7 +204,12 @@ void main() {
         ),
       );
 
-      expect(find.text(_s(tester).invoiceOffMarketTitle), findsOneWidget);
+      await tester.tap(find.text(_s(tester).invoiceContinueAnyway));
+      await tester.pumpAndSettle();
+
+      final s = _s(tester);
+      expect(find.byType(AddLightningInvoiceWidget), findsOneWidget);
+      expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
     });
 
     testWidgets('stays quiet when the settlement is on the market rate',

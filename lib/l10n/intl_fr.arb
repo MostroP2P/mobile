@@ -1773,6 +1773,8 @@
     "invoiceTermsUnverifiedBody": "Les termes de l’ordre publiés par le nœud ne sont pas arrivés, ce montant n’a donc pas pu être vérifié. Vérifiez-le vous-même avant de continuer.",
     "invoiceOffMarketTitle": "Écart avec le taux du marché",
     "invoiceOffMarketBody": "Cet ordre se règle à {settledSats} sats, mais un taux indépendant l’évalue à environ {quotedSats}. Rien ne prouve une erreur — les taux diffèrent et bougent — mais vérifiez avant de continuer.",
+    "invoiceOffMarketBlockedBody": "Cet ordre se règle à {settledSats} sats, mais un taux indépendant l’évalue à environ {quotedSats} : l’écart favorise le nœud. Vérifiez les termes avant de continuer.",
+    "invoiceContinueAnyway": "Continuer quand même",
     "invoiceTermsMismatchBody": "La facture demande {invoiceAmount} sats, mais cet ordre porte sur {orderAmount} sats. Elle ne peut pas être payée ici.",
     "invoiceUnreadableBody": "Cette facture n’a pas pu être lue, il est donc impossible de confirmer ce qu’elle paierait. Elle ne peut pas être payée ici.",
     "invoiceAmountMissingBody": "Cette facture ne fixe aucun montant, ce qui laisserait le portefeuille décider du montant à envoyer. Elle ne peut pas être payée ici.",
