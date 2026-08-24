@@ -31,7 +31,14 @@ String invoiceFor(int sats) => 'lnbc${sats * 10}n1$_data';
 /// which reaches for sessions, storage and a live subscription.
 class _StubOrderNotifier extends StateNotifier<OrderState>
     implements OrderNotifier {
-  _StubOrderNotifier(super.state);
+  _StubOrderNotifier(super.state, {this.cancelFails = false});
+
+  final bool cancelFails;
+
+  @override
+  Future<void> cancelOrder() async {
+    if (cancelFails) throw Exception('relay unreachable');
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => null;
@@ -51,6 +58,7 @@ Future<void> pumpPayScreen(
   required int messageSats,
   int? anchoredSats,
   MarketCheck? market,
+  bool cancelFails = false,
 }) async {
   final state = OrderState(
     status: Status.waitingPayment,
@@ -69,10 +77,14 @@ Future<void> pumpPayScreen(
   );
 
   final router = GoRouter(
-    initialLocation: '/',
+    initialLocation: '/pay',
     routes: [
       GoRoute(
         path: '/',
+        builder: (_, __) => const Scaffold(body: Text('home')),
+      ),
+      GoRoute(
+        path: '/pay',
         builder: (_, __) => const PayLightningInvoiceScreen(orderId: _orderId),
       ),
     ],
@@ -82,7 +94,8 @@ Future<void> pumpPayScreen(
     ProviderScope(
       overrides: [
         orderNotifierProvider
-            .overrideWith((ref, id) => _StubOrderNotifier(state)),
+            .overrideWith(
+                (ref, id) => _StubOrderNotifier(state, cancelFails: cancelFails)),
         nwcProvider.overrideWith((ref) => _StubNwcNotifier()),
         sessionProvider.overrideWith((ref, id) => null),
         anchoredSellerAmountProvider.overrideWith((ref, id) => anchoredSats),
@@ -98,10 +111,12 @@ Future<void> pumpPayScreen(
   await tester.pump();
 }
 
-/// The refusal box, whichever case produced it.
-Finder refusalNotice(WidgetTester tester) => find.text(
-      S.of(tester.element(find.byType(Scaffold)))!.invoiceNotPayableTitle,
-    );
+S _s(WidgetTester tester) =>
+    S.of(tester.element(find.byType(PayLightningInvoiceScreen)))!;
+
+/// The terms refusal box, whichever case produced it.
+Finder refusalNotice(WidgetTester tester) =>
+    find.text(_s(tester).invoiceNotPayableTitle);
 
 void main() {
   group('PayLightningInvoiceScreen gating', () {
@@ -180,7 +195,7 @@ void main() {
         anchoredSats: null,
       );
 
-      final s = S.of(tester.element(find.byType(Scaffold)))!;
+      final s = _s(tester);
       expect(find.text(s.invoiceTermsUnverifiedTitle), findsOneWidget);
       expect(refusalNotice(tester), findsNothing);
     });
@@ -194,7 +209,7 @@ void main() {
         anchoredSats: 50300,
       );
 
-      final s = S.of(tester.element(find.byType(Scaffold)))!;
+      final s = _s(tester);
       expect(find.text(s.invoiceTermsUnverifiedTitle), findsNothing);
       expect(find.text(s.invoiceOffMarketTitle), findsNothing);
     });
@@ -213,7 +228,7 @@ void main() {
         ),
       );
 
-      final s = S.of(tester.element(find.byType(Scaffold)))!;
+      final s = _s(tester);
       expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
     });
 
@@ -231,8 +246,45 @@ void main() {
         ),
       );
 
-      final s = S.of(tester.element(find.byType(Scaffold)))!;
+      final s = _s(tester);
       expect(find.text(s.invoiceOffMarketTitle), findsNothing);
+    });
+
+    testWidgets('leaves the screen once cancellation goes through',
+        (tester) async {
+      await pumpPayScreen(
+        tester,
+        lnInvoice: invoiceFor(500000),
+        messageSats: 50000,
+        anchoredSats: 50000,
+      );
+
+      await tester.tap(find.text(_s(tester).cancel));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PayLightningInvoiceScreen), findsNothing);
+      expect(find.text('home'), findsOneWidget);
+    });
+
+    testWidgets('keeps the screen and reports a cancellation that failed',
+        (tester) async {
+      // Cancel is the only action offered after a refusal. Navigating away
+      // before the cancellation lands would hide the failure and leave the
+      // trade active with nothing left to act on.
+      await pumpPayScreen(
+        tester,
+        lnInvoice: invoiceFor(500000),
+        messageSats: 50000,
+        anchoredSats: 50000,
+        cancelFails: true,
+      );
+
+      await tester.tap(find.text(_s(tester).cancel));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(PayLightningInvoiceScreen), findsOneWidget);
+      expect(find.textContaining('relay unreachable'), findsOneWidget);
     });
   });
 }

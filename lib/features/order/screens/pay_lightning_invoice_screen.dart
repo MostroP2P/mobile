@@ -14,6 +14,7 @@ import 'package:mostro_mobile/shared/widgets/invoice_notice.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_payment_widget.dart';
 import 'package:mostro_mobile/shared/widgets/pay_lightning_invoice_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 import 'package:mostro_mobile/features/order/providers/market_check_provider.dart';
 import 'package:mostro_mobile/features/order/providers/settlement_anchor_provider.dart';
 import 'package:mostro_mobile/shared/utils/invoice_terms.dart';
@@ -32,6 +33,29 @@ class _PayLightningInvoiceScreenState
     extends ConsumerState<PayLightningInvoiceScreen> {
   /// Whether the user chose to pay manually (fallback from NWC).
   bool _manualMode = false;
+
+  /// Cancels the trade, and only leaves the screen once that has gone
+  /// through. Navigating first would strand the failure: `cancelOrder`
+  /// rethrows, the screen is already gone, and the user is told nothing while
+  /// the trade stays active. It is the only action offered after a refusal,
+  /// so a silent failure there leaves no way forward at all.
+  Future<void> _cancelOrder() async {
+    final orderNotifier =
+        ref.read(orderNotifierProvider(widget.orderId).notifier);
+    try {
+      await orderNotifier.cancelOrder();
+      if (mounted) context.go('/');
+    } catch (e) {
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          SnackBarHelper.showTopSnackBar(
+            context,
+            S.of(context)!.failedToCancelOrder(e.toString()),
+          );
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,9 +93,6 @@ class _PayLightningInvoiceScreenState
     final offMarket = !blocked && (market?.isOffMarket ?? false);
     final fiatAmount = orderState.order?.fiatAmount.toString() ?? '0';
     final fiatCode = orderState.order?.fiatCode ?? '';
-    final orderNotifier =
-        ref.watch(orderNotifierProvider(widget.orderId).notifier);
-
     final nwcState = ref.watch(nwcProvider);
     final isNwcConnected = nwcState.status == NwcStatus.connected;
     final showNwcPayment =
@@ -140,10 +161,7 @@ class _PayLightningInvoiceScreenState
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton(
-                    onPressed: () async {
-                      context.go('/');
-                      await orderNotifier.cancelOrder();
-                    },
+                    onPressed: _cancelOrder,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Colors.red,
@@ -184,10 +202,7 @@ class _PayLightningInvoiceScreenState
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton(
-                    onPressed: () async {
-                      context.go('/');
-                      await orderNotifier.cancelOrder();
-                    },
+                    onPressed: _cancelOrder,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Colors.red,
@@ -202,10 +217,7 @@ class _PayLightningInvoiceScreenState
                 onSubmit: () async {
                   context.go('/');
                 },
-                onCancel: () async {
-                  context.go('/');
-                  await orderNotifier.cancelOrder();
-                },
+                onCancel: _cancelOrder,
                 lnInvoice: lnInvoice,
                 // Read back off the invoice, as the NWC branch does. A wallet
                 // scanning the QR honours the invoice, so the figure printed
