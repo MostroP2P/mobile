@@ -66,7 +66,14 @@ final marketCheckProvider =
   final fiat = event.fiatAmount;
   if (fiat.isRange() || fiat.minimum <= 0) return null;
 
-  final premium = double.tryParse(event.premium ?? '') ?? 0.0;
+  // An absent premium is zero; one that is present and unreadable is not.
+  // Quoting it as zero would misprice the order by exactly the premium and
+  // turn an honest trade into a refusal.
+  final premiumTag = event.premium;
+  final premium = (premiumTag == null || premiumTag.trim().isEmpty)
+      ? 0.0
+      : double.tryParse(premiumTag.trim());
+  if (premium == null) return null;
 
   final fiatPerBtc =
       ref.watch(independentFiatPerBtcProvider(fiatCode)).valueOrNull;

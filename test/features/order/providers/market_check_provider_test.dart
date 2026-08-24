@@ -149,5 +149,22 @@ void main() {
     test('skips before the order event has arrived', () {
       expect(container.read(marketCheckProvider(_orderId)), isNull);
     });
+
+    test('skips an order whose premium cannot be read', () async {
+      // Quoting an unreadable premium as zero would misprice the order by
+      // exactly the premium and turn an honest trade into a refusal.
+      container.read(marketCheckProvider(_orderId));
+      await publish(_orderEvent(amount: '180000', premium: 'not-a-number'));
+
+      expect(container.read(marketCheckProvider(_orderId)), isNull);
+    });
+
+    test('treats an absent premium as zero', () async {
+      container.read(marketCheckProvider(_orderId));
+      await publish(_orderEvent(premium: ''));
+
+      final check = container.read(marketCheckProvider(_orderId))!;
+      expect(check.quotedSats, 200000);
+    });
   });
 }
