@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
+import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/features/trades/providers/trades_provider.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
@@ -81,6 +82,12 @@ class LifecycleManager extends WidgetsBindingObserver {
       logger.i("Reloading chat rooms");
       final chatRooms = ref.read(chatRoomsNotifierProvider.notifier);
       await chatRooms.reloadAllChats();
+
+      // Reload dispute chats: the background service persists admin messages
+      // to disk while the app sleeps, but an already-initialized notifier
+      // never re-reads storage nor re-opens its relay subscription on its own
+      logger.i("Reloading dispute chats");
+      ref.invalidate(disputeChatNotifierProvider);
 
       // Force UI update for trades
       logger.i("Invalidating providers to refresh UI");
