@@ -173,8 +173,23 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _settings = settings.copyWith();
   }
 
-  Future<Session> newSession(
-      {String? orderId, int? requestId, Role? role}) async {
+  /// Creates the session for a trade.
+  ///
+  /// [pinnedAmountSats] and [pinnedFeeRate] record the terms the user is
+  /// committing to, so the settlement checks can hold the trade to them even
+  /// if the node later republishes its order or info event. They are set here
+  /// rather than assigned afterwards so the pin is already in place when the
+  /// state is emitted and the anchor providers first read it.
+  ///
+  /// An existing session for [orderId] is returned untouched: a retake must
+  /// not overwrite the terms the first take pinned.
+  Future<Session> newSession({
+    String? orderId,
+    int? requestId,
+    Role? role,
+    int? pinnedAmountSats,
+    double? pinnedFeeRate,
+  }) async {
     if (orderId != null && state.any((s) => s.orderId == orderId)) {
       return state.firstWhere((s) => s.orderId == orderId);
     }
@@ -190,6 +205,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       fullPrivacy: _settings.fullPrivacyMode,
       orderId: orderId,
       role: role,
+      pinnedAmountSats: pinnedAmountSats,
+      pinnedFeeRate: pinnedFeeRate,
     );
 
     if (orderId != null) {

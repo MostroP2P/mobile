@@ -48,6 +48,11 @@ void main() {
 
       // Create test settings
       final testSettings = MockSettings();
+      // The settlement anchor pins the node's fee rate at order creation, and
+      // reads the selected node to make sure the info event belongs to it.
+      when(testSettings.mostroPublicKey).thenReturn(
+        '9d9d0455a96871f2dc4289b8312429db2e925f167b37c77bf7b28014be235980',
+      );
 
       mockSessionNotifier =
           MockSessionNotifier(ref, mockKeyManager, mockSessionStorage, testSettings);

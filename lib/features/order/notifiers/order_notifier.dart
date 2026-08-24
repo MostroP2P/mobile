@@ -6,6 +6,7 @@ import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/notifications/providers/notifications_provider.dart';
 import 'package:mostro_mobile/shared/providers.dart';
 import 'package:mostro_mobile/features/order/notifiers/abstract_mostro_notifier.dart';
+import 'package:mostro_mobile/features/order/providers/settlement_anchor_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 
@@ -91,9 +92,17 @@ class OrderNotifier extends AbstractMostroNotifier {
     // restore (TOCTOU-safe). See [SessionLifecycleLock].
     await ref.read(sessionLifecycleLockProvider).withSessionLock(() async {
       final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      // Pin the terms being agreed to. Both inputs come from addressable
+      // events the node can republish, so reading them again later would let
+      // it move the figure this trade is checked against after the fact.
+      final pinnedAmountSats = ref.read(publishedOrderAmountProvider(orderId));
+      final pinnedFeeRate = ref.read(nodeFeeRateProvider);
+
       session = await sessionNotifier.newSession(
         orderId: orderId,
         role: Role.buyer,
+        pinnedAmountSats: pinnedAmountSats,
+        pinnedFeeRate: pinnedFeeRate,
       );
 
       // Drop any stale grace timer/flag from a previous cycle on this order so
@@ -117,9 +126,17 @@ class OrderNotifier extends AbstractMostroNotifier {
     // restore (TOCTOU-safe). See [SessionLifecycleLock].
     await ref.read(sessionLifecycleLockProvider).withSessionLock(() async {
       final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      // Pin the terms being agreed to. Both inputs come from addressable
+      // events the node can republish, so reading them again later would let
+      // it move the figure this trade is checked against after the fact.
+      final pinnedAmountSats = ref.read(publishedOrderAmountProvider(orderId));
+      final pinnedFeeRate = ref.read(nodeFeeRateProvider);
+
       session = await sessionNotifier.newSession(
         orderId: orderId,
         role: Role.seller,
+        pinnedAmountSats: pinnedAmountSats,
+        pinnedFeeRate: pinnedFeeRate,
       );
 
       // Drop any stale grace timer/flag from a previous cycle on this order so

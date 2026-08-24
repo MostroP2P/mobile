@@ -95,8 +95,13 @@ class MockSessionNotifier extends SessionNotifier {
   List<Session> get sessions => _mockSessions;
 
   @override
-  Future<Session> newSession(
-      {String? orderId, int? requestId, Role? role}) async {
+  Future<Session> newSession({
+    String? orderId,
+    int? requestId,
+    Role? role,
+    int? pinnedAmountSats,
+    double? pinnedFeeRate,
+  }) async {
     final mockSession = Session(
       // Dummy private keys for testing purposes only
       masterKey: NostrKeyPairs(
@@ -111,6 +116,8 @@ class MockSessionNotifier extends SessionNotifier {
     );
     mockSession.orderId = orderId;
     mockSession.role = role;
+    mockSession.pinnedAmountSats = pinnedAmountSats;
+    mockSession.pinnedFeeRate = pinnedFeeRate;
     return mockSession;
   }
 }

@@ -8,6 +8,7 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
+import 'package:mostro_mobile/features/order/providers/settlement_anchor_provider.dart';
 
 class AddOrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
@@ -114,9 +115,15 @@ class AddOrderNotifier extends AbstractMostroNotifier {
     // reset runs, and if a restore is in progress we block until it releases.
     await ref.read(sessionLifecycleLockProvider).withSessionLock(() async {
       final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+      // Pin the terms this order is being created on. The maker's own figure
+      // is the agreement here, so it is the one the settlement is later held
+      // to rather than whatever the node ends up publishing. A market-price
+      // or range order carries no sats amount to pin.
       session = await sessionNotifier.newSession(
         requestId: requestId,
         role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
+        pinnedAmountSats: order.amount > 0 ? order.amount : null,
+        pinnedFeeRate: ref.read(nodeFeeRateProvider),
       );
 
       // Start 10s timeout cleanup timer for create orders

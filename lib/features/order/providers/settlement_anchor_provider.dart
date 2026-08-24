@@ -4,9 +4,10 @@ import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/utils/settlement_amounts.dart';
 
-/// The order amount the node has published for [orderId], in satoshis.
+/// The order amount the node currently publishes for [orderId], in satoshis.
 ///
 /// Read off the kind-38383 order event rather than the direct message that
 /// asks for the payment. Both come from the node, but only one of them is the
@@ -16,14 +17,33 @@ import 'package:mostro_mobile/shared/utils/settlement_amounts.dart';
 /// of that flow, so by the time either side is asked to act the amount is
 /// there.
 ///
+/// Being addressable cuts both ways: the node can republish it again at any
+/// point, which is why a settlement is held to [signedOrderAmountProvider]
+/// and not to this.
+///
 /// Null when no event has arrived, or when it carries no usable amount.
-final signedOrderAmountProvider = Provider.family<int?, String>((ref, orderId) {
+final publishedOrderAmountProvider =
+    Provider.family<int?, String>((ref, orderId) {
   final event = ref.watch(eventProvider(orderId));
   if (event == null) return null;
 
   final amount = int.tryParse(event.amount ?? '');
   if (amount == null || amount <= 0) return null;
   return amount;
+});
+
+/// The order amount this settlement is held to, in satoshis.
+///
+/// The figure pinned when the session committed to the trade, so republishing
+/// the order event afterwards cannot move what the client will accept. Falls
+/// back to the live event where nothing was pinned: sessions written before
+/// the pin existed, and market-price and range orders, whose sats figure the
+/// node only resolves after the commitment there was to make.
+final signedOrderAmountProvider = Provider.family<int?, String>((ref, orderId) {
+  final pinned = ref.watch(sessionProvider(orderId))?.pinnedAmountSats;
+  if (pinned != null && pinned > 0) return pinned;
+
+  return ref.watch(publishedOrderAmountProvider(orderId));
 });
 
 /// The node's fee rate, from its kind-38385 info event.
@@ -56,6 +76,19 @@ final nodeFeeRateProvider = Provider<double?>((ref) {
   }
 });
 
+/// The fee rate this settlement is held to.
+///
+/// [nodeFeeRateProvider] tracks whatever the node currently advertises, which
+/// it can change under a trade already in flight. This prefers the rate
+/// pinned when the session committed, on the same terms as
+/// [signedOrderAmountProvider].
+final orderFeeRateProvider = Provider.family<double?, String>((ref, orderId) {
+  final pinned = ref.watch(sessionProvider(orderId))?.pinnedFeeRate;
+  if (pinned != null) return pinned;
+
+  return ref.watch(nodeFeeRateProvider);
+});
+
 /// What the seller's hold invoice for [orderId] should ask for, derived from
 /// the signed order amount and the signed fee rate.
 ///
@@ -65,7 +98,7 @@ final nodeFeeRateProvider = Provider<double?>((ref) {
 final anchoredSellerAmountProvider =
     Provider.family<int?, String>((ref, orderId) {
   final amountSats = ref.watch(signedOrderAmountProvider(orderId));
-  final feeRate = ref.watch(nodeFeeRateProvider);
+  final feeRate = ref.watch(orderFeeRateProvider(orderId));
   if (amountSats == null || feeRate == null) return null;
 
   return SettlementAmounts.sellerPays(
@@ -87,7 +120,7 @@ final anchoredSellerAmountProvider =
 final anchoredBuyerAmountProvider =
     Provider.family<int?, String>((ref, orderId) {
   final amountSats = ref.watch(signedOrderAmountProvider(orderId));
-  final feeRate = ref.watch(nodeFeeRateProvider);
+  final feeRate = ref.watch(orderFeeRateProvider(orderId));
   if (amountSats == null || feeRate == null) return null;
 
   return SettlementAmounts.buyerReceives(

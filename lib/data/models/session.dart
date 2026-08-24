@@ -23,6 +23,24 @@ class Session {
   NostrKeyPairs? _adminSharedKey;
   String? disputeId;
 
+  /// The order amount in satoshis as it stood when this session committed to
+  /// the trade, or null when there was no resolved figure to pin.
+  ///
+  /// The settlement checks derive what a payment should be from the node's
+  /// kind-38383 order event and kind-38385 info event, both of which are
+  /// addressable and can be republished after the fact. Pinning the figures
+  /// the user actually agreed to holds the check to those terms rather than
+  /// to whatever the node last said.
+  ///
+  /// Null for a market-price or range order, whose sats figure the node only
+  /// resolves after the take — there is nothing to pin at the moment of
+  /// commitment, and those orders fall back to the live events.
+  int? pinnedAmountSats;
+
+  /// The node's fee rate when this session committed, on the same terms as
+  /// [pinnedAmountSats].
+  double? pinnedFeeRate;
+
   /// Transient marker (never persisted): set while a maker-created order is in
   /// the anti-abuse bond limbo, so the shared pay-bond handler skips persisting
   /// the still-uncommitted session. Cleared and persisted on confirmation.
@@ -38,6 +56,8 @@ class Session {
     this.parentOrderId,
     this.role,
     this.disputeId,
+    this.pinnedAmountSats,
+    this.pinnedFeeRate,
     Peer? peer,
     String? adminPubkey,
   }) {
@@ -64,6 +84,8 @@ class Session {
         'peer': peer?.publicKey,
         'admin_peer': _adminPubkey,
         'dispute_id': disputeId,
+        'pinned_amount_sats': pinnedAmountSats,
+        'pinned_fee_rate': pinnedFeeRate,
       };
 
   factory Session.fromJson(Map<String, dynamic> json) {
@@ -181,6 +203,32 @@ class Session {
         disputeId = disputeIdValue;
       }
 
+      // Absent in sessions written before the terms were pinned, so a missing
+      // or unusable value reads as "nothing was pinned" rather than an error:
+      // those trades fall back to the live events, as they always did.
+      final pinnedAmountValue = json['pinned_amount_sats'];
+      int? pinnedAmountSats;
+      if (pinnedAmountValue is int) {
+        pinnedAmountSats = pinnedAmountValue;
+      } else if (pinnedAmountValue is String) {
+        pinnedAmountSats = int.tryParse(pinnedAmountValue);
+      }
+      if (pinnedAmountSats != null && pinnedAmountSats <= 0) {
+        pinnedAmountSats = null;
+      }
+
+      final pinnedFeeValue = json['pinned_fee_rate'];
+      double? pinnedFeeRate;
+      if (pinnedFeeValue is num) {
+        pinnedFeeRate = pinnedFeeValue.toDouble();
+      } else if (pinnedFeeValue is String) {
+        pinnedFeeRate = double.tryParse(pinnedFeeValue);
+      }
+      if (pinnedFeeRate != null &&
+          (pinnedFeeRate < 0 || !pinnedFeeRate.isFinite)) {
+        pinnedFeeRate = null;
+      }
+
       return Session(
         masterKey: masterKeyValue,
         tradeKey: tradeKeyValue,
@@ -193,6 +241,8 @@ class Session {
         peer: peer,
         adminPubkey: adminPubkey,
         disputeId: disputeId,
+        pinnedAmountSats: pinnedAmountSats,
+        pinnedFeeRate: pinnedFeeRate,
       );
     } catch (e) {
       throw FormatException('Failed to parse Session from JSON: $e');
