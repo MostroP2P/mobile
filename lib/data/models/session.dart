@@ -56,11 +56,23 @@ class Session {
     this.parentOrderId,
     this.role,
     this.disputeId,
-    this.pinnedAmountSats,
-    this.pinnedFeeRate,
+    int? pinnedAmountSats,
+    double? pinnedFeeRate,
     Peer? peer,
     String? adminPubkey,
   }) {
+    // Normalized here rather than at each reader: a figure that cannot anchor
+    // anything is the same as no figure, and the checks that consult these
+    // fields have to agree on which is which.
+    this.pinnedAmountSats =
+        (pinnedAmountSats != null && pinnedAmountSats > 0)
+            ? pinnedAmountSats
+            : null;
+    this.pinnedFeeRate =
+        (pinnedFeeRate != null && pinnedFeeRate >= 0 && pinnedFeeRate.isFinite)
+            ? pinnedFeeRate
+            : null;
+
     _peer = peer;
     if (peer != null) {
       _sharedKey = NostrUtils.computeSharedKey(
@@ -213,9 +225,6 @@ class Session {
       } else if (pinnedAmountValue is String) {
         pinnedAmountSats = int.tryParse(pinnedAmountValue);
       }
-      if (pinnedAmountSats != null && pinnedAmountSats <= 0) {
-        pinnedAmountSats = null;
-      }
 
       final pinnedFeeValue = json['pinned_fee_rate'];
       double? pinnedFeeRate;
@@ -223,10 +232,6 @@ class Session {
         pinnedFeeRate = pinnedFeeValue.toDouble();
       } else if (pinnedFeeValue is String) {
         pinnedFeeRate = double.tryParse(pinnedFeeValue);
-      }
-      if (pinnedFeeRate != null &&
-          (pinnedFeeRate < 0 || !pinnedFeeRate.isFinite)) {
-        pinnedFeeRate = null;
       }
 
       return Session(

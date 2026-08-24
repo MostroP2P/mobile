@@ -41,7 +41,7 @@ final publishedOrderAmountProvider =
 /// node only resolves after the commitment there was to make.
 final signedOrderAmountProvider = Provider.family<int?, String>((ref, orderId) {
   final pinned = ref.watch(sessionProvider(orderId))?.pinnedAmountSats;
-  if (pinned != null && pinned > 0) return pinned;
+  if (pinned != null) return pinned;
 
   return ref.watch(publishedOrderAmountProvider(orderId));
 });
@@ -83,8 +83,17 @@ final nodeFeeRateProvider = Provider<double?>((ref) {
 /// pinned when the session committed, on the same terms as
 /// [signedOrderAmountProvider].
 final orderFeeRateProvider = Provider.family<double?, String>((ref, orderId) {
-  final pinned = ref.watch(sessionProvider(orderId))?.pinnedFeeRate;
+  final session = ref.watch(sessionProvider(orderId));
+
+  final pinned = session?.pinnedFeeRate;
   if (pinned != null) return pinned;
+
+  // A session holding an amount but no rate is one that committed while the
+  // info event was still missing: pinning ran, and there was nothing to pin.
+  // Reading the live rate here would let the node publish the term after the
+  // fact, which is the whole of what pinning exists to prevent. Report it
+  // unknown instead and let the screen say the check could not be made.
+  if (session?.pinnedAmountSats != null) return null;
 
   return ref.watch(nodeFeeRateProvider);
 });

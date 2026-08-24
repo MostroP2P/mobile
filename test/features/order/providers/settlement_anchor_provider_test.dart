@@ -192,7 +192,7 @@ void main() {
   group('terms pinned at commitment', () {
     test('holds the settlement to the pinned amount, not the republished one',
         () async {
-      session = _session(pinnedAmountSats: 100000);
+      session = _session(pinnedAmountSats: 100000, pinnedFeeRate: 0.006);
       build();
 
       container.read(anchoredSellerAmountProvider(_orderId));
@@ -203,6 +203,24 @@ void main() {
 
       expect(container.read(anchoredSellerAmountProvider(_orderId)), 100300);
       expect(container.read(anchoredBuyerAmountProvider(_orderId)), 99700);
+    });
+
+    test('a fee missing at commitment does not become a term afterwards',
+        () async {
+      // The take landed before the info event, so there was an amount to pin
+      // and no rate. Reading the rate later would let the node choose it.
+      session = _session(pinnedAmountSats: 100000);
+      build();
+
+      container.read(anchoredSellerAmountProvider(_orderId));
+      orderEvents.add([_orderEvent()]);
+      // The node now publishes a rate more than sixteen times the usual.
+      infoEvents.add(_infoEvent(fee: '0.1'));
+      await flush();
+
+      expect(container.read(orderFeeRateProvider(_orderId)), isNull);
+      expect(container.read(anchoredSellerAmountProvider(_orderId)), isNull);
+      expect(container.read(anchoredBuyerAmountProvider(_orderId)), isNull);
     });
 
     test('holds the settlement to the pinned fee rate', () async {
@@ -234,7 +252,11 @@ void main() {
     });
 
     test('ignores a pinned amount that is not a usable figure', () async {
+      // Normalized to "nothing pinned" on the way in, so the trade falls back
+      // to the live events rather than being held to a figure that anchors
+      // nothing.
       session = _session(pinnedAmountSats: 0);
+      expect(session!.pinnedAmountSats, isNull);
       build();
 
       container.read(anchoredSellerAmountProvider(_orderId));
