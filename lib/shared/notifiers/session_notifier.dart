@@ -439,6 +439,35 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   }) async {
     final masterKey = ref.read(keyManagerProvider).masterKeyPair!;
 
+    // Anchored before the child is built, so the session records what was
+    // actually stored rather than what was hoped for.
+    //
+    // Unlike a take or a create, a failure here does not stop the caller. The
+    // release that carries NextTrade is what moves money out of escrow, and
+    // the child is a preparation of the range order's next leg: refusing to
+    // release because the remainder's anchor could not be written trades the
+    // important thing for the incidental one, and leaves funds stuck with
+    // nothing published and nothing to retry. The child falls back to the
+    // terms a session predating pinning uses. A storage failure is not
+    // something the node can bring about, so this is not a downgrade it can
+    // reach for.
+    var pinned = termsPinned;
+    if (termsPinned) {
+      try {
+        await ref.read(settlementTermsStoreProvider).pin(
+              tradeKey.public,
+              feeRate: pinnedFeeRate,
+              fiatCode: pinnedFiatCode,
+              premium: pinnedPremium,
+            );
+      } on SettlementTermsNotDurable catch (e) {
+        logger.e(
+          'Child session for $parentOrderId falls back to live terms: $e',
+        );
+        pinned = false;
+      }
+    }
+
     final session = Session(
       startTime: DateTime.now(),
       masterKey: masterKey,
@@ -447,17 +476,11 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       fullPrivacy: _settings.fullPrivacyMode,
       parentOrderId: parentOrderId,
       role: role,
-      pinnedFeeRate: pinnedFeeRate,
-      pinnedFiatCode: pinnedFiatCode,
-      pinnedPremium: pinnedPremium,
-      termsPinned: termsPinned,
+      pinnedFeeRate: pinned ? pinnedFeeRate : null,
+      pinnedFiatCode: pinned ? pinnedFiatCode : null,
+      pinnedPremium: pinned ? pinnedPremium : null,
+      termsPinned: pinned,
     );
-
-    // Before the child is registered, on the same terms as a take: the
-    // release message carrying NextTrade goes out once this returns, and a
-    // remainder published without its anchor settles on whatever the node
-    // advertises by the time a taker resolves it.
-    if (termsPinned) await _anchorTerms(session);
 
     _pendingChildSessions[tradeKey.public] = session;
 

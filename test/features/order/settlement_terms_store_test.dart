@@ -194,7 +194,7 @@ void main() {
       expect(store.termsFor(_otherKey), isNotNull);
     });
 
-    test('refuses to pin at all when the map went unread', () async {
+    test('refuses to pin while the map is still unreadable', () async {
       // Writing here would erase anchors that were never read.
       final store = SettlementTermsStore(_ThrowingReadPrefs());
       await store.init();
@@ -203,6 +203,51 @@ void main() {
         store.pin(_tradeKey, amountSats: 100000),
         throwsA(isA<SettlementTermsNotDurable>()),
       );
+    });
+
+    test('retries the read rather than refusing for the rest of the run',
+        () async {
+      // A transient failure at startup used to latch: the user could then
+      // take nothing, create nothing and release nothing until they restarted
+      // the app.
+      final prefs = _FlakyReadPrefs();
+      final store = SettlementTermsStore(prefs);
+      await store.init();
+
+      await expectLater(
+        store.pin(_tradeKey, amountSats: 100000),
+        throwsA(isA<SettlementTermsNotDurable>()),
+      );
+
+      prefs.failReads = false;
+      await store.pin(_tradeKey, amountSats: 100000);
+
+      expect(store.termsFor(_tradeKey)!.amountSats, 100000);
+    });
+
+    test('picks up what was on disk when the read finally works', () async {
+      // The retry is a real read, so anchors written before the failure come
+      // back rather than being overwritten by an empty map.
+      final seeded = _store();
+      await seeded.init();
+      await seeded.pin(_otherKey, amountSats: 50000);
+      await seeded.pendingWrites;
+
+      final prefs = _FlakyReadPrefs();
+      prefs.seed(await _readRaw());
+      final store = SettlementTermsStore(prefs);
+      await store.init();
+
+      await expectLater(
+        store.pin(_tradeKey, amountSats: 100000),
+        throwsA(isA<SettlementTermsNotDurable>()),
+      );
+
+      prefs.failReads = false;
+      await store.pin(_tradeKey, amountSats: 100000);
+
+      expect(store.termsFor(_otherKey), isNotNull);
+      expect(store.termsFor(_tradeKey), isNotNull);
     });
 
     test('will not write over anchors it never managed to read', () async {
@@ -262,6 +307,34 @@ void main() {
 }
 
 /// Writes fail until [failWrites] is cleared. Reads come back empty.
+/// Reads what it has been seeded with, and returns a copy of the store's raw
+/// value so a flaky-read double can start from real data.
+Future<String?> _readRaw() =>
+    SharedPreferencesAsync().getString('settlement_pinned_terms');
+
+/// Reads throw until [failReads] is cleared; writes always land.
+// ignore: must_be_immutable
+class _FlakyReadPrefs implements SharedPreferencesAsync {
+  bool failReads = true;
+  String? _stored;
+
+  void seed(String? value) => _stored = value;
+
+  @override
+  Future<String?> getString(String key, {Object? options}) async {
+    if (failReads) throw StateError('platform unavailable');
+    return _stored;
+  }
+
+  @override
+  Future<void> setString(String key, String value, {Object? options}) async {
+    _stored = value;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 // ignore: must_be_immutable
 class _FailingWritePrefs implements SharedPreferencesAsync {
   bool failWrites = true;

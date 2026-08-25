@@ -151,14 +151,24 @@ class SettlementTermsStore {
   Future<void> init() async {
     if (_initialized) return;
 
+    _readFailed = !await _load();
+    _initialized = true;
+    if (!_readFailed) _prune();
+  }
+
+  /// Reads the persisted map into memory.
+  ///
+  /// False when the value could not be read at all — the one state where
+  /// writing would destroy anchors rather than update them. A value that was
+  /// read and cannot be parsed returns true: there is nothing behind it to
+  /// preserve, and refusing to write would leave pinning broken for good.
+  Future<bool> _load() async {
     final String? raw;
     try {
       raw = await _prefs.getString(_prefsKey);
     } catch (e) {
       logger.e('Failed to read pinned settlement terms: $e');
-      _readFailed = true;
-      _initialized = true;
-      return;
+      return false;
     }
 
     if (raw != null) {
@@ -179,8 +189,7 @@ class SettlementTermsStore {
       }
     }
 
-    _initialized = true;
-    _prune();
+    return true;
   }
 
   /// The terms [tradeKeyPublic] committed to, or null if it never pinned any.
@@ -208,9 +217,17 @@ class SettlementTermsStore {
     if (_terms.containsKey(tradeKeyPublic)) return;
 
     if (_readFailed) {
-      throw const SettlementTermsNotDurable(
-        'the persisted map went unread, so writing would erase it',
-      );
+      // One transient read failure at startup must not lock the app out of
+      // trading for the rest of the run: with pinning refusing, the user can
+      // take nothing, create nothing and release nothing until they restart.
+      // A store that reads now is a store that can be written to.
+      _readFailed = !await _load();
+      if (_readFailed) {
+        throw const SettlementTermsNotDurable(
+          'the persisted map went unread, so writing would erase it',
+        );
+      }
+      _prune();
     }
 
     _terms[tradeKeyPublic] = PinnedTerms(

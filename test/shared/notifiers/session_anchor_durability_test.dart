@@ -104,21 +104,64 @@ void main() {
   });
 
   group('createChildOrderSession when the anchors cannot be stored', () {
-    test('throws, so the release carrying NextTrade is never published',
-        () async {
-      await expectLater(
-        notifier.createChildOrderSession(
-          tradeKey: keyPair,
-          keyIndex: 2,
-          parentOrderId: 'order-1',
-          role: Role.seller,
-          pinnedFeeRate: 0.006,
-          termsPinned: true,
-        ),
-        throwsA(isA<SettlementTermsNotDurable>()),
+    test('still prepares the child, so the release is not blocked', () async {
+      // The release carrying NextTrade is what moves money out of escrow.
+      // Refusing it because the remainder's anchor could not be written
+      // trades the important thing for the incidental one, and leaves funds
+      // stuck with nothing published and nothing to retry.
+      final session = await notifier.createChildOrderSession(
+        tradeKey: keyPair,
+        keyIndex: 2,
+        parentOrderId: 'order-1',
+        role: Role.seller,
+        pinnedFeeRate: 0.006,
+        pinnedFiatCode: 'USD',
+        pinnedPremium: 0,
+        termsPinned: true,
       );
 
-      expect(notifier.getSessionByTradeKey(keyPair.public), isNull);
+      expect(notifier.getSessionByTradeKey(keyPair.public), isNotNull);
+      expect(session.parentOrderId, 'order-1');
+    });
+
+    test('marks the child legacy rather than claiming terms it did not store',
+        () async {
+      // Left as termsPinned with the figures in place, the remainder would
+      // report anchors that survive nothing.
+      final session = await notifier.createChildOrderSession(
+        tradeKey: keyPair,
+        keyIndex: 2,
+        parentOrderId: 'order-1',
+        role: Role.seller,
+        pinnedFeeRate: 0.006,
+        pinnedFiatCode: 'USD',
+        pinnedPremium: 0,
+        termsPinned: true,
+      );
+
+      expect(session.termsPinned, isFalse);
+      expect(session.pinnedFeeRate, isNull);
+      expect(session.pinnedFiatCode, isNull);
+      expect(session.pinnedPremium, isNull);
+    });
+
+    test('keeps the parent terms when the anchor does land', () async {
+      prefs.failWrites = false;
+
+      final session = await notifier.createChildOrderSession(
+        tradeKey: keyPair,
+        keyIndex: 2,
+        parentOrderId: 'order-1',
+        role: Role.seller,
+        pinnedFeeRate: 0.006,
+        pinnedFiatCode: 'USD',
+        pinnedPremium: 0,
+        termsPinned: true,
+      );
+
+      expect(session.termsPinned, isTrue);
+      expect(session.pinnedFeeRate, 0.006);
+      expect(session.pinnedFiatCode, 'USD');
     });
   });
 }
