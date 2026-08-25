@@ -146,6 +146,65 @@ void main() {
       expect(reopened.termsFor(_otherKey), isNotNull);
     });
 
+    test('fails rather than reporting a write that did not land', () async {
+      // The commitment goes out on the strength of pin() returning. A write
+      // that failed and returned normally would publish a trade whose terms
+      // exist only in memory.
+      final failing = _FailingWritePrefs();
+      final store = SettlementTermsStore(failing);
+      await store.init();
+
+      await expectLater(
+        store.pin(_tradeKey, amountSats: 100000),
+        throwsA(isA<SettlementTermsNotDurable>()),
+      );
+    });
+
+    test('does not keep in memory what the disk refused', () async {
+      // Left in place, the entry would report the trade as anchored and turn
+      // every later attempt into a no-op that never retries the write.
+      final failing = _FailingWritePrefs();
+      final store = SettlementTermsStore(failing);
+      await store.init();
+
+      await expectLater(
+        store.pin(_tradeKey, amountSats: 100000),
+        throwsA(isA<SettlementTermsNotDurable>()),
+      );
+      expect(store.termsFor(_tradeKey), isNull);
+
+      // A retry once storage recovers actually writes.
+      failing.failWrites = false;
+      await store.pin(_tradeKey, amountSats: 100000);
+      expect(store.termsFor(_tradeKey)!.amountSats, 100000);
+    });
+
+    test('one failed write does not poison the writes that follow', () async {
+      final failing = _FailingWritePrefs();
+      final store = SettlementTermsStore(failing);
+      await store.init();
+
+      await expectLater(
+        store.pin(_tradeKey, amountSats: 100000),
+        throwsA(isA<SettlementTermsNotDurable>()),
+      );
+
+      failing.failWrites = false;
+      await store.pin(_otherKey, amountSats: 50000);
+      expect(store.termsFor(_otherKey), isNotNull);
+    });
+
+    test('refuses to pin at all when the map went unread', () async {
+      // Writing here would erase anchors that were never read.
+      final store = SettlementTermsStore(_ThrowingReadPrefs());
+      await store.init();
+
+      await expectLater(
+        store.pin(_tradeKey, amountSats: 100000),
+        throwsA(isA<SettlementTermsNotDurable>()),
+      );
+    });
+
     test('will not write over anchors it never managed to read', () async {
       // The read failing says nothing about the contents: the persisted map
       // may be perfectly good. Serializing memory over it would erase the
@@ -159,7 +218,11 @@ void main() {
       final unreadable = _ThrowingReadPrefs();
       final blind = SettlementTermsStore(unreadable);
       await blind.init();
-      await blind.pin(_tradeKey, amountSats: 100000);
+
+      await expectLater(
+        blind.pin(_tradeKey, amountSats: 100000),
+        throwsA(isA<SettlementTermsNotDurable>()),
+      );
       await blind.pendingWrites;
 
       expect(unreadable.writes, isEmpty);
@@ -196,6 +259,25 @@ void main() {
       expect(reopened.termsFor(_tradeKey)!.amountSats, 100000);
     });
   });
+}
+
+/// Writes fail until [failWrites] is cleared. Reads come back empty.
+// ignore: must_be_immutable
+class _FailingWritePrefs implements SharedPreferencesAsync {
+  bool failWrites = true;
+  String? _stored;
+
+  @override
+  Future<String?> getString(String key, {Object? options}) async => _stored;
+
+  @override
+  Future<void> setString(String key, String value, {Object? options}) async {
+    if (failWrites) throw StateError('disk full');
+    _stored = value;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 /// Reads throw; writes are recorded so a test can assert none happened.

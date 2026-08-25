@@ -1812,6 +1812,7 @@
     "invoiceNotPayableTitle": "Questa fattura non può essere pagata",
     "invoiceTermsUnverifiedTitle": "Importo non verificato",
     "invoiceTermsUnverifiedBody": "I termini dell'ordine pubblicati dal nodo non sono arrivati, quindi questo importo non ha potuto essere verificato. Controllalo tu prima di continuare.",
+    "orderTermsNotStored": "Non è stato possibile salvare i termini dell'ordine su questo dispositivo, quindi non è stato inviato nulla. Riprova.",
     "invoiceMarketRateUnavailableTitle": "Tasso di mercato non disponibile",
     "invoiceMarketRateUnavailableBody": "Non è stato possibile ottenere un tasso indipendente, quindi questo importo non è stato confrontato con nessuno. Controllalo tu prima di continuare.",
     "invoiceCheckingMarketRate": "Verifica del tasso di mercato...",

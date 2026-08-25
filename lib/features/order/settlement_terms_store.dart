@@ -5,6 +5,22 @@ import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Raised when a trade's terms could not be recorded durably.
+///
+/// The commitment is published as soon as the anchor call returns, so a
+/// caller that swallowed this would send a trade whose terms exist only in
+/// memory — and a crash, a timeout, a restore or a node switch would then
+/// bring that trade back reading whatever the node currently advertises.
+/// Failing here costs a retry; failing quietly costs the guarantee.
+class SettlementTermsNotDurable implements Exception {
+  final Object cause;
+
+  const SettlementTermsNotDurable(this.cause);
+
+  @override
+  String toString() => 'Settlement terms could not be stored: $cause';
+}
+
 /// The terms a trade committed to, as they stood at the moment of commitment.
 ///
 /// Every field here is something the node publishes in an addressable event
@@ -188,8 +204,14 @@ class SettlementTermsStore {
     int? fiatAmount,
     double? premium,
     DateTime? pinnedAt,
-  }) {
-    if (_terms.containsKey(tradeKeyPublic)) return Future<void>.value();
+  }) async {
+    if (_terms.containsKey(tradeKeyPublic)) return;
+
+    if (_readFailed) {
+      throw const SettlementTermsNotDurable(
+        'the persisted map went unread, so writing would erase it',
+      );
+    }
 
     _terms[tradeKeyPublic] = PinnedTerms(
       amountSats: amountSats,
@@ -199,7 +221,17 @@ class SettlementTermsStore {
       premium: premium,
       pinnedAt: pinnedAt ?? DateTime.now(),
     );
-    return _flush();
+
+    try {
+      await _flush();
+    } catch (e) {
+      // Memory must not keep what the disk refused. Left in place, the entry
+      // would report this trade as anchored when nothing was recorded, and
+      // the containsKey guard above would turn every later attempt into a
+      // no-op that never retries the write.
+      _terms.remove(tradeKeyPublic);
+      throw SettlementTermsNotDurable(e);
+    }
   }
 
   /// Drops the anchor for [tradeKeyPublic]. For a session the user deleted;
@@ -216,11 +248,16 @@ class SettlementTermsStore {
     if (_terms.length != before) _flush();
   }
 
-  /// Appends the write to the chain. `SharedPreferencesAsync` keeps no Dart
-  /// cache and completes concurrent calls in whatever order the platform
-  /// picks, so without the chain an older snapshot could land after a newer
-  /// one. Failures are logged and swallowed: one bad write must not poison
-  /// every later one, and memory stays authoritative for this run.
+  /// Appends the write to the chain and returns when it has run.
+  ///
+  /// `SharedPreferencesAsync` keeps no Dart cache and completes concurrent
+  /// calls in whatever order the platform picks, so without the chain an
+  /// older snapshot could land after a newer one.
+  ///
+  /// The returned future carries the failure to the caller — [pin] has to
+  /// know, since the commitment goes out on the strength of it. The chain
+  /// itself absorbs the failure separately so one bad write cannot poison the
+  /// ordering of every later one.
   Future<void> _flush() {
     if (_readFailed) {
       logger.w('Not flushing settlement anchors: the persisted map went unread');
@@ -230,12 +267,10 @@ class SettlementTermsStore {
     final snapshot = jsonEncode(
       _terms.map((key, value) => MapEntry(key, value.toJson())),
     );
-    final queued = _writes
-        .then((_) => _prefs.setString(_prefsKey, snapshot))
-        .catchError(
-          (Object e) => logger.e('Failed to persist pinned settlement terms: $e'),
-        );
-    _writes = queued;
+    final queued = _writes.then((_) => _prefs.setString(_prefsKey, snapshot));
+    _writes = queued.catchError(
+      (Object e) => logger.e('Failed to persist pinned settlement terms: $e'),
+    );
     return queued;
   }
 }

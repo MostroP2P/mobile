@@ -224,19 +224,27 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       termsPinned: true,
     );
 
+    // Anchor before the session is registered anywhere. If the terms cannot
+    // be recorded, this trade must not exist at all: the caller publishes the
+    // commitment the moment this returns, and a trade published without its
+    // anchors is the failure the store exists to prevent. Throws rather than
+    // logging, so the take or create stops here.
+    await _anchorTerms(session);
+
     if (orderId != null) {
       _sessions[orderId] = session;
     } else if (requestId != null) {
       _requestIdToSession[requestId] = session;
     }
 
-    await _anchorTerms(session);
-
     // A take knows its order id, so the session itself can be written now
     // rather than on the daemon's reply. A create has only a request id and
-    // stays deliberately ephemeral until the order is confirmed; its anchor
-    // is durable either way, keyed by the trade key it will be confirmed
-    // under.
+    // stays deliberately ephemeral until the order is confirmed.
+    //
+    // Best effort, unlike the anchor above: this row is a fast path, not the
+    // guarantee. Restore rebuilds the session from the node's data and takes
+    // its terms from the anchor, so losing the row costs a rebuild while
+    // losing the anchor costs the terms.
     if (orderId != null) {
       try {
         await _storage.putSession(session);
@@ -257,19 +265,20 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   /// session from the node's own data. Keyed by trade key, which spans the
   /// whole lifecycle: it exists before the order id, it signs the commitment,
   /// and restore re-derives it from the key index.
-  Future<void> _anchorTerms(Session session) async {
-    try {
-      await ref.read(settlementTermsStoreProvider).pin(
-            session.tradeKey.public,
-            amountSats: session.pinnedAmountSats,
-            feeRate: session.pinnedFeeRate,
-            fiatCode: session.pinnedFiatCode,
-            fiatAmount: session.pinnedFiatAmount,
-            premium: session.pinnedPremium,
-          );
-    } catch (e) {
-      logger.e('Failed to anchor pinned terms for a new session: $e');
-    }
+  ///
+  /// Throws [SettlementTermsNotDurable] rather than logging. Callers publish a
+  /// commitment on the strength of this returning, so swallowing the failure
+  /// would leave the anchors in memory only and hand the trade back to the
+  /// node's current terms after any crash, timeout, restore or node switch.
+  Future<void> _anchorTerms(Session session) {
+    return ref.read(settlementTermsStoreProvider).pin(
+          session.tradeKey.public,
+          amountSats: session.pinnedAmountSats,
+          feeRate: session.pinnedFeeRate,
+          fiatCode: session.pinnedFiatCode,
+          fiatAmount: session.pinnedFiatAmount,
+          premium: session.pinnedPremium,
+        );
   }
 
   /// What the trade under [tradeKeyPublic] committed to, from the durable
@@ -444,11 +453,13 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       termsPinned: termsPinned,
     );
 
-    _pendingChildSessions[tradeKey.public] = session;
-
-    // The child has no order id until mostrod delivers one, so the anchor is
-    // the only durable record of what the parent committed to until then.
+    // Before the child is registered, on the same terms as a take: the
+    // release message carrying NextTrade goes out once this returns, and a
+    // remainder published without its anchor settles on whatever the node
+    // advertises by the time a taker resolves it.
     if (termsPinned) await _anchorTerms(session);
+
+    _pendingChildSessions[tradeKey.public] = session;
 
     _emitState();
 

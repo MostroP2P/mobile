@@ -1771,6 +1771,7 @@
     "invoiceNotPayableTitle": "Diese Rechnung kann nicht bezahlt werden",
     "invoiceTermsUnverifiedTitle": "Betrag nicht verifiziert",
     "invoiceTermsUnverifiedBody": "Die vom Node veröffentlichten Orderbedingungen sind nicht eingetroffen, daher konnte dieser Betrag nicht dagegen geprüft werden. Prüfe ihn selbst, bevor du fortfährst.",
+    "orderTermsNotStored": "Die Orderbedingungen konnten auf diesem Gerät nicht gespeichert werden, daher wurde nichts gesendet. Versuche es erneut.",
     "invoiceMarketRateUnavailableTitle": "Marktkurs nicht verfügbar",
     "invoiceMarketRateUnavailableBody": "Ein unabhängiger Kurs war nicht erreichbar, daher wurde dieser Betrag mit keinem verglichen. Prüfe ihn selbst, bevor du fortfährst.",
     "invoiceCheckingMarketRate": "Marktkurs wird geprüft ...",

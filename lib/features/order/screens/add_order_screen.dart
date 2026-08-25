@@ -468,7 +468,7 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
     return _submitOrder; // Form is valid - allow submission
   }
 
-  void _submitOrder() {
+  Future<void> _submitOrder() async {
     // Force-commit any pending text field changes (e.g. premium debounce timer)
     primaryFocus?.unfocus();
     if (_formKey.currentState?.validate() ?? false) {
@@ -571,9 +571,13 @@ class _AddOrderScreenState extends ConsumerState<AddOrderScreen> {
           buyerInvoice: buyerInvoice,
         );
 
-        notifier.submitOrder(order);
+        // Awaited so a failure to record the order's terms reaches the catch
+        // below instead of escaping as an unhandled async error. Nothing was
+        // published when that throws.
+        await notifier.submitOrder(order);
       } catch (e) {
-        if (context.mounted) {
+        if (!mounted || !context.mounted) return;
+        {
           showDialog(
             context: context,
             builder: (context) => AlertDialog(

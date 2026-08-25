@@ -23,6 +23,8 @@ import 'package:mostro_mobile/shared/widgets/custom_card.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/shared/widgets/dynamic_countdown_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/features/order/settlement_terms_store.dart';
+import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 
 class TakeOrderScreen extends ConsumerStatefulWidget {
   final String orderId;
@@ -438,6 +440,12 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                             stackTrace: stackTrace,
                           );
                           if (!mounted) return;
+                          if (e is SettlementTermsNotDurable && context.mounted) {
+                            SnackBarHelper.showTopSnackBar(
+                              context,
+                              S.of(context)!.orderTermsNotStored,
+                            );
+                          }
                           setState(() {
                             _isSubmitting = false;
                           });
@@ -476,6 +484,12 @@ class _TakeOrderScreenState extends ConsumerState<TakeOrderScreen> {
                           stackTrace: stackTrace,
                         );
                         if (!mounted) return;
+                        if (e is SettlementTermsNotDurable && context.mounted) {
+                          SnackBarHelper.showTopSnackBar(
+                            context,
+                            S.of(context)!.orderTermsNotStored,
+                          );
+                        }
                         setState(() {
                           _isSubmitting = false;
                         });
