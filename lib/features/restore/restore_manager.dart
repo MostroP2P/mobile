@@ -663,6 +663,15 @@ class RestoreService {
             ? restoredDispute!.solverPubkey
             : null;
 
+        // The rebuild takes its figures from the node, which is exactly what
+        // the settlement checks must not be held to. Anything this trade
+        // pinned at commitment is recovered from the durable anchor store,
+        // which _clearAll does not touch; without it a committed trade would
+        // come back as one that predates pinning and follow whatever the node
+        // advertises now, and a node A -> B -> A round trip would do that to
+        // every trade in flight.
+        final anchored = sessionNotifier.anchoredTermsFor(tradeKey.public);
+
         final session = Session(
           masterKey: _masterKey!,
           tradeKey: tradeKey,
@@ -674,6 +683,12 @@ class RestoreService {
           peer: peer,
           adminPubkey: adminPubkey,
           disputeId: restoredDispute?.disputeId,
+          pinnedAmountSats: anchored?.amountSats,
+          pinnedFeeRate: anchored?.feeRate,
+          pinnedFiatCode: anchored?.fiatCode,
+          pinnedFiatAmount: anchored?.fiatAmount,
+          pinnedPremium: anchored?.premium,
+          termsPinned: anchored != null,
         );
 
         // Store session

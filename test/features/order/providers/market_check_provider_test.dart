@@ -43,7 +43,16 @@ NostrEvent _orderEvent({
       ],
     );
 
-Session _session({int? pinnedAmountSats, bool termsPinned = true}) => Session(
+/// A session that pinned the pricing terms at commitment: $100 at no
+/// premium, which the order event below also advertises.
+Session _session({
+  int? pinnedAmountSats,
+  bool termsPinned = true,
+  String? pinnedFiatCode = 'USD',
+  int? pinnedFiatAmount = 100,
+  double? pinnedPremium = 0,
+}) =>
+    Session(
       masterKey: _keyPair,
       tradeKey: _keyPair,
       keyIndex: 0,
@@ -51,6 +60,9 @@ Session _session({int? pinnedAmountSats, bool termsPinned = true}) => Session(
       startTime: DateTime.utc(2026),
       orderId: _orderId,
       pinnedAmountSats: pinnedAmountSats,
+      pinnedFiatCode: pinnedFiatCode,
+      pinnedFiatAmount: pinnedFiatAmount,
+      pinnedPremium: pinnedPremium,
       termsPinned: termsPinned,
     );
 
@@ -119,11 +131,48 @@ void main() {
     });
 
     test('accounts for the premium before judging', () async {
+      session = _session(pinnedPremium: 10);
+      build();
+
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent(amount: '180000', premium: '10'));
 
       expect(container.read(marketCheckProvider(_orderId)).check!.isOffMarket,
           isFalse);
+    });
+
+    test('prices from the pinned premium, not the one republished later',
+        () async {
+      // The finding's scenario: the user accepts 100 USD at no premium, worth
+      // 200000 sats. The node resolves 180000 and republishes premium as 10,
+      // which would make the shave quote exactly right.
+      container.read(marketCheckProvider(_orderId));
+      await publish(_orderEvent(amount: '180000', premium: '10'));
+
+      final check = container.read(marketCheckProvider(_orderId)).check!;
+      expect(check.quotedSats, 200000);
+      expect(check.isOffMarket, isTrue);
+    });
+
+    test('prices from the pinned currency, not the one republished later',
+        () async {
+      // Same move through the currency tag: the quote must not follow it.
+      container.read(marketCheckProvider(_orderId));
+      await publish(_orderEvent(amount: '180000', currency: 'EUR'));
+
+      final check = container.read(marketCheckProvider(_orderId)).check!;
+      expect(check.quotedSats, 200000);
+      expect(check.isOffMarket, isTrue);
+    });
+
+    test('prices from the pinned fiat amount, not the one republished later',
+        () async {
+      container.read(marketCheckProvider(_orderId));
+      await publish(_orderEvent(amount: '180000', fiat: const ['fa', '90']));
+
+      final check = container.read(marketCheckProvider(_orderId)).check!;
+      expect(check.quotedSats, 200000);
+      expect(check.isOffMarket, isTrue);
     });
 
     test('skips an order whose sats the session pinned', () async {
@@ -168,6 +217,9 @@ void main() {
 
     test('skips a range order that has not been resolved to one figure',
         () async {
+      session = _session(pinnedFiatAmount: null);
+      build();
+
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent(fiat: const ['fa', '50', '200']));
 
@@ -189,12 +241,16 @@ void main() {
           MarketCheckStatus.unavailable);
     });
 
-    test('reports an empty currency tag as a check it could not make',
+    test('reports a commitment that pinned no currency as unmakeable',
         () async {
-      // The node publishes this tag and can empty it, so silence here would
-      // be a state it can put the screen into.
+      // A take made before the order event arrived pinned no pricing terms.
+      // Reading them off the event now would let the node supply a term that
+      // was never agreed, so the check says it could not be made.
+      session = _session(pinnedFiatCode: null);
+      build();
+
       container.read(marketCheckProvider(_orderId));
-      await publish(_orderEvent(currency: ''));
+      await publish(_orderEvent());
 
       expect(container.read(marketCheckProvider(_orderId)).status,
           MarketCheckStatus.unavailable);
@@ -205,20 +261,26 @@ void main() {
           MarketCheckStatus.notApplicable);
     });
 
-    test('reports an unreadable premium as a check it could not make',
+    test('reports a commitment that pinned no premium as unmakeable',
         () async {
-      // Quoting an unreadable premium as zero would misprice the order by
-      // exactly the premium and turn an honest trade into a refusal.
+      session = _session(pinnedPremium: null);
+      build();
+
       container.read(marketCheckProvider(_orderId));
-      await publish(_orderEvent(amount: '180000', premium: 'not-a-number'));
+      await publish(_orderEvent());
 
       expect(container.read(marketCheckProvider(_orderId)).status,
           MarketCheckStatus.unavailable);
     });
 
-    test('treats an absent premium as zero', () async {
+    test('falls back to the live band only where none was pinned', () async {
+      // A range order resolves its fiat figure after the commitment, so there
+      // was nothing to pin. The rest of the terms still come from the pin.
+      session = _session(pinnedFiatAmount: null);
+      build();
+
       container.read(marketCheckProvider(_orderId));
-      await publish(_orderEvent(premium: ''));
+      await publish(_orderEvent(fiat: const ['fa', '100']));
 
       final check = container.read(marketCheckProvider(_orderId)).check!;
       expect(check.quotedSats, 200000);

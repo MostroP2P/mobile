@@ -324,6 +324,11 @@ class MostroService {
         parentOrderId: orderId,
         role: currentSession.role!,
         pinnedFeeRate: currentSession.pinnedFeeRate,
+        // The currency and premium carry over from the parent agreement; the
+        // remainder's own fiat figure is not known until a taker resolves it,
+        // which is the market check's territory.
+        pinnedFiatCode: currentSession.pinnedFiatCode,
+        pinnedPremium: currentSession.pinnedPremium,
         termsPinned: currentSession.termsPinned,
       );
       logger.i(

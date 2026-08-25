@@ -47,6 +47,61 @@ void main() {
       expect(restored.pinnedFeeRate, 0.006);
     });
 
+    test('round-trip through JSON keeps the pricing terms', () {
+      // The market quote is priced from these three, and all three live in
+      // the same addressable event as the sats amount.
+      final session = Session(
+        masterKey: keyPair,
+        tradeKey: keyPair,
+        keyIndex: 0,
+        fullPrivacy: false,
+        startTime: DateTime.parse('2026-06-03T12:00:00.000'),
+        orderId: 'order-1',
+        pinnedFiatCode: 'USD',
+        pinnedFiatAmount: 100,
+        pinnedPremium: 2.5,
+      );
+
+      final restored = Session.fromJson({
+        ...session.toJson(),
+        'master_key': keyPair,
+        'trade_key': keyPair,
+      });
+
+      expect(restored.pinnedFiatCode, 'USD');
+      expect(restored.pinnedFiatAmount, 100);
+      expect(restored.pinnedPremium, 2.5);
+    });
+
+    test('a zero premium is pinned rather than dropped', () {
+      // Zero is a real term: an order at no premium is priced from the market
+      // rate exactly. Dropping it would read as "nothing pinned" and put the
+      // check back on whatever the node publishes next.
+      final restored = decode({'pinned_premium': 0});
+      expect(restored.pinnedPremium, 0);
+    });
+
+    test('pricing terms that are not usable figures read as unpinned', () {
+      final restored = decode({
+        'pinned_fiat_code': '',
+        'pinned_fiat_amount': 0,
+        'pinned_premium': double.nan,
+      });
+
+      expect(restored.pinnedFiatCode, isNull);
+      expect(restored.pinnedFiatAmount, isNull);
+      expect(restored.pinnedPremium, isNull);
+    });
+
+    test('a session written before the pricing pins existed reads as unpinned',
+        () {
+      final restored = decode({'pinned_amount_sats': 100000});
+
+      expect(restored.pinnedFiatCode, isNull);
+      expect(restored.pinnedFiatAmount, isNull);
+      expect(restored.pinnedPremium, isNull);
+    });
+
     test('a session written before the pin existed reads as unpinned', () {
       final session = decode(const {});
 

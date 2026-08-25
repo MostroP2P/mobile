@@ -9,6 +9,7 @@ import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/features/order/settlement_terms_store.dart';
 import 'package:sembast/sembast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/data/models/order.dart';
@@ -183,12 +184,22 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   ///
   /// An existing session for [orderId] is returned untouched: a retake must
   /// not overwrite the terms the first take pinned.
+  ///
+  /// Returns only once the pins are durable. The caller publishes the
+  /// commitment as soon as this comes back, and a crash or a response timeout
+  /// before the daemon replies would otherwise leave the trade standing
+  /// remotely with its anchors gone — restore would then rebuild the session
+  /// as one that predates pinning and go back to reading whatever terms the
+  /// node currently advertises.
   Future<Session> newSession({
     String? orderId,
     int? requestId,
     Role? role,
     int? pinnedAmountSats,
     double? pinnedFeeRate,
+    String? pinnedFiatCode,
+    int? pinnedFiatAmount,
+    double? pinnedPremium,
   }) async {
     if (orderId != null && state.any((s) => s.orderId == orderId)) {
       return state.firstWhere((s) => s.orderId == orderId);
@@ -207,6 +218,9 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       role: role,
       pinnedAmountSats: pinnedAmountSats,
       pinnedFeeRate: pinnedFeeRate,
+      pinnedFiatCode: pinnedFiatCode,
+      pinnedFiatAmount: pinnedFiatAmount,
+      pinnedPremium: pinnedPremium,
       termsPinned: true,
     );
 
@@ -216,9 +230,57 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       _requestIdToSession[requestId] = session;
     }
 
+    await _anchorTerms(session);
+
+    // A take knows its order id, so the session itself can be written now
+    // rather than on the daemon's reply. A create has only a request id and
+    // stays deliberately ephemeral until the order is confirmed; its anchor
+    // is durable either way, keyed by the trade key it will be confirmed
+    // under.
+    if (orderId != null) {
+      try {
+        await _storage.putSession(session);
+      } catch (e) {
+        logger.e('Failed to persist session $orderId before publish: $e');
+      }
+    }
+
     _emitState();
     return session;
   }
+
+  /// Writes what [session] committed to into the durable anchor store, and
+  /// returns once it has landed.
+  ///
+  /// Separate from the session row because a restore clears the session store
+  /// outright — including sessions already persisted — and rebuilds every
+  /// session from the node's own data. Keyed by trade key, which spans the
+  /// whole lifecycle: it exists before the order id, it signs the commitment,
+  /// and restore re-derives it from the key index.
+  Future<void> _anchorTerms(Session session) async {
+    try {
+      await ref.read(settlementTermsStoreProvider).pin(
+            session.tradeKey.public,
+            amountSats: session.pinnedAmountSats,
+            feeRate: session.pinnedFeeRate,
+            fiatCode: session.pinnedFiatCode,
+            fiatAmount: session.pinnedFiatAmount,
+            premium: session.pinnedPremium,
+          );
+    } catch (e) {
+      logger.e('Failed to anchor pinned terms for a new session: $e');
+    }
+  }
+
+  /// What the trade under [tradeKeyPublic] committed to, from the durable
+  /// anchor store, or null if it pinned nothing.
+  ///
+  /// For rebuilding rather than loading a session: the restore path
+  /// reconstructs from the node's own data, which carries none of this.
+  /// Without it a committed trade comes back as one that predates pinning and
+  /// follows whatever the node advertises now.
+  PinnedTerms? anchoredTermsFor(String tradeKeyPublic) =>
+      ref.read(settlementTermsStoreProvider).termsFor(tradeKeyPublic);
 
   Future<void> saveSession(Session session) async {
     _sessions[session.orderId!] = session;
@@ -319,6 +381,9 @@ class SessionNotifier extends StateNotifier<List<Session>> {
           .removeWhere((_, session) => identical(session, removed));
     }
     await _storage.deleteSession(sessionId);
+    if (removed != null) {
+      await ref.read(settlementTermsStoreProvider).forget(removed.tradeKey.public);
+    }
     _emitState();
   }
 
@@ -359,6 +424,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     required String parentOrderId,
     required Role role,
     double? pinnedFeeRate,
+    String? pinnedFiatCode,
+    double? pinnedPremium,
     bool termsPinned = false,
   }) async {
     final masterKey = ref.read(keyManagerProvider).masterKeyPair!;
@@ -372,10 +439,17 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       parentOrderId: parentOrderId,
       role: role,
       pinnedFeeRate: pinnedFeeRate,
+      pinnedFiatCode: pinnedFiatCode,
+      pinnedPremium: pinnedPremium,
       termsPinned: termsPinned,
     );
 
     _pendingChildSessions[tradeKey.public] = session;
+
+    // The child has no order id until mostrod delivers one, so the anchor is
+    // the only durable record of what the parent committed to until then.
+    if (termsPinned) await _anchorTerms(session);
+
     _emitState();
 
     // Register the child trade key with the push server right away: the child

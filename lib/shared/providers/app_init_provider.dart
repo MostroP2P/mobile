@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
+import 'package:mostro_mobile/features/order/settlement_terms_store.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/mostro/mostro_nodes_provider.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
@@ -32,6 +33,11 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
   final mostroNodes = ref.read(mostroNodesProvider.notifier);
   await mostroNodes.init();
   unawaited(mostroNodes.fetchAllNodeMetadata());
+
+  // Before the session manager: a restore can run as soon as sessions load,
+  // and it reads this store to recover what each trade committed to. An empty
+  // store at that moment would rebuild committed trades as legacy ones.
+  await ref.read(settlementTermsStoreProvider).init();
 
   final sessionManager = ref.read(sessionNotifierProvider.notifier);
   await sessionManager.init();

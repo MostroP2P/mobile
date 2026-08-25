@@ -119,11 +119,19 @@ class AddOrderNotifier extends AbstractMostroNotifier {
       // is the agreement here, so it is the one the settlement is later held
       // to rather than whatever the node ends up publishing. A market-price
       // or range order carries no sats amount to pin.
+      // The maker's own figures are the agreement, so they are pinned from
+      // the order being submitted rather than read back off the event the
+      // node publishes for it. A range order carries no single fiat figure
+      // until a taker resolves the band.
+      final isRange = order.maxAmount != null;
       session = await sessionNotifier.newSession(
         requestId: requestId,
         role: order.kind == OrderType.buy ? Role.buyer : Role.seller,
         pinnedAmountSats: order.amount > 0 ? order.amount : null,
         pinnedFeeRate: ref.read(nodeFeeRateProvider),
+        pinnedFiatCode: order.fiatCode,
+        pinnedFiatAmount: isRange ? null : order.fiatAmount,
+        pinnedPremium: order.premium.toDouble(),
       );
 
       // Start 10s timeout cleanup timer for create orders

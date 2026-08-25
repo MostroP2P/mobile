@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/order/notifiers/abstract_mostro_notifier.
 import 'package:mostro_mobile/features/order/providers/settlement_anchor_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
+import 'package:mostro_mobile/shared/utils/pricing_terms.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
@@ -97,12 +98,16 @@ class OrderNotifier extends AbstractMostroNotifier {
       // it move the figure this trade is checked against after the fact.
       final pinnedAmountSats = ref.read(publishedOrderAmountProvider(orderId));
       final pinnedFeeRate = ref.read(nodeFeeRateProvider);
+      final terms = pricingTermsOf(ref.read(eventProvider(orderId)));
 
       session = await sessionNotifier.newSession(
         orderId: orderId,
         role: Role.buyer,
         pinnedAmountSats: pinnedAmountSats,
         pinnedFeeRate: pinnedFeeRate,
+        pinnedFiatCode: terms?.fiatCode,
+        pinnedFiatAmount: terms?.fiatAmount,
+        pinnedPremium: terms?.premium,
       );
 
       // Drop any stale grace timer/flag from a previous cycle on this order so
@@ -131,12 +136,16 @@ class OrderNotifier extends AbstractMostroNotifier {
       // it move the figure this trade is checked against after the fact.
       final pinnedAmountSats = ref.read(publishedOrderAmountProvider(orderId));
       final pinnedFeeRate = ref.read(nodeFeeRateProvider);
+      final terms = pricingTermsOf(ref.read(eventProvider(orderId)));
 
       session = await sessionNotifier.newSession(
         orderId: orderId,
         role: Role.seller,
         pinnedAmountSats: pinnedAmountSats,
         pinnedFeeRate: pinnedFeeRate,
+        pinnedFiatCode: terms?.fiatCode,
+        pinnedFiatAmount: terms?.fiatAmount,
+        pinnedPremium: terms?.premium,
       );
 
       // Drop any stale grace timer/flag from a previous cycle on this order so

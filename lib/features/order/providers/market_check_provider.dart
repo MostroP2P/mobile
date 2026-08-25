@@ -73,10 +73,16 @@ final independentFiatPerBtcProvider =
 /// to apply a new check to a commitment that predates it is the same call
 /// [orderFeeRateProvider] makes for the fee.
 ///
+/// The quote is priced from the terms the session pinned, not from the event
+/// the node currently publishes. Currency, fiat figure and premium all live
+/// in the same addressable event as the sats amount, so a node reading them
+/// back could resolve a shaved settlement and then republish the premium that
+/// makes the shave quote exactly — the check would agree with the skim.
+///
 /// The four outcomes stay distinct. "Does not apply" and "could not be made"
 /// are different facts about a settlement, and neither is "priced correctly":
-/// a node can empty the currency tag or make the premium unreadable, so
-/// silence on those would be a state it can put the screen into.
+/// a commitment made with no order event pinned no currency or premium, so
+/// silence there would be a state the node can produce by withholding it.
 final marketCheckProvider =
     Provider.autoDispose.family<MarketCheckResult, String>((ref, orderId) {
   final session = ref.watch(sessionProvider(orderId));
@@ -86,30 +92,36 @@ final marketCheckProvider =
   final settledSats = ref.watch(signedOrderAmountProvider(orderId));
   if (settledSats == null) return MarketCheckResult.notApplicable;
 
-  final event = ref.watch(eventProvider(orderId));
-  if (event == null) return MarketCheckResult.notApplicable;
-
-  // A range order still advertising its band has not been resolved to the one
-  // fiat figure this trade is for, so there is nothing to re-price yet.
-  final fiat = event.fiatAmount;
-  if (fiat.isRange() || fiat.minimum <= 0) {
-    return MarketCheckResult.notApplicable;
+  // Currency and premium come from what the session committed to, never from
+  // the live event. All three inputs sit in the same addressable kind-38383
+  // event as the sats amount, so reading them back would let a node make a
+  // shaved settlement quote exactly right: resolve fewer sats than the trade
+  // was agreed at, then republish the premium so the quote lands on the
+  // shaved figure and the gap disappears.
+  //
+  // The fiat figure is the exception that has to be read live, and only for a
+  // range order: the band is not resolved to one figure until a taker settles
+  // it, so there was nothing to pin at commitment. A node moving it there
+  // moves a term nobody had agreed to yet.
+  final fiatCode = session!.pinnedFiatCode;
+  final premium = session.pinnedPremium;
+  if (fiatCode == null || fiatCode.isEmpty || premium == null) {
+    return MarketCheckResult.unavailable;
   }
 
-  // The rest of the inputs are ones the node publishes and can withhold. An
-  // empty currency tag or an unreadable premium is a check that could not be
-  // made, not one that came back clean.
-  final fiatCode = event.currency;
-  if (fiatCode == null || fiatCode.isEmpty) return MarketCheckResult.unavailable;
+  int? fiatAmount = session.pinnedFiatAmount;
+  if (fiatAmount == null) {
+    final event = ref.watch(eventProvider(orderId));
+    if (event == null) return MarketCheckResult.notApplicable;
 
-  // An absent premium is zero; one that is present and unreadable is not.
-  // Quoting it as zero would misprice the order by exactly the premium and
-  // turn an honest trade into a refusal.
-  final premiumTag = event.premium;
-  final premium = (premiumTag == null || premiumTag.trim().isEmpty)
-      ? 0.0
-      : double.tryParse(premiumTag.trim());
-  if (premium == null) return MarketCheckResult.unavailable;
+    // A range order still advertising its band has not been resolved to the
+    // one fiat figure this trade is for, so there is nothing to re-price yet.
+    final fiat = event.fiatAmount;
+    if (fiat.isRange() || fiat.minimum <= 0) {
+      return MarketCheckResult.notApplicable;
+    }
+    fiatAmount = fiat.minimum;
+  }
 
   final rate = ref.watch(independentFiatPerBtcProvider(fiatCode));
   if (rate.isLoading) return MarketCheckResult.loading;
@@ -119,7 +131,7 @@ final marketCheckProvider =
 
   final check = MarketCheck.of(
     settledSats: settledSats,
-    fiatAmount: fiat.minimum,
+    fiatAmount: fiatAmount,
     fiatPerBtc: fiatPerBtc,
     premium: premium,
   );

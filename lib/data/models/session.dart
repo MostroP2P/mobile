@@ -41,6 +41,21 @@ class Session {
   /// [pinnedAmountSats].
   double? pinnedFeeRate;
 
+  /// The currency, fiat figure and premium this session committed to.
+  ///
+  /// The independent market quote is priced from these three, and all three
+  /// live in the same addressable kind-38383 event as the sats amount. Read
+  /// live, they let a node make a shaved settlement quote exactly: resolve
+  /// fewer sats than the trade was agreed at, then republish the premium so
+  /// the quote lands on the shaved figure. Pinned, the quote prices what the
+  /// user accepted.
+  ///
+  /// Null where there was nothing to pin — a session written before pinning
+  /// existed, or an order event that had not arrived at commitment.
+  String? pinnedFiatCode;
+  int? pinnedFiatAmount;
+  double? pinnedPremium;
+
   /// Whether the terms were pinned when this session committed.
   ///
   /// Separates a session that pinned whatever there was to pin — possibly
@@ -72,6 +87,9 @@ class Session {
     this.disputeId,
     int? pinnedAmountSats,
     double? pinnedFeeRate,
+    String? pinnedFiatCode,
+    int? pinnedFiatAmount,
+    double? pinnedPremium,
     this.termsPinned = false,
     Peer? peer,
     String? adminPubkey,
@@ -87,6 +105,16 @@ class Session {
         (pinnedFeeRate != null && pinnedFeeRate >= 0 && pinnedFeeRate.isFinite)
             ? pinnedFeeRate
             : null;
+    this.pinnedFiatCode =
+        (pinnedFiatCode != null && pinnedFiatCode.isNotEmpty)
+            ? pinnedFiatCode
+            : null;
+    this.pinnedFiatAmount =
+        (pinnedFiatAmount != null && pinnedFiatAmount > 0)
+            ? pinnedFiatAmount
+            : null;
+    this.pinnedPremium =
+        (pinnedPremium != null && pinnedPremium.isFinite) ? pinnedPremium : null;
 
     _peer = peer;
     if (peer != null) {
@@ -113,6 +141,9 @@ class Session {
         'dispute_id': disputeId,
         'pinned_amount_sats': pinnedAmountSats,
         'pinned_fee_rate': pinnedFeeRate,
+        'pinned_fiat_code': pinnedFiatCode,
+        'pinned_fiat_amount': pinnedFiatAmount,
+        'pinned_premium': pinnedPremium,
         'terms_pinned': termsPinned,
       };
 
@@ -257,6 +288,22 @@ class Session {
         pinnedFeeRate = double.tryParse(pinnedFeeValue);
       }
 
+      final pinnedFiatAmountValue = json['pinned_fiat_amount'];
+      int? pinnedFiatAmount;
+      if (pinnedFiatAmountValue is int) {
+        pinnedFiatAmount = pinnedFiatAmountValue;
+      } else if (pinnedFiatAmountValue is String) {
+        pinnedFiatAmount = int.tryParse(pinnedFiatAmountValue);
+      }
+
+      final pinnedPremiumValue = json['pinned_premium'];
+      double? pinnedPremium;
+      if (pinnedPremiumValue is num) {
+        pinnedPremium = pinnedPremiumValue.toDouble();
+      } else if (pinnedPremiumValue is String) {
+        pinnedPremium = double.tryParse(pinnedPremiumValue);
+      }
+
       return Session(
         masterKey: masterKeyValue,
         tradeKey: tradeKeyValue,
@@ -271,6 +318,9 @@ class Session {
         disputeId: disputeId,
         pinnedAmountSats: pinnedAmountSats,
         pinnedFeeRate: pinnedFeeRate,
+        pinnedFiatCode: json['pinned_fiat_code']?.toString(),
+        pinnedFiatAmount: pinnedFiatAmount,
+        pinnedPremium: pinnedPremium,
         termsPinned: termsPinned,
       );
     } catch (e) {

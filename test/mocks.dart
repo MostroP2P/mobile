@@ -101,6 +101,9 @@ class MockSessionNotifier extends SessionNotifier {
     Role? role,
     int? pinnedAmountSats,
     double? pinnedFeeRate,
+    String? pinnedFiatCode,
+    int? pinnedFiatAmount,
+    double? pinnedPremium,
   }) async {
     final mockSession = Session(
       // Dummy private keys for testing purposes only
