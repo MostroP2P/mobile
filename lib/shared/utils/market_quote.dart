@@ -139,3 +139,36 @@ class MarketCheck {
     );
   }
 }
+
+/// A market gap the user has waved through, tied to the quote they saw.
+///
+/// The consent is for a pair of figures, not for the screen. A bare flag
+/// stayed true while the node republished the order or the rate refreshed
+/// underneath it, so one acknowledgement of a 3% gap went on authorizing a
+/// 30% one with nothing but a caution left on screen. Holding the figures
+/// means a changed quote is a quote nobody has agreed to yet.
+class MarketOverride {
+  final String orderId;
+  final int settledSats;
+  final int quotedSats;
+
+  const MarketOverride({
+    required this.orderId,
+    required this.settledSats,
+    required this.quotedSats,
+  });
+
+  /// The consent a user gives when they continue past [check] on [orderId].
+  factory MarketOverride.of(String orderId, MarketCheck check) =>
+      MarketOverride(
+        orderId: orderId,
+        settledSats: check.settledSats,
+        quotedSats: check.quotedSats,
+      );
+
+  /// Whether this consent was given for exactly [check] on [orderId].
+  bool covers(String orderId, MarketCheck check) =>
+      this.orderId == orderId &&
+      settledSats == check.settledSats &&
+      quotedSats == check.quotedSats;
+}

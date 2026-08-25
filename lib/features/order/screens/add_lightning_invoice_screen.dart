@@ -16,6 +16,7 @@ import 'package:mostro_mobile/shared/widgets/nwc_invoice_widget.dart';
 import 'package:mostro_mobile/shared/widgets/invoice_header.dart';
 import 'package:mostro_mobile/shared/widgets/invoice_notice.dart';
 import 'package:mostro_mobile/shared/widgets/ln_address_confirmation_widget.dart';
+import 'package:mostro_mobile/shared/utils/market_quote.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -44,12 +45,15 @@ class _AddLightningInvoiceScreenState
   /// Whether the user chose to enter the invoice manually (fallback from NWC or LN address).
   bool _manualMode = false;
 
-  /// Whether the user chose to invoice for a payout the market check refused.
+  /// The market gap the user chose to invoice past, if any.
   ///
   /// The refusal rests on a third-party rate, which can be stale or simply
   /// disagree, so it is not a verdict the screen should be able to impose
-  /// with no way past it.
-  bool _marketOverridden = false;
+  /// with no way past it. Held as the quote they agreed to rather than as a
+  /// flag: the node can republish the order and the rate can refresh while
+  /// this screen stays mounted, and consent to one pair of figures is not
+  /// consent to whatever replaces them.
+  MarketOverride? _marketOverride;
 
   @override
   void dispose() {
@@ -119,9 +123,10 @@ class _AddLightningInvoiceScreenState
         // below the quote is the direction that shorts them, and the quote is
         // the only protection a market-price settlement has, so it is refused
         // until they say otherwise.
-        final marketBlocked = offMarket &&
-            !_marketOverridden &&
-            market!.isAdverseTo(Role.buyer);
+        final marketOverridden =
+            market != null && (_marketOverride?.covers(orderId, market) ?? false);
+        final marketBlocked =
+            offMarket && !marketOverridden && market!.isAdverseTo(Role.buyer);
         final marketCaution = offMarket && !marketBlocked;
 
         final headerBlock = (unverified || marketCaution)
@@ -172,6 +177,7 @@ class _AddLightningInvoiceScreenState
             child: marketBlocked
                 ? _buildMarketBlockedFlow(
                     header: headerBlock,
+                    orderId: orderId,
                     settledSats: market.settledSats,
                     quotedSats: market.quotedSats,
                   )
@@ -293,6 +299,7 @@ class _AddLightningInvoiceScreenState
   /// decision with the user rather than making it for them.
   Widget _buildMarketBlockedFlow({
     required Widget header,
+    required String orderId,
     required int settledSats,
     required int quotedSats,
   }) {
@@ -324,7 +331,11 @@ class _AddLightningInvoiceScreenState
             ),
             const SizedBox(width: 12),
             TextButton(
-              onPressed: () => setState(() => _marketOverridden = true),
+              onPressed: () => setState(() => _marketOverride = MarketOverride(
+                    orderId: orderId,
+                    settledSats: settledSats,
+                    quotedSats: quotedSats,
+                  )),
               child: Text(S.of(context)!.invoiceContinueAnyway),
             ),
           ],

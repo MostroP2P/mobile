@@ -21,6 +21,10 @@ import 'package:mostro_mobile/shared/utils/market_quote.dart';
 
 const _orderId = 'order-1';
 
+/// Feeds [marketCheckProvider] so a test can move the quote under a screen
+/// that is already mounted, the way a node republish or a rate refresh does.
+final _marketSource = StateProvider<MarketCheck?>((ref) => null);
+
 /// A data part long enough to look real; only the prefix is read.
 const _data = 'pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfq';
 
@@ -99,7 +103,8 @@ Future<void> pumpPayScreen(
         nwcProvider.overrideWith((ref) => _StubNwcNotifier()),
         sessionProvider.overrideWith((ref, id) => null),
         anchoredSellerAmountProvider.overrideWith((ref, id) => anchoredSats),
-        marketCheckProvider.overrideWith((ref, id) => market),
+        _marketSource.overrideWith((ref) => market),
+        marketCheckProvider.overrideWith((ref, id) => ref.watch(_marketSource)),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -113,6 +118,15 @@ Future<void> pumpPayScreen(
 
 S _s(WidgetTester tester) =>
     S.of(tester.element(find.byType(PayLightningInvoiceScreen)))!;
+
+/// Replaces the quote on the mounted screen and lets it rebuild.
+Future<void> moveMarketTo(WidgetTester tester, MarketCheck market) async {
+  final container = ProviderScope.containerOf(
+    tester.element(find.byType(PayLightningInvoiceScreen)),
+  );
+  container.read(_marketSource.notifier).state = market;
+  await tester.pump();
+}
 
 /// The terms refusal box, whichever case produced it.
 Finder refusalNotice(WidgetTester tester) =>
@@ -279,6 +293,67 @@ void main() {
       expect(find.byType(PayLightningInvoiceWidget), findsOneWidget);
       // The gap does not stop being true once it has been accepted.
       expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+    });
+
+    testWidgets('does not carry an override onto a quote that has changed',
+        (tester) async {
+      // The user accepts a gap of 100000 against a 50000 quote. The node then
+      // republishes and the settlement doubles again. A route-wide flag stayed
+      // true through that and left the pay button live under a caution.
+      await pumpPayScreen(
+        tester,
+        lnInvoice: invoiceFor(100000),
+        messageSats: 100000,
+        anchoredSats: 100000,
+        market: const MarketCheck(
+          quotedSats: 50000,
+          settledSats: 100000,
+          deviation: 1.0,
+        ),
+      );
+
+      await tester.tap(find.text(_s(tester).invoiceContinueAnyway));
+      await tester.pumpAndSettle();
+      expect(find.byType(PayLightningInvoiceWidget), findsOneWidget);
+
+      await moveMarketTo(
+        tester,
+        const MarketCheck(
+          quotedSats: 50000,
+          settledSats: 200000,
+          deviation: 3.0,
+        ),
+      );
+
+      final s = _s(tester);
+      expect(find.byType(PayLightningInvoiceWidget), findsNothing);
+      expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+      expect(find.text(s.invoiceContinueAnyway), findsOneWidget);
+    });
+
+    testWidgets('keeps the override while the quote it was given for holds',
+        (tester) async {
+      const accepted = MarketCheck(
+        quotedSats: 50000,
+        settledSats: 100000,
+        deviation: 1.0,
+      );
+      await pumpPayScreen(
+        tester,
+        lnInvoice: invoiceFor(100000),
+        messageSats: 100000,
+        anchoredSats: 100000,
+        market: accepted,
+      );
+
+      await tester.tap(find.text(_s(tester).invoiceContinueAnyway));
+      await tester.pumpAndSettle();
+
+      // A rebuild carrying the same figures is the same quote, so the user is
+      // not asked again.
+      await moveMarketTo(tester, accepted);
+
+      expect(find.byType(PayLightningInvoiceWidget), findsOneWidget);
     });
 
     testWidgets('stays quiet when the settlement is on the market rate',

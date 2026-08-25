@@ -22,6 +22,10 @@ import 'package:mostro_mobile/shared/utils/market_quote.dart';
 
 const _orderId = 'order-1';
 
+/// Feeds [marketCheckProvider] so a test can move the quote under a screen
+/// that is already mounted, the way a node republish or a rate refresh does.
+final _marketSource = StateProvider<MarketCheck?>((ref) => null);
+
 /// Holds a fixed [OrderState] without any of the notifier's real machinery.
 class _StubOrderNotifier extends StateNotifier<OrderState>
     implements OrderNotifier {
@@ -91,7 +95,8 @@ Future<void> pumpAddScreen(
         nwcProvider.overrideWith((ref) => _StubNwcNotifier()),
         sessionProvider.overrideWith((ref, id) => null),
         anchoredBuyerAmountProvider.overrideWith((ref, id) => anchoredSats),
-        marketCheckProvider.overrideWith((ref, id) => market),
+        _marketSource.overrideWith((ref) => market),
+        marketCheckProvider.overrideWith((ref, id) => ref.watch(_marketSource)),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -105,6 +110,15 @@ Future<void> pumpAddScreen(
 }
 
 S _s(WidgetTester tester) => S.of(tester.element(find.byType(Scaffold)))!;
+
+/// Replaces the quote on the mounted screen and lets it rebuild.
+Future<void> moveMarketTo(WidgetTester tester, MarketCheck market) async {
+  final container = ProviderScope.containerOf(
+    tester.element(find.byType(AddLightningInvoiceScreen)),
+  );
+  container.read(_marketSource.notifier).state = market;
+  await tester.pump();
+}
 
 void main() {
   group('AddLightningInvoiceScreen gating', () {
@@ -210,6 +224,65 @@ void main() {
       final s = _s(tester);
       expect(find.byType(AddLightningInvoiceWidget), findsOneWidget);
       expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+    });
+
+    testWidgets('does not carry an override onto a quote that has changed',
+        (tester) async {
+      // The user accepts a payout of 100000 against a 200000 quote. The node
+      // then republishes and the payout halves again. A route-wide flag stayed
+      // true through that and left invoice creation open under a caution.
+      await pumpAddScreen(
+        tester,
+        requestedSats: 99700,
+        anchoredSats: 99700,
+        market: const MarketCheck(
+          quotedSats: 200000,
+          settledSats: 100000,
+          deviation: 0.5,
+        ),
+      );
+
+      await tester.tap(find.text(_s(tester).invoiceContinueAnyway));
+      await tester.pumpAndSettle();
+      expect(find.byType(AddLightningInvoiceWidget), findsOneWidget);
+
+      await moveMarketTo(
+        tester,
+        const MarketCheck(
+          quotedSats: 200000,
+          settledSats: 50000,
+          deviation: 0.75,
+        ),
+      );
+
+      final s = _s(tester);
+      expect(find.byType(AddLightningInvoiceWidget), findsNothing);
+      expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+      expect(find.text(s.invoiceContinueAnyway), findsOneWidget);
+    });
+
+    testWidgets('keeps the override while the quote it was given for holds',
+        (tester) async {
+      const accepted = MarketCheck(
+        quotedSats: 200000,
+        settledSats: 100000,
+        deviation: 0.5,
+      );
+      await pumpAddScreen(
+        tester,
+        requestedSats: 99700,
+        anchoredSats: 99700,
+        market: accepted,
+      );
+
+      await tester.tap(find.text(_s(tester).invoiceContinueAnyway));
+      await tester.pumpAndSettle();
+
+      // A rebuild carrying the same figures is the same quote, so the user is
+      // not asked again.
+      await moveMarketTo(tester, accepted);
+
+      expect(find.byType(AddLightningInvoiceWidget), findsOneWidget);
     });
 
     testWidgets('stays quiet when the settlement is on the market rate',
