@@ -69,7 +69,8 @@ manual override: detection is automatic (decision below).
 ### Decisions (fixed)
 
 1. **Transport selection: auto-detection only.** Read `protocol_version` from
-   the node's kind-`38385` event. `"2"` → v2; `"1"` or absent → v1. No settings
+   the node's kind-`38385` event. `"2"` → v2; `"1"` or an absent tag on a
+   verified event → v1; anything else → the safe default (§4.1). No settings
    toggle.
 2. **`version` field tied to transport.** Send `version: 1` on the gift-wrap
    path (preserves today's exact wire for already-deployed daemons) and
@@ -86,7 +87,12 @@ A node advertises its transport in its kind-`38385` info event via a
 ["protocol_version", "1"]   → NIP-59 gift wrap (kind 1059), DEPRECATED
 ["protocol_version", "2"]   → NIP-44 direct (kind 14)
 (tag absent)                → legacy daemon → treat as v1
+["protocol_version", "abc"] → asserts nothing → safe default (§4.1)
+(no info event at all)      → no evidence    → safe default (§4.1)
 ```
+
+The last two are not the same as an absent tag, and §4.1 covers why the
+difference is load-bearing.
 
 The client already parses this event into `MostroInstance`
 (`lib/features/mostro/mostro_instance.dart`). Today the extension reads tags
@@ -224,16 +230,76 @@ of the chosen transport:
 enum Transport { giftWrap, nip44 } // v1 / v2
 ```
 
-One small resolver maps the node (via `MostroInstance.protocolVersion`, §2) to a
+One small resolver maps the node's advertised `protocol_version` (§2) to a
 `Transport`, and that single value is consumed by **both** the send path and the
-receive subscription filters. No UI, no persisted setting, no per-message
-override.
+receive subscription filters. No UI, no per-message override. Every caller reads
+`anchoredProtocolVersionFor(ref)` rather than reaching for
+`MostroInstance.protocolVersion` directly, so the two halves cannot disagree
+about which transport is in play.
 
-Degrade safely: when the `protocol_version` tag is absent or the node is
-unreachable, resolve to **`Transport.giftWrap` (v1)** rather than mis-pairing —
-this is the version-skew guard. The downgrade must be **logged explicitly** (at
-`warn`) so a misconfigured or unreachable node cannot silently leave the app in
-a degraded transport without anyone noticing.
+**The tag has three states, not two.** Collapsing them is a partition either
+way, so `NostrEvent.assertedProtocolVersion` keeps them apart:
+
+| Tag | Reads as | Why |
+|---|---|---|
+| Present, parseable | that version | `resolveTransport` decides what to do with one we do not speak |
+| Absent entirely | `kLegacyProtocolVersion` (v1) | on a *verified* event, silence is a pre-0.18.0 daemon asserting v1 by omission |
+| Present, unusable | `null` (no evidence) | the node meant to state a version and the value says nothing; reading `protocol_version=abc` as v1 would pair us with gift wrap against a node that may well speak NIP-44 |
+
+**Degrade upwards, not to v1.** When nothing is known — no info event yet, the
+node unreachable, a relay withholding the event, or a version this client does
+not speak — resolve to **`kDefaultTransport` = `Transport.nip44` (v2)**, and log
+an unsupported value at `warn`.
+
+The direction is a security property, not a guess about what most nodes run.
+"Unknown" is a state any relay can create for free by simply not serving the
+info event, and v1's intake authenticates nothing — so resolving unknown to v1
+made *omission* a downgrade primitive. Defaulting the other way makes the
+failure mode a brief deafness against a genuine v1 node, self-healing the moment
+its signed info event arrives, instead of a silent downgrade. It also matches
+mostrod's own default: since v0.18.0 the daemon picks nip44 unless an operator
+opts into gift-wrap explicitly, and v0.19.0 removes the choice.
+
+#### The persisted anchor
+
+Signature verification and the NIP-01 replacement rule both guard the info
+event, but neither survives a restart: `OpenOrdersRepository` holds the event in
+memory only, so on a cold start the first one to arrive is accepted with nothing
+to compare it against. A relay that withholds the current event and replays a
+genuinely signed pre-migration one downgrades the client for the whole session.
+
+`ProtocolVersionStore` (`lib/features/mostro/protocol_version_store.dart`) is
+what persists across that gap. Per node pubkey it remembers the last version
+that node was **verified** to assert, together with the asserting event's signed
+`created_at`, and `anchoredProtocolVersion` resolves the two against each other:
+
+- **The more recent assertion wins.** A relay picks which signed events it
+  serves, but it cannot mint one and cannot re-date one without breaking the
+  signature — so "newer than anything this client has verified" is exactly the
+  evidence it cannot manufacture. A replayed pre-migration v1 event loses
+  against a recorded v2.
+- **In both directions.** mostrod 0.18.x still ships `transport = "gift-wrap"`,
+  so an operator undoing a bad v2 rollout signs a *newer* v1 assertion. A purely
+  monotonic ratchet would refuse it and partition every client that had ever
+  seen v2 — silently, with no recovery short of reinstalling. Anchoring on
+  freshness follows the node instead.
+- **Ties resolve upwards.** Same `created_at`, or an assertion that cannot be
+  dated, falls back to the higher version. NIP-01's id tie-break runs upstream
+  on events, so a tie here is between an event in hand and one recalled from an
+  earlier session.
+
+Two things are deliberately never recorded: a version this client cannot resolve
+(the store would anchor to a number no resolver understands), and an *absent*
+tag. Resolution reads an absent tag as v1 because it can see the info event is
+in hand; the store outlives it, and persisting 1 would let a relay resolve v1
+off remembered state alone by simply withholding the event — turning the anchor
+into the durable downgrade primitive it exists to prevent.
+
+`ProtocolVersionStore.init()` must complete before the first transport is
+resolved. `appInitializerProvider` awaits it before `SubscriptionManager` is
+built; `init()` merges rather than replaces, because `RelaysNotifier` builds a
+`SubscriptionManager` of its own during bootstrap and info events can reach
+`record()` before the load finishes.
 
 ### 4.2 `version` field is derived from the transport
 
@@ -270,10 +336,11 @@ behaviourally unchanged.
 
 ### Phase A — Dual receive (with receive-side auto-detection)
 
-- Parse `protocol_version` into `MostroInstance.protocolVersion` (default v1 when
-  absent or unparseable) — `lib/features/mostro/mostro_instance.dart`. Resolve a
-  per-node `Transport` from it (`lib/features/mostro/transport.dart`), degrading
-  to v1 on an unsupported value and logging it (version-skew guard, §4.1).
+- Parse `protocol_version` into `MostroInstance.protocolVersion` —
+  `lib/features/mostro/mostro_instance.dart`. Resolve a per-node `Transport`
+  from it (`lib/features/mostro/transport.dart`). Originally this read an absent
+  *or* unparseable tag as v1 and degraded unsupported values to v1; both were
+  reversed later — see §4.1 for the three-state reading and the upward degrade.
   > Receive-side detection lives here (not Phase C) so the dual-receive path is
   > actually reachable and reviewable; Phase C only threads the resolved
   > transport into the **send** path.
@@ -339,8 +406,8 @@ behaviourally unchanged.
   from the transport (§4.2).
 - Extracted the transport → orders-filter mapping into the testable top-level
   `buildOrdersFilter` (`subscription_manager.dart`).
-- The version-skew guard (`resolveTransport`) degrades to v1 on an unsupported
-  protocol version and logs it (§4.1).
+- The version-skew guard (`resolveTransport`) handles an unsupported protocol
+  version and logs it (§4.1; it degrades to `kDefaultTransport`, not to v1).
 
 ### Phase D — Tests ✅
 
@@ -350,9 +417,14 @@ behaviourally unchanged.
   verifies the trade signature and the identity proof, including the exact domain
   string `mostro-transport-v2-identity:<tradePubkey>:<messageJSON>` (`null` in
   full-privacy).
-- `protocol_version` tag parse → transport mapping, including absent → v1
+- `protocol_version` tag parse → transport mapping, across all three tag states
   (`test/features/mostro/transport_test.dart`,
   `test/features/mostro/mostro_instance_test.dart`).
+- The persisted anchor: freshness ordering in both directions, unsupported and
+  undatable assertions, write serialisation and records racing `init()`
+  (`test/features/mostro/protocol_version_store_test.dart`), and the same rules
+  end-to-end through the repository
+  (`test/features/mostro/anchored_transport_resolution_test.dart`).
 - Orders subscription filter is transport-aware
   (`test/features/subscriptions/orders_filter_test.dart`).
 - Restore decode handles both transports and yields identical results
@@ -364,9 +436,16 @@ behaviourally unchanged.
 
 ## 6. Backward compatibility and edge cases
 
-- **Legacy node (no `protocol_version` tag)** → resolve to v1; behaviour
-  identical to today. The resolver logs this downgrade at `warn` (§4.1) so a
-  misconfigured node is not silently left on the degraded transport.
+- **Legacy node (no `protocol_version` tag)** → resolve to v1, but only off a
+  *verified* info event: an absent tag on one is the node asserting v1 by
+  omission (§4.1). Having no info event at all is the opposite case and resolves
+  to `kDefaultTransport`.
+- **Malformed `protocol_version`** → no evidence; resolve to `kDefaultTransport`
+  and log at `warn`. The About screen shows "unknown" rather than a version the
+  node never claimed.
+- **Operator rolls a node back to v1** → followed, because the rollback event is
+  signed later than the v2 one the client remembers (§4.1, the persisted
+  anchor). A replayed pre-migration v1 event is not, because it is not.
 - **`version` field** → v1 keeps `version: 1` on the wire (decision #2), so
   already-deployed pre-0.13 daemons are unaffected. (A 0.13+ daemon dispatches
   on event **kind**, not on `version`, and `verify()` checks action↔payload

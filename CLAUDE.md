@@ -125,15 +125,28 @@ The app follows a specific initialization order in `appInitializerProvider`:
 
 1. **NostrService Initialization**: Establishes WebSocket connections to configured relays
 2. **KeyManager Initialization**: Loads cryptographic keys from secure storage  
-3. **SessionNotifier Initialization**: Loads active trading sessions from Sembast database
-4. **SubscriptionManager Creation**: Registers session listeners with `fireImmediately: false`
-5. **Background Services Setup**: Configures notification and sync services
-6. **Order Notifier Initialization**: Creates individual order managers for active sessions
+3. **ProtocolVersionStore Initialization**: Loads the persisted transport anchor from SharedPreferences
+4. **SessionNotifier Initialization**: Loads active trading sessions from Sembast database
+5. **SubscriptionManager Creation**: Registers session listeners with `fireImmediately: false`
+6. **Background Services Setup**: Configures notification and sync services
+7. **Order Notifier Initialization**: Creates individual order managers for active sessions
 
 ### Critical Timing Requirements
 - SessionNotifier must complete initialization before SubscriptionManager setup
 - SubscriptionManager uses `fireImmediately: false` to prevent premature execution
+- `ProtocolVersionStore.init()` must complete before SubscriptionManager builds its first orders filter, since that filter's kind depends on the resolved transport
 - Proper sequence ensures orders appear consistently in UI across app restarts
+
+## Transport Resolution (Protocol v1/v2)
+
+Mostro nodes speak one of two wire transports, advertised in the kind-38385 info event via a `protocol_version` tag: v1 (NIP-59 gift wrap, kind 1059) or v2 (NIP-44 direct message, kind 14). Detection is automatic; there is no setting.
+
+- **Single resolution point**: every caller reads `anchoredProtocolVersionFor(ref)` (`features/mostro/protocol_version_store.dart`), never `MostroInstance.protocolVersion` directly. The send path and the receive subscription must not disagree about the transport — a client publishing kind 1059 while listening on kind 14 is partitioned from the node.
+- **Three tag states**: `NostrEvent.assertedProtocolVersion` reads a parseable value as that version, an absent tag on a *verified* event as v1 (a pre-0.18.0 daemon asserting by omission), and a present-but-unusable value as null. The last two are different facts and must not collapse.
+- **Unknown degrades upwards**: no info event, an unreadable value, or a version this client does not speak resolves to `kDefaultTransport` (v2), not v1. Any relay can produce "unknown" by withholding the info event, and v1's intake authenticates nothing, so resolving unknown to v1 would make omission a downgrade primitive.
+- **Persisted anchor**: `ProtocolVersionStore` remembers, per node pubkey, the last verified version *and* the asserting event's signed `created_at`. The more recent assertion wins, with ties and undatable assertions falling back to the higher version. A relay can replay a signed event but cannot re-date one, so a replayed pre-migration v1 event loses against a recorded v2 — while an operator genuinely rolling a node back to v1 is followed.
+- **Never recorded**: a version this client cannot resolve, and an absent tag. Persisting the latter would let a relay resolve v1 from remembered state alone by simply withholding the info event.
+- **Full detail**: `docs/architecture/TRANSPORT_V2_MIGRATION.md` §4.1, referenced from the code comments.
 
 ## Timeout Detection & Orphan Session Prevention
 
