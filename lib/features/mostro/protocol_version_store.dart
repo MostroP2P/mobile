@@ -128,15 +128,24 @@ class ProtocolVersionStore {
   /// has been verified — an unverified event is a relay's claim, not the
   /// node's, and recording it would poison the anchor.
   ///
+  /// Only versions [tryResolveTransport] maps to a concrete transport are
+  /// stored. [resolveTransport] already degrades an unrecognised one upwards to
+  /// [kDefaultTransport], but the store outlives that decision: keeping the raw
+  /// number would leave every later assertion measured against a value no
+  /// resolver understands, so the first client to meet a v3 node would anchor
+  /// itself to 3 with no way back to the v2 it actually speaks. Not recording
+  /// it costs nothing — resolution still reads 3 off the info event in hand.
+  ///
   /// Returns true when the stored assertion changed. That includes a same
   /// version re-asserted more recently: the date is what later replays are
   /// measured against, so it has to move forward too.
   bool record(String pubkey, int version, DateTime? createdAt) {
     if (pubkey.isEmpty) return false;
-    // Guard against a malformed tag anchoring the store to a value no resolver
-    // would honour anyway.
-    if (version < 1) {
-      logger.w('Ignoring non-positive protocol_version $version for $pubkey');
+    if (tryResolveTransport(version) == null) {
+      logger.w(
+        'Not recording protocol_version $version for $pubkey: '
+        'this client does not speak it',
+      );
       return false;
     }
 
@@ -228,11 +237,15 @@ class ProtocolVersionStore {
   /// entry. Entries are dropped rather than repaired: an assertion whose shape
   /// this build does not recognise cannot be dated, and something that cannot
   /// be dated is not evidence.
+  ///
+  /// A version this build cannot resolve is dropped here too, for the same
+  /// reason [record] refuses one — an entry written by a build that spoke more
+  /// versions than this one must not anchor it to a number it cannot act on.
   VersionAssertion? _decode(Object? value) {
     if (value is! Map) return null;
 
     final version = _asInt(value['v']);
-    if (version == null || version < 1) return null;
+    if (version == null || tryResolveTransport(version) == null) return null;
 
     final seconds = _asInt(value['t']);
     return VersionAssertion(

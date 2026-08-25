@@ -115,6 +115,9 @@ class SubscriptionManager {
   /// The event's own `created_at` is what dates the assertion. It is signed,
   /// so a relay can replay this event but cannot make the copy it replays look
   /// newer than the one it is trying to displace.
+  ///
+  /// A version this build cannot resolve is dropped by the store itself — see
+  /// [ProtocolVersionStore.record].
   void _recordAdvertisedProtocolVersion(NostrEvent event) {
     try {
       final version = event.protocolVersion;

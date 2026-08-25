@@ -30,6 +30,34 @@ void main() {
     });
   });
 
+  // Callers that need to know whether a version is one this build understands
+  // ask here rather than hardcoding the set, so the two cannot drift apart as
+  // versions are added.
+  group('tryResolveTransport', () {
+    test('names the transport for a version this client speaks', () {
+      expect(tryResolveTransport(1), Transport.giftWrap);
+      expect(tryResolveTransport(2), Transport.nip44);
+    });
+
+    test('has no answer for a version this client does not speak', () {
+      expect(tryResolveTransport(3), isNull);
+      expect(tryResolveTransport(99), isNull);
+      expect(tryResolveTransport(0), isNull);
+      expect(tryResolveTransport(-1), isNull);
+    });
+
+    test('has no answer when there is no version at all', () {
+      expect(tryResolveTransport(null), isNull);
+    });
+
+    // The distinction resolveTransport erases: it answers kDefaultTransport for
+    // both, and only logs for the second.
+    test('separates "nothing advertised" from "unsupported"', () {
+      expect(resolveTransport(null), resolveTransport(3));
+      expect(tryResolveTransport(null), tryResolveTransport(3));
+    });
+  });
+
   group('anchoredProtocolVersion', () {
     test('knows nothing when neither source knows anything', () {
       expect(anchoredProtocolVersion(null, null), isNull);

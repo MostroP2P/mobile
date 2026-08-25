@@ -56,19 +56,33 @@ const int kLegacyProtocolVersion = 1;
 /// transport from an assertion older than one this client has already
 /// verified.
 Transport resolveTransport(int? protocolVersion) {
+  final resolved = tryResolveTransport(protocolVersion);
+  if (resolved != null) return resolved;
+
+  if (protocolVersion != null) {
+    logger.w(
+      'Unsupported protocol_version $protocolVersion; '
+      'falling back to $kDefaultTransport',
+    );
+  }
+  return kDefaultTransport;
+}
+
+/// The transport [protocolVersion] names, or null when this client does not
+/// speak it — including when there is no version to resolve at all.
+///
+/// [resolveTransport] is this with the safe default applied. Callers that need
+/// to know whether a version is one this build understands, rather than what to
+/// do about it, should ask here: deriving that from the resolver keeps the two
+/// from drifting as versions are added.
+Transport? tryResolveTransport(int? protocolVersion) {
   switch (protocolVersion) {
     case 1:
       return Transport.giftWrap;
     case 2:
       return Transport.nip44;
-    case null:
-      return kDefaultTransport;
     default:
-      logger.w(
-        'Unsupported protocol_version $protocolVersion; '
-        'falling back to $kDefaultTransport',
-      );
-      return kDefaultTransport;
+      return null;
   }
 }
 

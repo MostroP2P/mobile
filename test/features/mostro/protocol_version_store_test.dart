@@ -176,6 +176,23 @@ void main() {
       expect(store.record(_nodeA, -1, _at(_migration)), isFalse);
       expect(store.versionFor(_nodeA), isNull);
     });
+
+    // Resolution degrades an unknown version upwards to the safe default, but
+    // the store outlives the info event that carried it. Anchoring to a number
+    // no resolver understands would pin the first client to meet a v3 node at
+    // 3, with no way back to the v2 it actually speaks.
+    test('ignores a version this client does not speak', () {
+      expect(store.record(_nodeA, 3, _at(_migration)), isFalse);
+      expect(store.record(_nodeA, 99, _at(_migration)), isFalse);
+      expect(store.versionFor(_nodeA), isNull);
+    });
+
+    test('an unsupported version does not displace a recorded one', () {
+      store.record(_nodeA, 2, _at(_migration));
+
+      expect(store.record(_nodeA, 3, _at(_rollback)), isFalse);
+      expect(store.versionFor(_nodeA), 2);
+    });
   });
 
   group('ProtocolVersionStore anchor', () {
@@ -357,6 +374,9 @@ void main() {
         // An entry that cannot be dated cannot be weighed against a signed
         // event, so it is not evidence and is dropped like any other.
         'undatable': 2,
+        // Written by a build that spoke more versions than this one. Loading it
+        // would anchor this client to a number it cannot act on.
+        'unspeakable': _entry(3, _migration),
       }));
 
       expect(s.versionFor(_nodeA), 2);
@@ -364,6 +384,7 @@ void main() {
       expect(s.versionFor('another'), isNull);
       expect(s.versionFor('negative'), isNull);
       expect(s.versionFor('undatable'), isNull);
+      expect(s.versionFor('unspeakable'), isNull);
     });
 
     test('accepts numeric strings for both fields', () async {
