@@ -92,10 +92,7 @@ class _NwcPaymentWidgetState extends ConsumerState<NwcPaymentWidget> {
 
     try {
       logger.i('NWC: Paying invoice (${widget.sats} sats)...');
-      final result = await nwcNotifier.payInvoice(
-        widget.lnInvoice,
-        expectedAmountMsats: widget.sats * 1000,
-      );
+      final result = await nwcNotifier.payInvoice(widget.lnInvoice);
 
       if (!mounted) return;
 

@@ -384,20 +384,19 @@ class NwcNotifier extends StateNotifier<NwcState> {
   /// Throws [NwcNotConnectedException] if no wallet is connected.
   /// Throws [NwcResponseException] if the wallet returns an error.
   /// Throws [NwcTimeoutException] if the payment times out.
-  /// [expectedAmountMsats] is sent as NIP-47's optional `amount`, so a wallet
-  /// that honours it refuses anything the invoice asks for beyond what the
-  /// caller intended. Belt and braces: the caller has already reconciled the
-  /// invoice against the order, and not every wallet enforces the field.
-  Future<PayInvoiceResult> payInvoice(
-    String invoice, {
-    int? expectedAmountMsats,
-  }) async {
+  /// The request carries the invoice alone. NIP-47's `amount` is optional and
+  /// wallets do not agree on it: some honour it only for a zero-amount
+  /// invoice and error out when the invoice already encodes a figure, which
+  /// would break every payment here rather than catch a wrong one. The caller
+  /// has already reconciled the invoice against the order's signed terms, so
+  /// the field would add nothing it does not already enforce.
+  Future<PayInvoiceResult> payInvoice(String invoice) async {
     if (_client == null || !_client!.isConnected) {
       throw const NwcNotConnectedException('No wallet connected');
     }
 
     final result = await _client!.payInvoice(
-      PayInvoiceParams(invoice: invoice, amount: expectedAmountMsats),
+      PayInvoiceParams(invoice: invoice),
     );
 
     state = state.copyWith(
