@@ -140,6 +140,56 @@ class MarketCheck {
   }
 }
 
+/// Where the independent market check stands for a settlement.
+///
+/// Four outcomes the screens have to tell apart. Collapsing them to one
+/// nullable [MarketCheck] made three of them indistinguishable from "no gap",
+/// so a rate still in flight, a rate that could not be fetched, and an input
+/// the node had emptied all read to the user as a settlement that had passed
+/// its check.
+enum MarketCheckStatus {
+  /// There is nothing for an outside rate to second-guess: the settlement is
+  /// held to a figure the user agreed to, or the order has not resolved to
+  /// one yet.
+  notApplicable,
+
+  /// The rate has been asked for and has not come back.
+  loading,
+
+  /// The check applies but could not be made — no rate, or an input the node
+  /// publishes that arrived empty or unreadable.
+  unavailable,
+
+  /// The settlement was re-priced. [MarketCheckResult.check] carries the
+  /// comparison.
+  checked,
+}
+
+/// The outcome of [MarketCheckStatus] together with the comparison, if one
+/// was made.
+class MarketCheckResult {
+  final MarketCheckStatus status;
+
+  /// The comparison, present only when [status] is
+  /// [MarketCheckStatus.checked].
+  final MarketCheck? check;
+
+  const MarketCheckResult._(this.status) : check = null;
+
+  static const MarketCheckResult notApplicable =
+      MarketCheckResult._(MarketCheckStatus.notApplicable);
+  static const MarketCheckResult loading =
+      MarketCheckResult._(MarketCheckStatus.loading);
+  static const MarketCheckResult unavailable =
+      MarketCheckResult._(MarketCheckStatus.unavailable);
+
+  const MarketCheckResult.checked(MarketCheck this.check)
+      : status = MarketCheckStatus.checked;
+
+  bool get isLoading => status == MarketCheckStatus.loading;
+  bool get isUnavailable => status == MarketCheckStatus.unavailable;
+}
+
 /// A market gap the user has waved through, tied to the quote they saw.
 ///
 /// The consent is for a pair of figures, not for the screen. A bare flag

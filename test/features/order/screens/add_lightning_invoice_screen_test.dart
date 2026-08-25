@@ -24,7 +24,8 @@ const _orderId = 'order-1';
 
 /// Feeds [marketCheckProvider] so a test can move the quote under a screen
 /// that is already mounted, the way a node republish or a rate refresh does.
-final _marketSource = StateProvider<MarketCheck?>((ref) => null);
+final _marketSource = StateProvider<MarketCheckResult>(
+    (ref) => MarketCheckResult.notApplicable);
 
 /// Holds a fixed [OrderState] without any of the notifier's real machinery.
 class _StubOrderNotifier extends StateNotifier<OrderState>
@@ -68,6 +69,7 @@ Future<void> pumpAddScreen(
   required int? requestedSats,
   int? anchoredSats,
   MarketCheck? market,
+  MarketCheckResult? marketResult,
 }) async {
   final state = OrderState(
     status: Status.waitingBuyerInvoice,
@@ -95,7 +97,11 @@ Future<void> pumpAddScreen(
         nwcProvider.overrideWith((ref) => _StubNwcNotifier()),
         sessionProvider.overrideWith((ref, id) => null),
         anchoredBuyerAmountProvider.overrideWith((ref, id) => anchoredSats),
-        _marketSource.overrideWith((ref) => market),
+        _marketSource.overrideWith((ref) =>
+            marketResult ??
+            (market == null
+                ? MarketCheckResult.notApplicable
+                : MarketCheckResult.checked(market))),
         marketCheckProvider.overrideWith((ref, id) => ref.watch(_marketSource)),
       ],
       child: MaterialApp.router(
@@ -112,11 +118,16 @@ Future<void> pumpAddScreen(
 S _s(WidgetTester tester) => S.of(tester.element(find.byType(Scaffold)))!;
 
 /// Replaces the quote on the mounted screen and lets it rebuild.
-Future<void> moveMarketTo(WidgetTester tester, MarketCheck market) async {
+Future<void> moveMarketTo(WidgetTester tester, MarketCheck market) =>
+    moveMarketResultTo(tester, MarketCheckResult.checked(market));
+
+/// Replaces the whole check outcome on the mounted screen and lets it rebuild.
+Future<void> moveMarketResultTo(
+    WidgetTester tester, MarketCheckResult result) async {
   final container = ProviderScope.containerOf(
     tester.element(find.byType(AddLightningInvoiceScreen)),
   );
-  container.read(_marketSource.notifier).state = market;
+  container.read(_marketSource.notifier).state = result;
   await tester.pump();
 }
 
@@ -224,6 +235,44 @@ void main() {
       final s = _s(tester);
       expect(find.byType(AddLightningInvoiceWidget), findsOneWidget);
       expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+    });
+
+    testWidgets('holds the invoice flow while the rate is still in flight',
+        (tester) async {
+      await pumpAddScreen(
+        tester,
+        requestedSats: 99700,
+        anchoredSats: 99700,
+        marketResult: MarketCheckResult.loading,
+      );
+
+      expect(find.byType(AddLightningInvoiceWidget), findsNothing);
+      expect(find.text(_s(tester).invoiceCheckingMarketRate), findsOneWidget);
+
+      await moveMarketResultTo(
+        tester,
+        const MarketCheckResult.checked(MarketCheck(
+          quotedSats: 100100,
+          settledSats: 100000,
+          deviation: 0.001,
+        )),
+      );
+
+      expect(find.byType(AddLightningInvoiceWidget), findsOneWidget);
+    });
+
+    testWidgets('says so when the rate could not be had, without refusing',
+        (tester) async {
+      await pumpAddScreen(
+        tester,
+        requestedSats: 99700,
+        anchoredSats: 99700,
+        marketResult: MarketCheckResult.unavailable,
+      );
+
+      final s = _s(tester);
+      expect(find.text(s.invoiceMarketRateUnavailableTitle), findsOneWidget);
+      expect(find.byType(AddLightningInvoiceWidget), findsOneWidget);
     });
 
     testWidgets('does not carry an override onto a quote that has changed',

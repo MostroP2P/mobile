@@ -8,6 +8,8 @@ import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/order/providers/market_check_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/services/exchange_service.dart';
+import 'package:mostro_mobile/shared/utils/market_quote.dart';
 
 import '../../../mocks.mocks.dart';
 
@@ -67,6 +69,12 @@ void main() {
           .overrideWith((ref, code) async => independentRate),
     ]);
     addTearDown(container.dispose);
+
+    // Both providers are autoDispose now, so a bare read would build and tear
+    // down an instance per call and restart the rate request every time. A
+    // live listener is what a mounted screen is.
+    container.listen(marketCheckProvider(_orderId), (_, __) {},
+        fireImmediately: true);
   }
 
   /// Publishes [event] and lets the provider chain settle on it.
@@ -94,16 +102,17 @@ void main() {
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent());
 
-      final check = container.read(marketCheckProvider(_orderId))!;
-      expect(check.quotedSats, 200000);
-      expect(check.isOffMarket, isFalse);
+      final result = container.read(marketCheckProvider(_orderId));
+      expect(result.status, MarketCheckStatus.checked);
+      expect(result.check!.quotedSats, 200000);
+      expect(result.check!.isOffMarket, isFalse);
     });
 
     test('catches the node shaving the settlement', () async {
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent(amount: '180000'));
 
-      final check = container.read(marketCheckProvider(_orderId))!;
+      final check = container.read(marketCheckProvider(_orderId)).check!;
       expect(check.isOffMarket, isTrue);
       expect(check.isBelowMarket, isTrue);
       expect(check.settledSats, 180000);
@@ -113,7 +122,7 @@ void main() {
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent(amount: '180000', premium: '10'));
 
-      expect(container.read(marketCheckProvider(_orderId))!.isOffMarket,
+      expect(container.read(marketCheckProvider(_orderId)).check!.isOffMarket,
           isFalse);
     });
 
@@ -126,7 +135,8 @@ void main() {
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent(amount: '180000'));
 
-      expect(container.read(marketCheckProvider(_orderId)), isNull);
+      expect(container.read(marketCheckProvider(_orderId)).status,
+          MarketCheckStatus.notApplicable);
     });
 
     test('skips a session written before pinning existed', () async {
@@ -141,7 +151,8 @@ void main() {
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent(amount: '180000'));
 
-      expect(container.read(marketCheckProvider(_orderId)), isNull);
+      expect(container.read(marketCheckProvider(_orderId)).status,
+          MarketCheckStatus.notApplicable);
     });
 
     test('skips an order with no session of its own', () async {
@@ -151,7 +162,8 @@ void main() {
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent(amount: '180000'));
 
-      expect(container.read(marketCheckProvider(_orderId)), isNull);
+      expect(container.read(marketCheckProvider(_orderId)).status,
+          MarketCheckStatus.notApplicable);
     });
 
     test('skips a range order that has not been resolved to one figure',
@@ -159,38 +171,130 @@ void main() {
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent(fiat: const ['fa', '50', '200']));
 
-      expect(container.read(marketCheckProvider(_orderId)), isNull);
+      expect(container.read(marketCheckProvider(_orderId)).status,
+          MarketCheckStatus.notApplicable);
     });
 
-    test('skips when the independent rate cannot be had', () async {
+    test('reports a rate that cannot be had as a check it could not make',
+        () async {
+      // Not the same as a settlement that passed: the screens say so rather
+      // than opening the flow on silence.
       independentRate = null;
       build();
 
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent(amount: '180000'));
 
-      expect(container.read(marketCheckProvider(_orderId)), isNull);
+      expect(container.read(marketCheckProvider(_orderId)).status,
+          MarketCheckStatus.unavailable);
+    });
+
+    test('reports an empty currency tag as a check it could not make',
+        () async {
+      // The node publishes this tag and can empty it, so silence here would
+      // be a state it can put the screen into.
+      container.read(marketCheckProvider(_orderId));
+      await publish(_orderEvent(currency: ''));
+
+      expect(container.read(marketCheckProvider(_orderId)).status,
+          MarketCheckStatus.unavailable);
     });
 
     test('skips before the order event has arrived', () {
-      expect(container.read(marketCheckProvider(_orderId)), isNull);
+      expect(container.read(marketCheckProvider(_orderId)).status,
+          MarketCheckStatus.notApplicable);
     });
 
-    test('skips an order whose premium cannot be read', () async {
+    test('reports an unreadable premium as a check it could not make',
+        () async {
       // Quoting an unreadable premium as zero would misprice the order by
       // exactly the premium and turn an honest trade into a refusal.
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent(amount: '180000', premium: 'not-a-number'));
 
-      expect(container.read(marketCheckProvider(_orderId)), isNull);
+      expect(container.read(marketCheckProvider(_orderId)).status,
+          MarketCheckStatus.unavailable);
     });
 
     test('treats an absent premium as zero', () async {
       container.read(marketCheckProvider(_orderId));
       await publish(_orderEvent(premium: ''));
 
-      final check = container.read(marketCheckProvider(_orderId))!;
+      final check = container.read(marketCheckProvider(_orderId)).check!;
       expect(check.quotedSats, 200000);
     });
+
+    test('reports a rate still in flight as loading, not as no gap', () async {
+      // The gap the finding describes: a request that has not come back read
+      // the same as a settlement priced correctly, so the screens opened
+      // before the check had an answer.
+      final rate = Completer<double?>();
+      container = ProviderContainer(overrides: [
+        orderRepositoryProvider.overrideWithValue(repository),
+        sessionProvider
+            .overrideWith((ref, id) => id == _orderId ? session : null),
+        independentFiatPerBtcProvider.overrideWith((ref, code) => rate.future),
+      ]);
+      addTearDown(container.dispose);
+      container.listen(marketCheckProvider(_orderId), (_, __) {},
+          fireImmediately: true);
+
+      orderEvents.add([_orderEvent(amount: '180000')]);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(container.read(marketCheckProvider(_orderId)).status,
+          MarketCheckStatus.loading);
+
+      rate.complete(50000);
+      await Future<void>.delayed(Duration.zero);
+
+      final settled = container.read(marketCheckProvider(_orderId));
+      expect(settled.status, MarketCheckStatus.checked);
+      expect(settled.check!.isOffMarket, isTrue);
+    });
   });
+
+  group('the independent rate', () {
+    test('is fetched again for a later settlement rather than reused', () async {
+      // Not autoDispose, the first rate a process ever fetched went on
+      // pricing every trade after it, however many hours later.
+      var fetches = 0;
+      final container = ProviderContainer(overrides: [
+        independentExchangeServiceProvider
+            .overrideWithValue(_CountingExchangeService(() => fetches++)),
+      ]);
+      addTearDown(container.dispose);
+
+      final first = container.listen(
+        independentFiatPerBtcProvider('USD'),
+        (_, __) {},
+      );
+      await container.read(independentFiatPerBtcProvider('USD').future);
+      expect(fetches, 1);
+
+      // The settlement screen goes away, and with it the last listener.
+      first.close();
+      await Future<void>.delayed(Duration.zero);
+
+      container.listen(independentFiatPerBtcProvider('USD'), (_, __) {});
+      await container.read(independentFiatPerBtcProvider('USD').future);
+      expect(fetches, 2);
+    });
+  });
+}
+
+/// Counts how many times a rate is actually asked for.
+class _CountingExchangeService implements ExchangeService {
+  _CountingExchangeService(this.onFetch);
+
+  final void Function() onFetch;
+
+  @override
+  Future<double> getExchangeRate(String from, String to) async {
+    onFetch();
+    return 50000;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
 }

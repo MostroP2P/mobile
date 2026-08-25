@@ -102,16 +102,29 @@ class _PayLightningInvoiceScreenState
     // so the checks above only establish that its own figures agree. Re-price
     // it against a rate the node does not control.
     final market = ref.watch(marketCheckProvider(widget.orderId));
-    final offMarket = !blocked && (market?.isOffMarket ?? false);
+    final check = market.check;
+    final offMarket = !blocked && (check?.isOffMarket ?? false);
+
+    // A rate still in flight is not a settlement that has passed its check.
+    // Hold the pay button until it lands rather than exposing it and
+    // withdrawing it a moment later.
+    final marketPending = !blocked && market.isLoading;
+
+    // A check that applies and could not be made is said out loud, on the
+    // same terms as an amount whose signed terms never arrived. It does not
+    // refuse: an unreachable third party is not evidence against a
+    // settlement, and refusing on it would hand anyone who can break that
+    // request a way to stop honest trades.
+    final marketUnavailable = !blocked && market.isUnavailable;
 
     // Paying the hold invoice is always the seller's side of the trade. A gap
     // that runs against them is refused until they say otherwise, since the
     // quote is the only protection a market-price settlement has; a gap in
     // their favour is worth naming and not worth stopping.
-    final marketOverridden = market != null &&
-        (_marketOverride?.covers(widget.orderId, market) ?? false);
+    final marketOverridden = check != null &&
+        (_marketOverride?.covers(widget.orderId, check) ?? false);
     final marketBlocked =
-        offMarket && !marketOverridden && market!.isAdverseTo(Role.seller);
+        offMarket && !marketOverridden && check!.isAdverseTo(Role.seller);
     final marketCaution = offMarket && !marketBlocked;
     final fiatAmount = orderState.order?.fiatAmount.toString() ?? '0';
     final fiatCode = orderState.order?.fiatCode ?? '';
@@ -167,13 +180,37 @@ class _PayLightningInvoiceScreenState
               InvoiceNotice.caution(
                 title: S.of(context)!.invoiceOffMarketTitle,
                 body: S.of(context)!.invoiceOffMarketBody(
-                      market!.settledSats.toString(),
-                      market.quotedSats.toString(),
+                      check!.settledSats.toString(),
+                      check.quotedSats.toString(),
                     ),
               ),
               const SizedBox(height: 16),
             ],
-            if (blocked) ...[
+            if (marketUnavailable) ...[
+              InvoiceNotice.caution(
+                title: S.of(context)!.invoiceMarketRateUnavailableTitle,
+                body: S.of(context)!.invoiceMarketRateUnavailableBody,
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (marketPending) ...[
+              header,
+              const SizedBox(height: 32),
+              Center(
+                child: Column(
+                  children: [
+                    const CircularProgressIndicator(
+                        color: AppTheme.mostroGreen),
+                    const SizedBox(height: 16),
+                    Text(
+                      S.of(context)!.invoiceCheckingMarketRate,
+                      style: TextStyle(
+                          color: AppTheme.cream1.withValues(alpha: 0.7)),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (blocked) ...[
               header,
               const SizedBox(height: 24),
               _InvoiceTermsNotice(
@@ -198,8 +235,8 @@ class _PayLightningInvoiceScreenState
               InvoiceNotice.refusal(
                 title: S.of(context)!.invoiceOffMarketTitle,
                 body: S.of(context)!.invoiceOffMarketBlockedBody(
-                      market.settledSats.toString(),
-                      market.quotedSats.toString(),
+                      check.settledSats.toString(),
+                      check.quotedSats.toString(),
                     ),
               ),
               const SizedBox(height: 20),
@@ -218,7 +255,7 @@ class _PayLightningInvoiceScreenState
                   TextButton(
                     onPressed: () =>
                         setState(() => _marketOverride =
-                            MarketOverride.of(widget.orderId, market)),
+                            MarketOverride.of(widget.orderId, check)),
                     child: Text(S.of(context)!.invoiceContinueAnyway),
                   ),
                 ],

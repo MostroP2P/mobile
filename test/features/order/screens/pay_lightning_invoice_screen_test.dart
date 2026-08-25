@@ -23,7 +23,8 @@ const _orderId = 'order-1';
 
 /// Feeds [marketCheckProvider] so a test can move the quote under a screen
 /// that is already mounted, the way a node republish or a rate refresh does.
-final _marketSource = StateProvider<MarketCheck?>((ref) => null);
+final _marketSource = StateProvider<MarketCheckResult>(
+    (ref) => MarketCheckResult.notApplicable);
 
 /// A data part long enough to look real; only the prefix is read.
 const _data = 'pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfq';
@@ -62,6 +63,7 @@ Future<void> pumpPayScreen(
   required int messageSats,
   int? anchoredSats,
   MarketCheck? market,
+  MarketCheckResult? marketResult,
   bool cancelFails = false,
 }) async {
   final state = OrderState(
@@ -103,7 +105,11 @@ Future<void> pumpPayScreen(
         nwcProvider.overrideWith((ref) => _StubNwcNotifier()),
         sessionProvider.overrideWith((ref, id) => null),
         anchoredSellerAmountProvider.overrideWith((ref, id) => anchoredSats),
-        _marketSource.overrideWith((ref) => market),
+        _marketSource.overrideWith((ref) =>
+            marketResult ??
+            (market == null
+                ? MarketCheckResult.notApplicable
+                : MarketCheckResult.checked(market))),
         marketCheckProvider.overrideWith((ref, id) => ref.watch(_marketSource)),
       ],
       child: MaterialApp.router(
@@ -120,11 +126,16 @@ S _s(WidgetTester tester) =>
     S.of(tester.element(find.byType(PayLightningInvoiceScreen)))!;
 
 /// Replaces the quote on the mounted screen and lets it rebuild.
-Future<void> moveMarketTo(WidgetTester tester, MarketCheck market) async {
+Future<void> moveMarketTo(WidgetTester tester, MarketCheck market) =>
+    moveMarketResultTo(tester, MarketCheckResult.checked(market));
+
+/// Replaces the whole check outcome on the mounted screen and lets it rebuild.
+Future<void> moveMarketResultTo(
+    WidgetTester tester, MarketCheckResult result) async {
   final container = ProviderScope.containerOf(
     tester.element(find.byType(PayLightningInvoiceScreen)),
   );
-  container.read(_marketSource.notifier).state = market;
+  container.read(_marketSource.notifier).state = result;
   await tester.pump();
 }
 
@@ -293,6 +304,49 @@ void main() {
       expect(find.byType(PayLightningInvoiceWidget), findsOneWidget);
       // The gap does not stop being true once it has been accepted.
       expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+    });
+
+    testWidgets('holds the pay button while the rate is still in flight',
+        (tester) async {
+      await pumpPayScreen(
+        tester,
+        lnInvoice: invoiceFor(100000),
+        messageSats: 100000,
+        anchoredSats: 100000,
+        marketResult: MarketCheckResult.loading,
+      );
+
+      expect(find.byType(PayLightningInvoiceWidget), findsNothing);
+      expect(find.text(_s(tester).invoiceCheckingMarketRate), findsOneWidget);
+
+      // The answer lands and the flow opens on it.
+      await moveMarketResultTo(
+        tester,
+        const MarketCheckResult.checked(MarketCheck(
+          quotedSats: 100100,
+          settledSats: 100000,
+          deviation: 0.001,
+        )),
+      );
+
+      expect(find.byType(PayLightningInvoiceWidget), findsOneWidget);
+    });
+
+    testWidgets('says so when the rate could not be had, without refusing',
+        (tester) async {
+      // An unreachable third party is not evidence against a settlement, so
+      // it is named rather than used to stop the trade.
+      await pumpPayScreen(
+        tester,
+        lnInvoice: invoiceFor(100000),
+        messageSats: 100000,
+        anchoredSats: 100000,
+        marketResult: MarketCheckResult.unavailable,
+      );
+
+      final s = _s(tester);
+      expect(find.text(s.invoiceMarketRateUnavailableTitle), findsOneWidget);
+      expect(find.byType(PayLightningInvoiceWidget), findsOneWidget);
     });
 
     testWidgets('does not carry an override onto a quote that has changed',

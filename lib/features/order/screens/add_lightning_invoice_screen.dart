@@ -117,19 +117,32 @@ class _AddLightningInvoiceScreenState
         // take, so the check above only establishes that its own figures
         // agree. Re-price it against a rate the node does not control.
         final market = ref.watch(marketCheckProvider(orderId));
-        final offMarket = !blocked && (market?.isOffMarket ?? false);
+        final check = market.check;
+        final offMarket = !blocked && (check?.isOffMarket ?? false);
+
+        // A rate still in flight is not a settlement that has passed its
+        // check. Hold the flows until it lands rather than opening them and
+        // correcting afterwards.
+        final marketPending = !blocked && market.isLoading;
+
+        // A check that applies and could not be made is said out loud, on the
+        // same terms as an amount whose signed terms never arrived. It does
+        // not refuse: an unreachable third party is not evidence against a
+        // settlement, and refusing on it would hand anyone who can break that
+        // request a way to stop honest trades.
+        final marketUnavailable = !blocked && market.isUnavailable;
 
         // Adding an invoice is always the buyer's side of the trade. A payout
         // below the quote is the direction that shorts them, and the quote is
         // the only protection a market-price settlement has, so it is refused
         // until they say otherwise.
         final marketOverridden =
-            market != null && (_marketOverride?.covers(orderId, market) ?? false);
+            check != null && (_marketOverride?.covers(orderId, check) ?? false);
         final marketBlocked =
-            offMarket && !marketOverridden && market!.isAdverseTo(Role.buyer);
+            offMarket && !marketOverridden && check!.isAdverseTo(Role.buyer);
         final marketCaution = offMarket && !marketBlocked;
 
-        final headerBlock = (unverified || marketCaution)
+        final headerBlock = (unverified || marketCaution || marketUnavailable)
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -146,9 +159,17 @@ class _AddLightningInvoiceScreenState
                     InvoiceNotice.caution(
                       title: S.of(context)!.invoiceOffMarketTitle,
                       body: S.of(context)!.invoiceOffMarketBody(
-                            market!.settledSats.toString(),
-                            market.quotedSats.toString(),
+                            check!.settledSats.toString(),
+                            check.quotedSats.toString(),
                           ),
+                    ),
+                  ],
+                  if (marketUnavailable) ...[
+                    const SizedBox(height: 16),
+                    InvoiceNotice.caution(
+                      title:
+                          S.of(context)!.invoiceMarketRateUnavailableTitle,
+                      body: S.of(context)!.invoiceMarketRateUnavailableBody,
                     ),
                   ],
                 ],
@@ -174,12 +195,14 @@ class _AddLightningInvoiceScreenState
               16,
               16 + MediaQuery.of(context).viewPadding.bottom,
             ),
-            child: marketBlocked
+            child: marketPending
+                ? _buildMarketPendingFlow(header: headerBlock)
+                : marketBlocked
                 ? _buildMarketBlockedFlow(
                     header: headerBlock,
                     orderId: orderId,
-                    settledSats: market.settledSats,
-                    quotedSats: market.quotedSats,
+                    settledSats: check.settledSats,
+                    quotedSats: check.quotedSats,
                   )
                 : blocked
                     ? _buildBlockedFlow(
@@ -297,6 +320,33 @@ class _AddLightningInvoiceScreenState
   /// A refusal with a way past it: the quote comes from a third party and can
   /// be stale or simply disagree, so the screen states the gap and leaves the
   /// decision with the user rather than making it for them.
+  /// Shown while the independent rate is still in flight.
+  ///
+  /// The check is the only protection a market-price settlement has, and it
+  /// has not come back yet. Opening the invoice flows here and withdrawing
+  /// them a moment later would be worse than waiting for the answer.
+  Widget _buildMarketPendingFlow({required Widget header}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        header,
+        const SizedBox(height: 32),
+        Center(
+          child: Column(
+            children: [
+              const CircularProgressIndicator(color: AppTheme.mostroGreen),
+              const SizedBox(height: 16),
+              Text(
+                S.of(context)!.invoiceCheckingMarketRate,
+                style: TextStyle(color: AppTheme.cream1.withValues(alpha: 0.7)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildMarketBlockedFlow({
     required Widget header,
     required String orderId,
