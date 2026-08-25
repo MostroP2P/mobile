@@ -35,11 +35,11 @@ class Session {
   /// Null for a market-price or range order, whose sats figure the node only
   /// resolves after the take — there is nothing to pin at the moment of
   /// commitment, and those orders fall back to the live events.
-  int? pinnedAmountSats;
+  late final int? pinnedAmountSats;
 
   /// The node's fee rate when this session committed, on the same terms as
   /// [pinnedAmountSats].
-  double? pinnedFeeRate;
+  late final double? pinnedFeeRate;
 
   /// The currency, fiat figure and premium this session committed to.
   ///
@@ -52,11 +52,14 @@ class Session {
   ///
   /// Null where there was nothing to pin — a session written before pinning
   /// existed, or an order event that had not arrived at commitment.
-  String? pinnedFiatCode;
-  int? pinnedFiatAmount;
-  double? pinnedPremium;
+  late final String? pinnedFiatCode;
+  late final int? pinnedFiatAmount;
+  late final double? pinnedPremium;
 
   /// Whether the terms were pinned when this session committed.
+  ///
+  /// Together with the figures above: all of it is written once, in the
+  /// constructor body, and never moved afterwards. That is what a pin is.
   ///
   /// Separates a session that pinned whatever there was to pin — possibly
   /// nothing, for a market-price order with no resolved sats, or for a

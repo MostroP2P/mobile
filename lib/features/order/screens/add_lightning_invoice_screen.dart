@@ -132,14 +132,24 @@ class _AddLightningInvoiceScreenState
         // request a way to stop honest trades.
         final marketUnavailable = !blocked && market.isUnavailable;
 
+        // A re-prompt after a failed payout can arrive hours after the order
+        // was priced, and bitcoin moves further than the tolerance in that
+        // time. The gap is then real and the node did nothing to cause it, so
+        // refusing here would strand the user on the most fragile path in the
+        // flow — the one where the trade is already half-settled and the only
+        // way out of a refusal is to cancel. The gap is still named.
+        final isPayoutRetry = orderState.paymentFailed != null;
+
         // Adding an invoice is always the buyer's side of the trade. A payout
         // below the quote is the direction that shorts them, and the quote is
         // the only protection a market-price settlement has, so it is refused
         // until they say otherwise.
         final marketOverridden =
             check != null && (_marketOverride?.covers(orderId, check) ?? false);
-        final marketBlocked =
-            offMarket && !marketOverridden && check!.isAdverseTo(Role.buyer);
+        final marketBlocked = offMarket &&
+            !marketOverridden &&
+            !isPayoutRetry &&
+            check!.isAdverseTo(Role.buyer);
         final marketCaution = offMarket && !marketBlocked;
 
         final headerBlock = (unverified || marketCaution || marketUnavailable)
@@ -195,46 +205,49 @@ class _AddLightningInvoiceScreenState
               16,
               16 + MediaQuery.of(context).viewPadding.bottom,
             ),
-            child: marketPending
-                ? _buildMarketPendingFlow(header: headerBlock)
-                : marketBlocked
-                ? _buildMarketBlockedFlow(
-                    header: headerBlock,
-                    orderId: orderId,
-                    settledSats: check.settledSats,
-                    quotedSats: check.quotedSats,
-                  )
-                : blocked
-                    ? _buildBlockedFlow(
-                        header: headerBlock,
-                        requestedSats: amount,
-                        expectedSats: expectedSats,
-                      )
-                    : showLnAddressConfirmation
-                        ? _buildLnAddressConfirmation(header: headerBlock)
-                        : showNwcInvoice
-                            ? _buildNwcInvoiceFlow(
-                                header: headerBlock,
-                                amount: amount ?? 0,
-                                orderIdValue: orderIdValue,
-                              )
-                            : AddLightningInvoiceWidget(
-                            controller: invoiceController,
-                            onSubmit: () async {
-                              final invoice = invoiceController.text.trim();
-                              if (invoice.isNotEmpty) {
-                                await _submitInvoice(invoice, amount);
-                              }
-                            },
-                            onCancel: () async {
-                              await _cancelOrder();
-                            },
-                            amount: amount ?? 0,
-                            fiatAmount: fiatAmount,
-                            fiatCode: fiatCode,
-                            orderId: orderIdValue,
-                            header: headerBlock,
-                          ),
+            // Ordered by precedence: a refusal outranks a caution, and both
+            // outrank whichever invoice flow the user would otherwise get.
+            // Written out rather than nested as conditionals so adding a gate
+            // does not re-indent the ones below it.
+            child: switch (true) {
+              _ when marketPending =>
+                _buildMarketPendingFlow(header: headerBlock),
+              _ when marketBlocked => _buildMarketBlockedFlow(
+                  header: headerBlock,
+                  orderId: orderId,
+                  settledSats: check.settledSats,
+                  quotedSats: check.quotedSats,
+                ),
+              _ when blocked => _buildBlockedFlow(
+                  header: headerBlock,
+                  requestedSats: amount,
+                  expectedSats: expectedSats,
+                ),
+              _ when showLnAddressConfirmation =>
+                _buildLnAddressConfirmation(header: headerBlock),
+              _ when showNwcInvoice => _buildNwcInvoiceFlow(
+                  header: headerBlock,
+                  amount: amount ?? 0,
+                  orderIdValue: orderIdValue,
+                ),
+              _ => AddLightningInvoiceWidget(
+                  controller: invoiceController,
+                  onSubmit: () async {
+                    final invoice = invoiceController.text.trim();
+                    if (invoice.isNotEmpty) {
+                      await _submitInvoice(invoice, amount);
+                    }
+                  },
+                  onCancel: () async {
+                    await _cancelOrder();
+                  },
+                  amount: amount ?? 0,
+                  fiatAmount: fiatAmount,
+                  fiatCode: fiatCode,
+                  orderId: orderIdValue,
+                  header: headerBlock,
+                ),
+            },
           ),
         );
       },
@@ -309,17 +322,6 @@ class _AddLightningInvoiceScreenState
     );
   }
 
-  /// Shown instead of every invoice flow when the amount asked for is not the
-  /// amount this order should pay out.
-  ///
-  /// A refusal rather than a warning: an invoice minted here is what the
-  /// trade settles at, and there is no confirming a figure the signed terms
-  /// contradict.
-  /// Shown when the settlement sits off the market rate in the node's favour.
-  ///
-  /// A refusal with a way past it: the quote comes from a third party and can
-  /// be stale or simply disagree, so the screen states the gap and leaves the
-  /// decision with the user rather than making it for them.
   /// Shown while the independent rate is still in flight.
   ///
   /// The check is the only protection a market-price settlement has, and it
@@ -347,6 +349,11 @@ class _AddLightningInvoiceScreenState
     );
   }
 
+  /// Shown when the settlement sits off the market rate in the node's favour.
+  ///
+  /// A refusal with a way past it: the quote comes from a third party and can
+  /// be stale or simply disagree, so the screen states the gap and leaves the
+  /// decision with the user rather than making it for them.
   Widget _buildMarketBlockedFlow({
     required Widget header,
     required String orderId,
@@ -394,6 +401,12 @@ class _AddLightningInvoiceScreenState
     );
   }
 
+  /// Shown instead of every invoice flow when the amount asked for is not the
+  /// amount this order should pay out.
+  ///
+  /// A refusal rather than a warning: an invoice minted here is what the
+  /// trade settles at, and there is no confirming a figure the signed terms
+  /// contradict.
   Widget _buildBlockedFlow({
     required Widget header,
     required int requestedSats,

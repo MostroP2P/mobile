@@ -116,11 +116,17 @@ class MockSessionNotifier extends SessionNotifier {
       keyIndex: 0,
       fullPrivacy: false,
       startTime: DateTime.now(),
+      // Pins go through the constructor: they are written once and never
+      // moved, which is what the real notifier does too.
+      pinnedAmountSats: pinnedAmountSats,
+      pinnedFeeRate: pinnedFeeRate,
+      pinnedFiatCode: pinnedFiatCode,
+      pinnedFiatAmount: pinnedFiatAmount,
+      pinnedPremium: pinnedPremium,
+      termsPinned: true,
     );
     mockSession.orderId = orderId;
     mockSession.role = role;
-    mockSession.pinnedAmountSats = pinnedAmountSats;
-    mockSession.pinnedFeeRate = pinnedFeeRate;
     return mockSession;
   }
 }

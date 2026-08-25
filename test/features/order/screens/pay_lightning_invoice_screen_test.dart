@@ -306,6 +306,24 @@ void main() {
       expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
     });
 
+    testWidgets('cautions rather than refusing when the order carries no amount',
+        (tester) async {
+      // Nothing about the invoice contradicts the order; there is simply no
+      // order figure to check it against. Refusing there would make an absent
+      // term stronger evidence than a disagreeing one.
+      await pumpPayScreen(
+        tester,
+        lnInvoice: invoiceFor(100000),
+        messageSats: 0,
+        anchoredSats: null,
+      );
+
+      final s = _s(tester);
+      expect(refusalNotice(tester), findsNothing);
+      expect(find.text(s.invoiceTermsUnverifiedTitle), findsOneWidget);
+      expect(find.byType(PayLightningInvoiceWidget), findsOneWidget);
+    });
+
     testWidgets('holds the pay button while the rate is still in flight',
         (tester) async {
       await pumpPayScreen(

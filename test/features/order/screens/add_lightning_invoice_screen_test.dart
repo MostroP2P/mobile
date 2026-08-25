@@ -7,6 +7,7 @@ import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/payment_failed.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/notifiers/order_notifier.dart';
 import 'package:mostro_mobile/features/order/providers/market_check_provider.dart';
@@ -70,11 +71,16 @@ Future<void> pumpAddScreen(
   int? anchoredSats,
   MarketCheck? market,
   MarketCheckResult? marketResult,
+  bool payoutFailed = false,
 }) async {
   final state = OrderState(
     status: Status.waitingBuyerInvoice,
     action: mostro.Action.addInvoice,
     order: _request(requestedSats)?.getPayload<Order>(),
+    // Retained from the earlier payment-failed message, which is what marks
+    // this prompt as a retry rather than the first one.
+    paymentFailed:
+        payoutFailed ? PaymentFailed(paymentAttempts: 1, paymentRetriesInterval: 60) : null,
   );
 
   final router = GoRouter(
@@ -235,6 +241,30 @@ void main() {
       final s = _s(tester);
       expect(find.byType(AddLightningInvoiceWidget), findsOneWidget);
       expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+    });
+
+    testWidgets('cautions instead of refusing on a payout retry',
+        (tester) async {
+      // The re-prompt after a failed payout arrives hours after the order was
+      // priced, and bitcoin moves further than the tolerance in that time.
+      // Refusing there strands the user on the path where the only way out is
+      // to cancel a half-settled trade.
+      await pumpAddScreen(
+        tester,
+        requestedSats: 99700,
+        anchoredSats: 99700,
+        payoutFailed: true,
+        market: const MarketCheck(
+          quotedSats: 200000,
+          settledSats: 100000,
+          deviation: 0.5,
+        ),
+      );
+
+      final s = _s(tester);
+      expect(find.text(s.invoiceOffMarketTitle), findsOneWidget);
+      expect(find.text(s.invoiceContinueAnyway), findsNothing);
+      expect(find.byType(AddLightningInvoiceWidget), findsOneWidget);
     });
 
     testWidgets('holds the invoice flow while the rate is still in flight',

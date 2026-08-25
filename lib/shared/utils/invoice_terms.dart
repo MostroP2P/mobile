@@ -38,7 +38,19 @@ class InvoiceTerms {
 
   const InvoiceTerms._({this.invoice, this.problem});
 
-  bool get isPayable => problem == null;
+  /// Whether the invoice may be paid from here.
+  ///
+  /// [InvoiceTermsProblem.termsUnknown] is the one problem that qualifies the
+  /// payment rather than refusing it: nothing about the invoice contradicts
+  /// the order, there is simply no order figure to check it against. Refusing
+  /// there would make an absent term stronger evidence than a disagreeing
+  /// one, and it is the same state the rest of the flow reports as a check it
+  /// could not make. The caller says so out loud instead.
+  bool get isPayable =>
+      problem == null || problem == InvoiceTermsProblem.termsUnknown;
+
+  /// Whether the invoice was read but had nothing to be checked against.
+  bool get isUnverifiable => problem == InvoiceTermsProblem.termsUnknown;
 
   /// Satoshis the invoice asks for, from the invoice itself rather than from
   /// the message that carried it. Null when it could not be read.

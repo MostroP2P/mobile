@@ -86,7 +86,11 @@ void main() {
       expect(terms.problem, InvoiceTermsProblem.unreadable);
     });
 
-    test('refuses when the order carries no amount to check against', () {
+    test('reports, without refusing, an order with no amount to check against',
+        () {
+      // Nothing about the invoice contradicts the order, so this qualifies
+      // the payment rather than stopping it: refusing would make an absent
+      // term stronger evidence than a disagreeing one.
       for (final expected in <int?>[null, 0, -1]) {
         final terms = InvoiceTerms.check(
           invoice: invoiceFor(50000),
@@ -95,7 +99,23 @@ void main() {
 
         expect(terms.problem, InvoiceTermsProblem.termsUnknown,
             reason: 'expectedSats: $expected');
+        expect(terms.isUnverifiable, isTrue, reason: 'expectedSats: $expected');
+        expect(terms.isPayable, isTrue, reason: 'expectedSats: $expected');
       }
+    });
+
+    test('refuses every problem that contradicts the order', () {
+      // The distinction the screen rests on: these are disagreements, not
+      // absences.
+      expect(
+        InvoiceTerms.check(invoice: '', expectedSats: 50000).isPayable,
+        isFalse,
+      );
+      expect(
+        InvoiceTerms.check(invoice: invoiceFor(90000), expectedSats: 50000)
+            .isPayable,
+        isFalse,
+      );
     });
 
     test('reads the amount off the invoice, not off the order', () {

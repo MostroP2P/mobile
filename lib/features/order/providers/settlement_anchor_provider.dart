@@ -82,6 +82,25 @@ final nodeFeeRateProvider = Provider<double?>((ref) {
 /// it can change under a trade already in flight. This prefers the rate
 /// pinned when the session committed, on the same terms as
 /// [signedOrderAmountProvider].
+///
+/// Known race, deliberately not papered over. mostrod computes `order.fee`
+/// at take time from `Settings::get_mostro().fee` (`take_sell.rs`,
+/// `take_buy.rs`, `util.rs`), while the client pins what the kind-38385 info
+/// event advertised. If an operator changes the fee and the republished info
+/// event has not reached this client before it takes, the two disagree and
+/// the seller meets a hard refusal on an honest trade, recoverable only by
+/// cancelling. The window is narrow — it needs a fee change and an
+/// unpropagated event at the same moment — but pinning makes the
+/// disagreement permanent for that trade, and it is the worst failure mode
+/// in this flow.
+///
+/// Accepting a second figure derived from the live rate would close it, and
+/// is not done here: that is exactly the shape of "a term the node supplies
+/// after the agreement" that pinning exists to refuse, and it would let a
+/// node raise its fee under a trade already committed. If the race shows up
+/// in the field, the fix belongs on the daemon side — publishing the fee that
+/// applied at take time alongside the order — rather than in a client that
+/// guesses which of two rates it is being held to.
 final orderFeeRateProvider = Provider.family<double?, String>((ref, orderId) {
   final session = ref.watch(sessionProvider(orderId));
 
