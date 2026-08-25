@@ -80,6 +80,16 @@ class TradeDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 // For pending orders created by the user, show creator's reputation
                 if (isPending && isCreator && originalOrder != null) ...[
+                  // Automation readout: this branch replaces the Mostro
+                  // message card, which is where `order.status` normally
+                  // lives, so without it the status disappears from the trade
+                  // detail of the maker's own pending order. Invisible;
+                  // screen readers get the wire status.
+                  const SizedBox(width: 1, height: 1).withAutomationId(
+                    AutomationIds.orderStatus,
+                    merge: false,
+                    label: tradeState.status.value,
+                  ),
                   // TODO: Change this to use `orderPayload` after Order model is updated
                   // with rating information
                   _buildCreatorReputation(context, originalOrder),
