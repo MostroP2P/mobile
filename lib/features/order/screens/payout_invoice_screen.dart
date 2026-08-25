@@ -10,12 +10,23 @@ import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
 import 'package:mostro_mobile/shared/widgets/add_lightning_invoice_widget.dart';
 import 'package:mostro_mobile/shared/widgets/nwc_invoice_widget.dart';
+import 'package:mostro_mobile/features/order/providers/market_check_provider.dart';
+import 'package:mostro_mobile/features/order/providers/settlement_anchor_provider.dart';
+import 'package:mostro_mobile/shared/widgets/invoice_notice.dart';
 
 /// Invoice screen for collecting the sats of a settled order.
 ///
 /// The trade itself is over, so this is not the add-invoice of a take: there is
 /// no counterpart to introduce, no Lightning address shortcut (it may be what
 /// broke the payout in the first place) and nothing left to cancel.
+///
+/// The settlement checks run here too — an invoice minted here is still what
+/// the payout settles at — but every one of them cautions rather than refuses.
+/// Nothing left to cancel cuts both ways: the user has already given up their
+/// side of the trade, the hold invoice is settled, and collecting is all that
+/// remains. A screen that refused to mint would leave them unable to collect
+/// at all, with no path back. Naming the gap is the strongest thing that can
+/// be done here without stranding an honest trade.
 class PayoutInvoiceScreen extends ConsumerStatefulWidget {
   final String orderId;
 
@@ -55,16 +66,78 @@ class _PayoutInvoiceScreenState extends ConsumerState<PayoutInvoiceScreen> {
     final fiatCode = order?.fiatCode ?? '';
     final orderIdValue = order?.id ?? widget.orderId;
 
+    // What the order's signed terms say this payout is worth: the order
+    // amount less the buyer's half of the fee, re-derived rather than taken
+    // from the figure the node put in the message.
+    final expectedSats = ref.watch(anchoredBuyerAmountProvider(widget.orderId));
+    final mismatch =
+        sats > 0 && expectedSats != null && sats != expectedSats;
+
+    // Nothing to re-derive from. The node publishes both inputs and can
+    // withhold either, so silence here would read as a confirmation.
+    final unverified = sats > 0 && expectedSats == null;
+
+    // A market-price order's sats were resolved by the node after the take,
+    // so the check above only establishes that its own figures agree.
+    final market = ref.watch(marketCheckProvider(widget.orderId));
+    final offMarket = market.check?.isOffMarket ?? false;
+    final marketUnavailable = market.isUnavailable;
+
     final nwcState = ref.watch(nwcProvider);
     final showNwcInvoice =
         nwcState.status == NwcStatus.connected && !_manualMode && sats > 0;
 
-    final header = _PayoutHeader(
-      sats: sats,
-      fiatAmount: fiatAmount,
-      fiatCode: fiatCode,
-      orderId: orderIdValue,
-    );
+    final notices = <Widget>[
+      if (mismatch)
+        InvoiceNotice.caution(
+          title: S.of(context)!.payoutAmountMismatchTitle,
+          body: S.of(context)!.payoutAmountMismatchBody(
+                sats.toString(),
+                expectedSats.toString(),
+              ),
+        ),
+      if (unverified)
+        InvoiceNotice.caution(
+          title: S.of(context)!.invoiceTermsUnverifiedTitle,
+          body: S.of(context)!.invoiceTermsUnverifiedBody,
+        ),
+      if (offMarket)
+        InvoiceNotice.caution(
+          title: S.of(context)!.invoiceOffMarketTitle,
+          body: S.of(context)!.invoiceOffMarketBody(
+                market.check!.settledSats.toString(),
+                market.check!.quotedSats.toString(),
+              ),
+        ),
+      if (marketUnavailable)
+        InvoiceNotice.caution(
+          title: S.of(context)!.invoiceMarketRateUnavailableTitle,
+          body: S.of(context)!.invoiceMarketRateUnavailableBody,
+        ),
+    ];
+
+    final header = notices.isEmpty
+        ? _PayoutHeader(
+            sats: sats,
+            fiatAmount: fiatAmount,
+            fiatCode: fiatCode,
+            orderId: orderIdValue,
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _PayoutHeader(
+                sats: sats,
+                fiatAmount: fiatAmount,
+                fiatCode: fiatCode,
+                orderId: orderIdValue,
+              ),
+              for (final notice in notices) ...[
+                const SizedBox(height: 16),
+                notice,
+              ],
+            ],
+          );
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,

@@ -1762,6 +1762,8 @@
     "invoiceNotPayableTitle": "Esta factura no se puede pagar",
     "invoiceTermsUnverifiedTitle": "Monto no verificado",
     "invoiceTermsUnverifiedBody": "No llegaron los términos de la orden que publica el nodo, así que este monto no pudo verificarse contra ellos. Revisalo vos antes de continuar.",
+    "payoutAmountMismatchTitle": "El monto no coincide con la orden",
+    "payoutAmountMismatchBody": "Esta factura sería por {requestedAmount} sats, pero la orden debería pagar {expectedAmount}. Revisalo antes de cobrar.",
     "orderTermsNotStored": "No se pudieron guardar los términos de la orden en este dispositivo, así que no se envió nada. Intentá de nuevo.",
     "invoiceMarketRateUnavailableTitle": "Tasa de mercado no disponible",
     "invoiceMarketRateUnavailableBody": "No se pudo obtener una tasa independiente, así que este monto no se comparó con ninguna. Revisalo vos antes de continuar.",

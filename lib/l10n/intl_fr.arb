@@ -1787,6 +1787,8 @@
     "invoiceNotPayableTitle": "Cette facture ne peut pas être payée",
     "invoiceTermsUnverifiedTitle": "Montant non vérifié",
     "invoiceTermsUnverifiedBody": "Les termes de l’ordre publiés par le nœud ne sont pas arrivés, ce montant n’a donc pas pu être vérifié. Vérifiez-le vous-même avant de continuer.",
+    "payoutAmountMismatchTitle": "Le montant ne correspond pas à l’ordre",
+    "payoutAmountMismatchBody": "Cette facture serait de {requestedAmount} sats, mais l’ordre devrait verser {expectedAmount}. Vérifiez avant d’encaisser.",
     "orderTermsNotStored": "Les termes de l’ordre n’ont pas pu être enregistrés sur cet appareil, rien n’a donc été envoyé. Réessayez.",
     "invoiceMarketRateUnavailableTitle": "Taux du marché indisponible",
     "invoiceMarketRateUnavailableBody": "Un taux indépendant n’a pas pu être obtenu, ce montant n’a donc été comparé à aucun. Vérifiez-le vous-même avant de continuer.",

@@ -143,24 +143,19 @@ class _AddLightningInvoiceScreenState
         // request a way to stop honest trades.
         final marketUnavailable = !blocked && market.isUnavailable;
 
-        // A re-prompt after a failed payout can arrive hours after the order
-        // was priced, and bitcoin moves further than the tolerance in that
-        // time. The gap is then real and the node did nothing to cause it, so
-        // refusing here would strand the user on the most fragile path in the
-        // flow — the one where the trade is already half-settled and the only
-        // way out of a refusal is to cancel. The gap is still named.
-        final isPayoutRetry = orderState.paymentFailed != null;
-
         // Adding an invoice is always the buyer's side of the trade. A payout
         // below the quote is the direction that shorts them, and the quote is
         // the only protection a market-price settlement has, so it is refused
         // until they say otherwise.
+        //
+        // The late paths — a payout retry, and the window between release and
+        // payout — never reach here: a settled order returns PayoutInvoiceScreen
+        // at the top of this build, and that screen cautions instead of
+        // refusing precisely because it has no way out to offer.
         final marketOverridden =
             check != null && (_marketOverride?.covers(orderId, check) ?? false);
-        final marketBlocked = offMarket &&
-            !marketOverridden &&
-            !isPayoutRetry &&
-            check!.isAdverseTo(Role.buyer);
+        final marketBlocked =
+            offMarket && !marketOverridden && check!.isAdverseTo(Role.buyer);
         final marketCaution = offMarket && !marketBlocked;
 
         final headerBlock = (unverified || marketCaution || marketUnavailable)

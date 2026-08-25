@@ -1832,6 +1832,8 @@
     "invoiceNotPayableTitle": "Esta fatura não pode ser paga",
     "invoiceTermsUnverifiedTitle": "Valor não verificado",
     "invoiceTermsUnverifiedBody": "Os termos da ordem publicados pelo nó não chegaram, então este valor não pôde ser verificado. Confira você mesmo antes de continuar.",
+    "payoutAmountMismatchTitle": "O valor não corresponde à ordem",
+    "payoutAmountMismatchBody": "Esta fatura seria de {requestedAmount} sats, mas a ordem deveria pagar {expectedAmount}. Confira antes de receber.",
     "orderTermsNotStored": "Não foi possível salvar os termos da ordem neste dispositivo, então nada foi enviado. Tente novamente.",
     "invoiceMarketRateUnavailableTitle": "Taxa de mercado indisponível",
     "invoiceMarketRateUnavailableBody": "Não foi possível obter uma taxa independente, então este valor não foi comparado com nenhuma. Confira você mesmo antes de continuar.",
