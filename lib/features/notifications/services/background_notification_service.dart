@@ -66,6 +66,40 @@ Future<String?> getNotificationLaunchOrderId() async {
   return null;
 }
 
+/// Payload `type` marking a peer-to-peer (buyer <-> seller) chat message.
+const String peerChatPayloadType = 'peer_chat';
+
+/// Payload `type` marking an admin/solver DM, which belongs to a dispute chat.
+const String adminDmPayloadType = 'admin_dm';
+
+/// Builds the notification payload for a notification about [orderId].
+///
+/// Chat actions get a structured JSON payload so the tap handler can open the
+/// conversation itself; every other action keeps the legacy plain orderId
+/// payload, which resolves to the trade detail screen.
+String buildNotificationPayload({
+  required mostro_action.Action action,
+  required String? orderId,
+  required String? disputeId,
+}) {
+  if (action == mostro_action.Action.chatMessage) {
+    return jsonEncode({
+      'type': peerChatPayloadType,
+      'orderId': orderId,
+    });
+  }
+
+  if (action == mostro_action.Action.sendDm) {
+    return jsonEncode({
+      'type': adminDmPayloadType,
+      'orderId': orderId,
+      'disputeId': disputeId,
+    });
+  }
+
+  return orderId ?? '';
+}
+
 /// Resolves the navigation route from a notification payload string.
 ///
 /// Returns the route path to navigate to. Pure function, no side effects.
@@ -84,7 +118,14 @@ String resolveNotificationRoute(String? payload) {
     final orderId = decoded['orderId'] as String?;
     final disputeId = decoded['disputeId'] as String?;
 
-    if (type == 'admin_dm' && orderId != null) {
+    // Chat notifications open the conversation they belong to.
+    if (type == peerChatPayloadType && orderId != null) {
+      return '/chat_room/$orderId';
+    }
+
+    if (type == adminDmPayloadType && orderId != null) {
+      // Solver (dispute) chat when the session knows its dispute; otherwise
+      // the trade detail is the only place the user can reach it from.
       if (disputeId != null) {
         return '/dispute_details/$disputeId';
       }
@@ -172,14 +213,13 @@ Future<void> showLocalNotification(NostrEvent event) async {
       ),
     );
 
-    // Build payload: JSON for admin DMs, plain orderId for standard notifications
-    final notificationPayload = notificationData.action == mostro_action.Action.sendDm
-        ? jsonEncode({
-            'type': 'admin_dm',
-            'orderId': mostroMessage.id,
-            'disputeId': matchingSession?.disputeId,
-          })
-        : mostroMessage.id;
+    // Build payload: JSON for chat notifications (so the tap opens the
+    // conversation), plain orderId for standard trade notifications.
+    final notificationPayload = buildNotificationPayload(
+      action: notificationData.action,
+      orderId: mostroMessage.id,
+      disputeId: matchingSession?.disputeId,
+    );
 
     // Unique id per event so each notification is independent: dismissing one
     // does not suppress the heads-up of the next (which was the observed bug

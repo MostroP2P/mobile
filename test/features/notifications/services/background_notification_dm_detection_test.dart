@@ -251,11 +251,75 @@ void main() {
       expect(resolveNotificationRoute(payload), '/notifications');
     });
 
-    test('routes P2P chat notification (plain orderId) to trade detail', () {
+    test('routes peer_chat notification to the P2P chat room', () {
+      final payload = jsonEncode({
+        'type': 'peer_chat',
+        'orderId': 'order-chat-1',
+      });
+      expect(resolveNotificationRoute(payload), '/chat_room/order-chat-1');
+    });
+
+    test('routes peer_chat without orderId to notifications', () {
+      final payload = jsonEncode({'type': 'peer_chat'});
+      expect(resolveNotificationRoute(payload), '/notifications');
+    });
+
+    test('routes admin_dm with disputeId to the solver chat', () {
+      final payload = jsonEncode({
+        'type': 'admin_dm',
+        'orderId': 'order-chat-2',
+        'disputeId': 'dispute-chat-2',
+      });
+      expect(
+        resolveNotificationRoute(payload),
+        '/dispute_details/dispute-chat-2',
+      );
+    });
+
+    test('legacy plain orderId payload still opens the trade detail', () {
       expect(
         resolveNotificationRoute('p2p-chat-order-id'),
         '/trade_detail/p2p-chat-order-id',
       );
+    });
+  });
+
+  group('buildNotificationPayload', () {
+    test('peer chat messages carry the peer_chat type', () {
+      final payload = buildNotificationPayload(
+        action: Action.chatMessage,
+        orderId: 'order-1',
+        disputeId: null,
+      );
+      expect(jsonDecode(payload), {
+        'type': 'peer_chat',
+        'orderId': 'order-1',
+      });
+      expect(resolveNotificationRoute(payload), '/chat_room/order-1');
+    });
+
+    test('admin DMs carry the admin_dm type with the disputeId', () {
+      final payload = buildNotificationPayload(
+        action: Action.sendDm,
+        orderId: 'order-2',
+        disputeId: 'dispute-2',
+      );
+      expect(jsonDecode(payload), {
+        'type': 'admin_dm',
+        'orderId': 'order-2',
+        'disputeId': 'dispute-2',
+      });
+      expect(resolveNotificationRoute(payload), '/dispute_details/dispute-2');
+    });
+
+    test('non-chat actions keep the plain orderId payload', () {
+      final payload = buildNotificationPayload(
+        action: Action.fiatSentOk,
+        orderId: 'order-3',
+        disputeId: null,
+      );
+      expect(payload, 'order-3');
+      expect(resolveNotificationRoute(payload), '/trade_detail/order-3');
     });
   });
 
