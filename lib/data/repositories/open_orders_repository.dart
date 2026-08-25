@@ -76,6 +76,12 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     // whole session. That used to be harmless because unknown meant v1; now
     // that unknown resolves to v2 it would strand the client on kind 14
     // against a node that only listens on kind 1059.
+    //
+    // `limit: 1` bounds each relay, not the subscription, so N relays can each
+    // answer with their own idea of the latest info event. Picking among them
+    // is _supersedesCurrentInfo's job — the NIP-01 replacement order it applies
+    // is what makes multi-relay delivery converge on one event rather than on
+    // whichever relay replied last.
     final request = NostrRequest(
       filters: [
         NostrFilter(
