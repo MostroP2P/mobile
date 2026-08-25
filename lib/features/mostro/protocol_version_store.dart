@@ -12,9 +12,9 @@ import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/storage_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Remembers the highest `protocol_version` each Mostro node has ever been
-/// *verified* to advertise, so a relay cannot walk a client back to an older
-/// wire transport.
+/// Remembers the most recent `protocol_version` each Mostro node has been
+/// *verified* to assert, so a relay cannot walk a client back to an older wire
+/// transport by serving an older event.
 ///
 /// The client learns a node's transport from its kind-38385 info event. Two
 /// guards already sit in front of that event: the signature must verify, and
@@ -25,18 +25,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// genuinely signed one from before the operator migrated to v2, downgrades
 /// the client for that whole session.
 ///
-/// This store is the part that persists. It is deliberately monotonic: a
-/// recorded version is never lowered, so once a node has been seen speaking
-/// v2 no later event can make this client speak v1 to it again.
+/// This store is the part that persists, and what it persists is the *signed
+/// timestamp* alongside the version. A relay picks which events it serves but
+/// cannot mint one or re-date one, so "newer than anything this client has
+/// verified" is precisely the property it cannot forge. A replayed
+/// pre-migration v1 event loses against a recorded v2; a genuinely newer signed
+/// v1 event — an operator rolling back, which mostrod 0.18.x still supports —
+/// wins, and the client follows the node instead of being partitioned from it.
+/// See [anchoredProtocolVersion] for the comparison itself.
 ///
 /// Keyed by node pubkey, so switching between Mostro instances keeps each
 /// node's history separate.
 class ProtocolVersionStore {
   final SharedPreferencesAsync _prefs;
 
-  /// Node pubkey -> highest verified `protocol_version`. Authoritative once
-  /// [init] has run; persistence is a write-behind mirror of it.
-  Map<String, int> _versions = {};
+  /// Node pubkey -> most recent verified assertion. Authoritative once [init]
+  /// has run; persistence is a write-behind mirror of it.
+  Map<String, VersionAssertion> _versions = {};
 
   bool _initialized = false;
 
@@ -47,8 +52,8 @@ class ProtocolVersionStore {
   /// straight to platform storage and concurrent calls complete in whatever
   /// order the platform picks. Without this chain a `setString` issued before
   /// a `clear()` could land after it and resurrect the cleared map, or an
-  /// older snapshot could overwrite a newer one — the ratchet is monotonic in
-  /// memory, but its disk mirror would not be.
+  /// older snapshot could overwrite a newer one — the anchor only ever moves
+  /// forward in memory, but its disk mirror would not.
   Future<void> _writes = Future<void>.value();
 
   ProtocolVersionStore(this._prefs);
@@ -78,9 +83,9 @@ class ProtocolVersionStore {
   /// Merges rather than replaces. A `SubscriptionManager` can exist before this
   /// runs — `RelaysNotifier` builds one of its own during bootstrap, and every
   /// instance feeds the info-event stream into [record] — so entries may
-  /// already have been ratcheted into memory. Overwriting them would drop the
-  /// higher version, and the next snapshot would carry that loss to disk: a
-  /// ratchet that forgets is the one thing this store must not be.
+  /// already have been anchored in memory. Overwriting them would drop that
+  /// evidence, and the next snapshot would carry the loss to disk: an anchor
+  /// that forgets is the one thing this store must not be.
   Future<void> init() async {
     final loaded = await _load();
     final early = _versions;
@@ -88,10 +93,10 @@ class ProtocolVersionStore {
     _initialized = true;
 
     var merged = false;
-    early.forEach((pubkey, version) {
+    early.forEach((pubkey, assertion) {
       final current = _versions[pubkey];
-      if (current == null || version > current) {
-        _versions[pubkey] = version;
+      if (current == null || _supersedes(assertion, current)) {
+        _versions[pubkey] = assertion;
         merged = true;
       }
     });
@@ -104,39 +109,55 @@ class ProtocolVersionStore {
 
   bool get isInitialized => _initialized;
 
-  /// Highest verified protocol version seen for [pubkey], or null if this
-  /// client has never verified an info event from that node.
-  int? versionFor(String pubkey) => _versions[pubkey];
+  /// The most recent verified assertion for [pubkey], or null if this client
+  /// has never verified an info event from that node.
+  VersionAssertion? assertionFor(String pubkey) => _versions[pubkey];
 
-  /// Records [version] for [pubkey], keeping the higher of the two.
+  /// The version of [assertionFor], for callers that do not need its date.
+  int? versionFor(String pubkey) => _versions[pubkey]?.version;
+
+  /// Records [version] for [pubkey] as asserted at [createdAt], keeping
+  /// whichever assertion is the more recent evidence.
+  ///
+  /// [createdAt] must be the `created_at` of the info event that carried the
+  /// version, not the time of the call: the point of storing it is that it is
+  /// signed, and a wall-clock stamp would let a relay advance the anchor just
+  /// by delivering an old event late.
   ///
   /// Call this only for a version parsed from an info event whose signature
   /// has been verified — an unverified event is a relay's claim, not the
-  /// node's, and recording it would poison the ratchet permanently.
+  /// node's, and recording it would poison the anchor.
   ///
-  /// Returns true when the stored value changed.
-  bool record(String pubkey, int version) {
+  /// Returns true when the stored assertion changed. That includes a same
+  /// version re-asserted more recently: the date is what later replays are
+  /// measured against, so it has to move forward too.
+  bool record(String pubkey, int version, DateTime? createdAt) {
     if (pubkey.isEmpty) return false;
-    // Guard against a malformed tag ratcheting the store to a value no
-    // resolver would honour anyway.
+    // Guard against a malformed tag anchoring the store to a value no resolver
+    // would honour anyway.
     if (version < 1) {
       logger.w('Ignoring non-positive protocol_version $version for $pubkey');
       return false;
     }
 
+    final incoming = VersionAssertion(version, createdAt);
     final current = _versions[pubkey];
-    if (current != null && current >= version) {
-      if (current > version) {
+    if (current != null && !_supersedes(incoming, current)) {
+      if (current.version != version) {
         logger.w(
-          'Node $pubkey advertised protocol_version $version but has been '
-          'verified at $current before; keeping $current',
+          'Node $pubkey asserted protocol_version $version at $createdAt, '
+          'which does not postdate the verified assertion of ${current.version} '
+          'at ${current.createdAt}; keeping ${current.version}',
         );
       }
       return false;
     }
 
-    _versions[pubkey] = version;
-    logger.i('Recorded protocol_version $version for node $pubkey');
+    _versions[pubkey] = incoming;
+    logger.i(
+      'Recorded protocol_version $version for node $pubkey '
+      'asserted at $createdAt',
+    );
     // Nothing reaches disk before [init] has merged what is already there.
     // A snapshot taken now would be of a map that has not seen storage yet,
     // and writing it would erase every node this device had verified in an
@@ -145,9 +166,23 @@ class ProtocolVersionStore {
     return true;
   }
 
+  /// Whether [incoming] is the better evidence of what a node speaks than
+  /// [current], using the same rule [anchoredProtocolVersion] resolves with:
+  /// the more recent signed assertion wins, and a tie — or an assertion that
+  /// cannot be dated — falls back to the higher version.
+  bool _supersedes(VersionAssertion incoming, VersionAssertion current) {
+    final incomingAt = incoming.createdAt;
+    final currentAt = current.createdAt;
+    if (incomingAt != null && currentAt != null) {
+      if (incomingAt.isAfter(currentAt)) return true;
+      if (currentAt.isAfter(incomingAt)) return false;
+    }
+    return incoming.version > current.version;
+  }
+
   /// Drops everything this store knows. Intended for an explicit "forget this
   /// device's history" action, not for routine flows — clearing it reopens the
-  /// downgrade window the ratchet exists to close.
+  /// downgrade window the anchor exists to close.
   Future<void> clear() {
     _versions = {};
     return _enqueueWrite(
@@ -156,14 +191,16 @@ class ProtocolVersionStore {
     );
   }
 
-  /// Memory is authoritative, so a failed write costs at most the ratchet's
-  /// memory of this node across a restart — never a wrong value.
+  /// Memory is authoritative, so a failed write costs at most this node's
+  /// anchor across a restart — never a wrong value.
   ///
   /// The snapshot is encoded here, at call time, and the write is queued: what
   /// reaches disk is the map as it stood when the caller asked, applied in the
   /// order the callers asked.
   void _persist() {
-    final snapshot = jsonEncode(_versions);
+    final snapshot = jsonEncode(
+      _versions.map((pubkey, assertion) => MapEntry(pubkey, _encode(assertion))),
+    );
     unawaited(
       _enqueueWrite(
         () => _prefs.setString(
@@ -175,7 +212,47 @@ class ProtocolVersionStore {
     );
   }
 
-  Future<Map<String, int>> _load() async {
+  /// `{"v": version, "t": secondsSinceEpoch}`, with `t` omitted for an
+  /// assertion that carried no usable date. Seconds rather than milliseconds
+  /// to match the `created_at` this came from.
+  Map<String, Object> _encode(VersionAssertion assertion) {
+    final createdAt = assertion.createdAt;
+    return {
+      'v': assertion.version,
+      if (createdAt != null)
+        't': createdAt.millisecondsSinceEpoch ~/ Duration.millisecondsPerSecond,
+    };
+  }
+
+  /// The inverse of [_encode], or null for anything that is not a usable
+  /// entry. Entries are dropped rather than repaired: an assertion whose shape
+  /// this build does not recognise cannot be dated, and something that cannot
+  /// be dated is not evidence.
+  VersionAssertion? _decode(Object? value) {
+    if (value is! Map) return null;
+
+    final version = _asInt(value['v']);
+    if (version == null || version < 1) return null;
+
+    final seconds = _asInt(value['t']);
+    return VersionAssertion(
+      version,
+      seconds == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(
+              seconds * Duration.millisecondsPerSecond,
+              isUtc: true,
+            ),
+    );
+  }
+
+  int? _asInt(Object? value) => value is int
+      ? value
+      : value is String
+          ? int.tryParse(value)
+          : null;
+
+  Future<Map<String, VersionAssertion>> _load() async {
     try {
       final json = await _prefs.getString(
         SharedPreferencesKeys.nodeProtocolVersions.value,
@@ -185,20 +262,14 @@ class ProtocolVersionStore {
       final decoded = jsonDecode(json);
       if (decoded is! Map) return {};
 
-      final result = <String, int>{};
+      final result = <String, VersionAssertion>{};
       decoded.forEach((key, value) {
         if (key is! String || key.isEmpty) return;
         // Tolerate anything a previous version (or a corrupted write) left
         // behind: a malformed entry is dropped, never allowed to throw and
-        // take the whole ratchet down with it.
-        final version = value is int
-            ? value
-            : value is String
-                ? int.tryParse(value)
-                : null;
-        if (version != null && version >= 1) {
-          result[key] = version;
-        }
+        // take the whole anchor down with it.
+        final assertion = _decode(value);
+        if (assertion != null) result[key] = assertion;
       });
       return result;
     } catch (e) {
@@ -213,8 +284,8 @@ final protocolVersionStoreProvider = Provider<ProtocolVersionStore>((ref) {
 });
 
 /// The protocol version to use when talking to the currently connected node:
-/// what it advertises now, anchored against the highest version it has ever
-/// been verified to advertise.
+/// what it advertises now, anchored against the most recent assertion it has
+/// been verified to make.
 ///
 /// Single resolution point on purpose. The send path and the receive
 /// subscription must never disagree about which transport is in play — a
@@ -234,7 +305,7 @@ int? anchoredProtocolVersionFor(Ref ref) {
     final infoEvent = ref.read(orderRepositoryProvider).mostroInstance;
     final mostroPubkey = ref.read(settingsProvider).mostroPublicKey;
     final remembered =
-        ref.read(protocolVersionStoreProvider).versionFor(mostroPubkey);
+        ref.read(protocolVersionStoreProvider).assertionFor(mostroPubkey);
     return anchoredProtocolVersion(_advertisedBy(infoEvent), remembered);
   } catch (e) {
     // Null resolves to the safe default rather than to v1, so failing to read
@@ -244,8 +315,8 @@ int? anchoredProtocolVersionFor(Ref ref) {
   }
 }
 
-/// What [infoEvent] actually asserts about its transport, in the three states
-/// the tag can be in.
+/// What [infoEvent] actually asserts about its transport, and when, in the
+/// three states the tag can be in.
 ///
 /// - No info event, or a tag that is present but unusable → null. Both are an
 ///   absence of evidence, and [resolveTransport] maps null to the safe
@@ -256,11 +327,14 @@ int? anchoredProtocolVersionFor(Ref ref) {
 ///   event is a legacy daemon asserting v1.
 /// - Tag present and parseable → that version, whatever it is;
 ///   [resolveTransport] decides what to do with one it does not speak.
-int? _advertisedBy(NostrEvent? infoEvent) {
+///
+/// The assertion carries the event's signed `created_at`, which is what
+/// [anchoredProtocolVersion] weighs it against the remembered one with.
+VersionAssertion? _advertisedBy(NostrEvent? infoEvent) {
   if (infoEvent == null) return null;
 
   final parsed = infoEvent.protocolVersion;
-  if (parsed != null) return parsed;
+  if (parsed != null) return VersionAssertion(parsed, infoEvent.createdAt);
 
   if (infoEvent.advertisesProtocolVersion) {
     logger.w(
@@ -269,5 +343,5 @@ int? _advertisedBy(NostrEvent? infoEvent) {
     );
     return null;
   }
-  return kLegacyProtocolVersion;
+  return VersionAssertion(kLegacyProtocolVersion, infoEvent.createdAt);
 }

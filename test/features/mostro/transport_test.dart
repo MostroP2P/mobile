@@ -36,46 +36,124 @@ void main() {
     });
 
     test('uses the advertised version when nothing is remembered', () {
-      expect(anchoredProtocolVersion(1, null), 1);
-      expect(anchoredProtocolVersion(2, null), 2);
+      expect(anchoredProtocolVersion(_v(1, _beforeMigration), null), 1);
+      expect(anchoredProtocolVersion(_v(2, _migration), null), 2);
     });
 
     test('uses the remembered version when nothing is advertised', () {
-      expect(anchoredProtocolVersion(null, 1), 1);
-      expect(anchoredProtocolVersion(null, 2), 2);
+      expect(anchoredProtocolVersion(null, _v(1, _beforeMigration)), 1);
+      expect(anchoredProtocolVersion(null, _v(2, _migration)), 2);
     });
 
     test('lets a node upgrade', () {
-      expect(anchoredProtocolVersion(2, 1), 2);
+      expect(
+        anchoredProtocolVersion(_v(2, _migration), _v(1, _beforeMigration)),
+        2,
+      );
     });
 
-    test('refuses to walk a node back below what it has proven', () {
-      expect(anchoredProtocolVersion(1, 2), 2);
+    // The attack the anchor exists to stop: a relay withholds the node's
+    // current event and serves a pre-migration one it cannot re-date.
+    test('refuses an assertion older than the one already verified', () {
+      expect(
+        anchoredProtocolVersion(_v(1, _beforeMigration), _v(2, _migration)),
+        2,
+      );
+    });
+
+    // The other half of the same rule, and the reason it is dated rather than
+    // monotonic: an operator rolling a bad v2 rollout back publishes a genuine,
+    // newer, signed v1 assertion. Refusing it would partition the client from
+    // the node permanently and silently.
+    test('follows a node that asserts v1 again more recently', () {
+      expect(
+        anchoredProtocolVersion(_v(1, _rollback), _v(2, _migration)),
+        1,
+      );
     });
 
     test('agreeing sources pass straight through', () {
-      expect(anchoredProtocolVersion(2, 2), 2);
-      expect(anchoredProtocolVersion(1, 1), 1);
+      expect(anchoredProtocolVersion(_v(2, _migration), _v(2, _migration)), 2);
+      expect(
+        anchoredProtocolVersion(
+          _v(1, _beforeMigration),
+          _v(1, _beforeMigration),
+        ),
+        1,
+      );
+    });
+
+    // Freshness cannot separate same-second assertions — NIP-01's id tie-break
+    // runs upstream, on events, not here — so the safer transport wins.
+    test('a same-second downgrade loses to the higher version', () {
+      expect(
+        anchoredProtocolVersion(_v(1, _migration), _v(2, _migration)),
+        2,
+      );
+    });
+
+    group('an assertion that cannot be dated', () {
+      test('never lowers a dated one', () {
+        expect(
+          anchoredProtocolVersion(
+            const VersionAssertion(1, null),
+            _v(2, _migration),
+          ),
+          2,
+        );
+      });
+
+      test('is not lowered by a dated one either', () {
+        expect(
+          anchoredProtocolVersion(
+            _v(1, _rollback),
+            const VersionAssertion(2, null),
+          ),
+          2,
+        );
+      });
+
+      test('falls back to the higher version when both are undated', () {
+        expect(
+          anchoredProtocolVersion(
+            const VersionAssertion(1, null),
+            const VersionAssertion(2, null),
+          ),
+          2,
+        );
+      });
     });
   });
 
   group('resolveAnchoredTransport', () {
     test('first contact with a legacy v1 node still reaches v1', () {
-      expect(resolveAnchoredTransport(1, null), Transport.giftWrap);
+      expect(
+        resolveAnchoredTransport(_v(1, _beforeMigration), null),
+        Transport.giftWrap,
+      );
     });
 
     test('first contact with a v2 node reaches v2', () {
-      expect(resolveAnchoredTransport(2, null), Transport.nip44);
+      expect(
+        resolveAnchoredTransport(_v(2, _migration), null),
+        Transport.nip44,
+      );
     });
 
     // The attack this whole chain exists to stop: the node is known to speak
     // v2, and a relay tries to put the client back on the forgeable transport.
     test('a replayed v1 advertisement cannot downgrade a known v2 node', () {
-      expect(resolveAnchoredTransport(1, 2), Transport.nip44);
+      expect(
+        resolveAnchoredTransport(_v(1, _beforeMigration), _v(2, _migration)),
+        Transport.nip44,
+      );
     });
 
     test('withholding the info event cannot downgrade a known v2 node', () {
-      expect(resolveAnchoredTransport(null, 2), Transport.nip44);
+      expect(
+        resolveAnchoredTransport(null, _v(2, _migration)),
+        Transport.nip44,
+      );
     });
 
     test('withholding the info event on first contact reaches the default',
@@ -84,11 +162,39 @@ void main() {
     });
 
     test('a node that has only ever been seen at v1 stays reachable', () {
-      expect(resolveAnchoredTransport(1, 1), Transport.giftWrap);
+      expect(
+        resolveAnchoredTransport(
+          _v(1, _beforeMigration),
+          _v(1, _beforeMigration),
+        ),
+        Transport.giftWrap,
+      );
     });
 
     test('a v1 node that upgrades is followed to v2', () {
-      expect(resolveAnchoredTransport(2, 1), Transport.nip44);
+      expect(
+        resolveAnchoredTransport(_v(2, _migration), _v(1, _beforeMigration)),
+        Transport.nip44,
+      );
+    });
+
+    test('a v2 node that the operator rolls back is followed to v1', () {
+      expect(
+        resolveAnchoredTransport(_v(1, _rollback), _v(2, _migration)),
+        Transport.giftWrap,
+      );
     });
   });
 }
+
+/// Three moments in a node's life, as `created_at` seconds: the last info
+/// event before the operator migrated, the one that announced v2, and the one
+/// that announced a rollback to v1.
+const int _beforeMigration = 1000;
+const int _migration = 2000;
+const int _rollback = 3000;
+
+VersionAssertion _v(int version, int seconds) => VersionAssertion(
+      version,
+      DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true),
+    );

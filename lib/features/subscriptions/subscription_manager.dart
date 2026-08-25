@@ -109,13 +109,19 @@ class SubscriptionManager {
   /// a transport. Resolution can see that the info event is in hand; the store
   /// outlives it. Persisting 1 would leave `remembered == 1` with no info
   /// event after a restart, and a relay that then simply withholds the event
-  /// would resolve v1 off remembered state alone — turning the ratchet, whose
+  /// would resolve v1 off remembered state alone — turning the anchor, whose
   /// whole purpose is to block downgrades, into a durable downgrade primitive.
+  ///
+  /// The event's own `created_at` is what dates the assertion. It is signed,
+  /// so a relay can replay this event but cannot make the copy it replays look
+  /// newer than the one it is trying to displace.
   void _recordAdvertisedProtocolVersion(NostrEvent event) {
     try {
       final version = event.protocolVersion;
       if (version == null) return;
-      ref.read(protocolVersionStoreProvider).record(event.pubkey, version);
+      ref
+          .read(protocolVersionStoreProvider)
+          .record(event.pubkey, version, event.createdAt);
     } catch (e) {
       logger.w('Failed to record advertised protocol version: $e');
     }

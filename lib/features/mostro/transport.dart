@@ -52,8 +52,9 @@ const int kLegacyProtocolVersion = 1;
 ///   degrades *upwards* to the safe default instead.
 ///
 /// Callers that can reach a [ProtocolVersionStore] should prefer
-/// [resolveAnchoredTransport], which additionally refuses to walk a node back
-/// to a transport older than one it has already been verified to speak.
+/// [resolveAnchoredTransport], which additionally refuses to take a node's
+/// transport from an assertion older than one this client has already
+/// verified.
 Transport resolveTransport(int? protocolVersion) {
   switch (protocolVersion) {
     case 1:
@@ -71,27 +72,89 @@ Transport resolveTransport(int? protocolVersion) {
   }
 }
 
-/// Combines what a node advertises *now* with the highest version it has
-/// previously been verified to advertise, taking the higher of the two.
+/// A protocol version together with the moment the node asserted it.
+///
+/// [createdAt] is the signed `created_at` of the kind-38385 info event that
+/// carried the version. That field sits *inside* the signature, so a relay can
+/// replay an assertion but cannot re-date one. This is what lets
+/// [anchoredProtocolVersion] tell a replayed old event apart from the node
+/// genuinely changing what it speaks.
+class VersionAssertion {
+  final int version;
+
+  /// Null when the event carried no usable `created_at`. An assertion that
+  /// cannot be dated cannot be ranked by freshness, so it falls back to the
+  /// conservative comparison — see [anchoredProtocolVersion].
+  final DateTime? createdAt;
+
+  const VersionAssertion(this.version, this.createdAt);
+
+  @override
+  bool operator ==(Object other) =>
+      other is VersionAssertion &&
+      other.version == version &&
+      other.createdAt == createdAt;
+
+  @override
+  int get hashCode => Object.hash(version, createdAt);
+
+  @override
+  String toString() => 'VersionAssertion($version, $createdAt)';
+}
+
+/// Combines what a node advertises *now* with what it has previously been
+/// verified to advertise, letting the more recent signed assertion win.
 ///
 /// [advertised] comes from the node's current kind-38385 info event, and
 /// [remembered] from [ProtocolVersionStore]. Both may be null: null
 /// [advertised] means no info event is in hand, null [remembered] means this
 /// client has never verified one from that node.
 ///
-/// Taking the maximum is what makes the ratchet hold. Upgrades pass straight
-/// through, while a claim that a node speaks something *older* than it has
-/// already been proven to speak is ignored — that claim is only ever reachable
-/// by a relay replaying or suppressing events, never by the node itself under
-/// a migration that only moves forward.
-int? anchoredProtocolVersion(int? advertised, int? remembered) {
-  if (remembered == null) return advertised;
-  if (advertised == null) return remembered;
-  return advertised > remembered ? advertised : remembered;
+/// Freshness — not the higher number — is what makes the anchor hold. The
+/// threat is a relay withholding the node's current info event and serving an
+/// older signed one in its place; a relay can choose *which* events it serves,
+/// but it cannot mint one, and it cannot move an existing one forward in time
+/// without breaking the signature. So the newest assertion this client has ever
+/// verified is exactly the evidence a relay cannot manufacture, and preferring
+/// it blocks the downgrade.
+///
+/// Anchoring on the *highest* version instead would block one more thing it
+/// should not: the node itself moving back to v1. mostrod 0.18.x still ships
+/// `transport = "gift-wrap"`, so an operator who rolls back a bad v2 rollout
+/// publishes a genuine, newer, signed v1 assertion — and a client that refused
+/// it would be partitioned from that node for good, silently, with no way back
+/// short of reinstalling.
+///
+/// When the two assertions carry the same timestamp — or either cannot be dated
+/// — freshness cannot separate them and the higher version wins. NIP-01's
+/// tie-break on event id already runs upstream in `OpenOrdersRepository`, so a
+/// tie here is between an assertion in hand and one recalled from an earlier
+/// session; resolving it upwards keeps a same-second replay from lowering the
+/// anchor.
+int? anchoredProtocolVersion(
+  VersionAssertion? advertised,
+  VersionAssertion? remembered,
+) {
+  if (remembered == null) return advertised?.version;
+  if (advertised == null) return remembered.version;
+
+  final advertisedAt = advertised.createdAt;
+  final rememberedAt = remembered.createdAt;
+  if (advertisedAt != null && rememberedAt != null) {
+    if (advertisedAt.isAfter(rememberedAt)) return advertised.version;
+    if (rememberedAt.isAfter(advertisedAt)) return remembered.version;
+  }
+
+  return advertised.version > remembered.version
+      ? advertised.version
+      : remembered.version;
 }
 
 /// [resolveTransport] applied to [anchoredProtocolVersion] — the resolution
 /// every caller should use once a [ProtocolVersionStore] is reachable.
-Transport resolveAnchoredTransport(int? advertised, int? remembered) {
+Transport resolveAnchoredTransport(
+  VersionAssertion? advertised,
+  VersionAssertion? remembered,
+) {
   return resolveTransport(anchoredProtocolVersion(advertised, remembered));
 }

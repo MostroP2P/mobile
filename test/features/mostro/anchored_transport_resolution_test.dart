@@ -21,14 +21,19 @@ import '../../mocks.mocks.dart';
 /// A kind-38385 info event shaped like mostrod's: empty content, everything in
 /// tags. Passing null for [protocolVersion] omits the tag entirely, which is
 /// what every daemon before v0.18.0 publishes.
+///
+/// [createdAt] is the signed timestamp the anchor weighs assertions by, so
+/// tests that pit an event against a remembered one set it explicitly.
 NostrEvent _infoEvent(
   NostrKeyPairs keyPair, {
   required String? protocolVersion,
+  DateTime? createdAt,
 }) {
   return NostrEvent.fromPartialData(
     kind: 38385,
     content: '',
     keyPairs: keyPair,
+    createdAt: createdAt,
     tags: [
       ['d', 'info'],
       ['y', 'mostro'],
@@ -37,6 +42,11 @@ NostrEvent _infoEvent(
     ],
   );
 }
+
+/// Two moments in a node's life, as info-event timestamps: the event that
+/// announced v2, and a later one that announces a rollback to v1.
+final _migration = DateTime.utc(2026, 1, 1);
+final _rollback = DateTime.utc(2026, 6, 1);
 
 class _FakeSharedPreferencesAsync implements SharedPreferencesAsync {
   final Map<String, String> strings = {};
@@ -140,14 +150,34 @@ void main() {
     });
 
     test('does not walk back a node already verified at v2', () async {
-      container.read(protocolVersionStoreProvider).record(nodeKeys.public, 2);
+      container
+          .read(protocolVersionStoreProvider)
+          .record(nodeKeys.public, 2, _rollback);
 
-      await deliver(_infoEvent(nodeKeys, protocolVersion: null));
+      await deliver(
+        _infoEvent(nodeKeys, protocolVersion: null, createdAt: _migration),
+      );
 
-      // The ratchet outranks a tag-less event: on a node that has already
-      // migrated, only a relay replaying an old event produces this state.
+      // The anchor outranks an older tag-less event: on a node that has
+      // already migrated, only a relay replaying an old event produces this.
       expect(anchored(), 2);
       expect(resolveTransport(anchored()), Transport.nip44);
+    });
+
+    test('does follow a node that goes back to v1 more recently', () async {
+      container
+          .read(protocolVersionStoreProvider)
+          .record(nodeKeys.public, 2, _migration);
+
+      await deliver(
+        _infoEvent(nodeKeys, protocolVersion: null, createdAt: _rollback),
+      );
+
+      // A tag-less event this client has never seen before, signed after the
+      // v2 one, is the operator rolling back — not a relay, which can replay
+      // an event but cannot re-date it.
+      expect(anchored(), kLegacyProtocolVersion);
+      expect(resolveTransport(anchored()), Transport.giftWrap);
     });
   });
 
@@ -185,9 +215,15 @@ void main() {
     });
 
     test('does not lower a node already verified at v2', () async {
-      container.read(protocolVersionStoreProvider).record(nodeKeys.public, 2);
+      container
+          .read(protocolVersionStoreProvider)
+          .record(nodeKeys.public, 2, _migration);
 
-      await deliver(_infoEvent(nodeKeys, protocolVersion: 'abc'));
+      // Unusable in either direction: it asserts nothing, so however recent it
+      // is it cannot displace the remembered assertion.
+      await deliver(
+        _infoEvent(nodeKeys, protocolVersion: 'abc', createdAt: _rollback),
+      );
 
       expect(anchored(), 2);
       expect(resolveTransport(anchored()), Transport.nip44);
