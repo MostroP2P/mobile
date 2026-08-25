@@ -45,11 +45,19 @@ final independentFiatPerBtcProvider =
 /// on the take screen, and re-pricing it would only second-guess a number
 /// they accepted with their eyes open: a fixed-amount order may sit off the
 /// market on purpose. What is left is the market-price and range orders,
-/// whose sats the node resolved after the commitment, and sessions from
-/// before the pin existed.
+/// whose sats the node resolved after the commitment.
+///
+/// Sessions written before pinning existed are left out. They pinned no sats
+/// either, so without this they would all fall through to the check — and a
+/// fixed-amount order among them, priced by hand and legitimately far from
+/// the market, would draw a caution on a settlement that is perfectly honest.
+/// Trades already in flight when the user updates would carry it. Declining
+/// to apply a new check to a commitment that predates it is the same call
+/// [orderFeeRateProvider] makes for the fee.
 final marketCheckProvider =
     Provider.family<MarketCheck?, String>((ref, orderId) {
   final session = ref.watch(sessionProvider(orderId));
+  if (session?.termsPinned != true) return null;
   if (session?.pinnedAmountSats != null) return null;
 
   final settledSats = ref.watch(signedOrderAmountProvider(orderId));

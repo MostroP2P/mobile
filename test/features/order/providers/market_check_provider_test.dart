@@ -41,7 +41,7 @@ NostrEvent _orderEvent({
       ],
     );
 
-Session _session({int? pinnedAmountSats}) => Session(
+Session _session({int? pinnedAmountSats, bool termsPinned = true}) => Session(
       masterKey: _keyPair,
       tradeKey: _keyPair,
       keyIndex: 0,
@@ -49,6 +49,7 @@ Session _session({int? pinnedAmountSats}) => Session(
       startTime: DateTime.utc(2026),
       orderId: _orderId,
       pinnedAmountSats: pinnedAmountSats,
+      termsPinned: termsPinned,
     );
 
 void main() {
@@ -120,6 +121,31 @@ void main() {
       // A fixed-amount order was shown to the user and pinned at commitment,
       // so it is held to that figure and may sit off the market on purpose.
       session = _session(pinnedAmountSats: 180000);
+      build();
+
+      container.read(marketCheckProvider(_orderId));
+      await publish(_orderEvent(amount: '180000'));
+
+      expect(container.read(marketCheckProvider(_orderId)), isNull);
+    });
+
+    test('skips a session written before pinning existed', () async {
+      // A session from an earlier build pinned no sats, so without a marker of
+      // its own it is indistinguishable from a market-price order the node
+      // resolved. Checking it would put a caution on any fixed-amount trade
+      // in flight when the user updated, priced by hand and off the market on
+      // purpose.
+      session = _session(termsPinned: false);
+      build();
+
+      container.read(marketCheckProvider(_orderId));
+      await publish(_orderEvent(amount: '180000'));
+
+      expect(container.read(marketCheckProvider(_orderId)), isNull);
+    });
+
+    test('skips an order with no session of its own', () async {
+      session = null;
       build();
 
       container.read(marketCheckProvider(_orderId));
