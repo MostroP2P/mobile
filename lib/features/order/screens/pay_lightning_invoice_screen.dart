@@ -220,6 +220,23 @@ class _PayLightningInvoiceScreenState
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
+              // Every other branch offers Cancel, and a request that never
+              // comes back would otherwise leave the user with no way forward
+              // and no way out.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: _cancelOrder,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.red,
+                    ),
+                    child: Text(S.of(context)!.cancel),
+                  ).withAutomationId(AutomationIds.payCancel),
+                ],
+              ),
             ] else if (blocked) ...[
               header,
               const SizedBox(height: 24),

@@ -314,6 +314,23 @@ void main() {
       expect(settled.status, MarketCheckStatus.checked);
       expect(settled.check!.isOffMarket, isTrue);
     });
+
+    test('keeps checking against the cached rate while it refreshes', () async {
+      // The TTL refresh reports isLoading with the previous value still
+      // attached. Treating that as "no answer yet" would pull the settlement
+      // actions off both screens for the length of an HTTP request, every two
+      // minutes, in front of a user who is mid-payment.
+      container.read(marketCheckProvider(_orderId));
+      await publish(_orderEvent(amount: '180000'));
+      expect(container.read(marketCheckProvider(_orderId)).status,
+          MarketCheckStatus.checked);
+
+      container.invalidate(independentFiatPerBtcProvider('USD'));
+
+      final refreshing = container.read(marketCheckProvider(_orderId));
+      expect(refreshing.status, MarketCheckStatus.checked);
+      expect(refreshing.check!.isOffMarket, isTrue);
+    });
   });
 
   group('the independent rate', () {

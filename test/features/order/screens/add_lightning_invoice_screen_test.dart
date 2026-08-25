@@ -291,6 +291,20 @@ void main() {
       expect(find.byType(AddLightningInvoiceWidget), findsOneWidget);
     });
 
+    testWidgets('keeps cancel reachable while the rate is in flight',
+        (tester) async {
+      // Every other branch offers it. A request that never comes back would
+      // otherwise leave the user with no way forward and no way out.
+      await pumpAddScreen(
+        tester,
+        requestedSats: 99700,
+        anchoredSats: 99700,
+        marketResult: MarketCheckResult.loading,
+      );
+
+      expect(find.text(_s(tester).cancel), findsOneWidget);
+    });
+
     testWidgets('says so when the rate could not be had, without refusing',
         (tester) async {
       await pumpAddScreen(

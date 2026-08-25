@@ -107,6 +107,18 @@ class SettlementTermsStore {
 
   bool _initialized = false;
 
+  /// Set when [init] could not read the persisted value at all.
+  ///
+  /// Memory then mirrors nothing, and flushing it would serialize an empty
+  /// map over anchors belonging to trades still in flight — which would send
+  /// exactly those trades back to whatever the node currently advertises.
+  /// Writes are refused for the rest of the run instead.
+  ///
+  /// A value that was read and could not be parsed is the opposite case: there
+  /// is nothing behind it to preserve, and refusing to write would leave
+  /// pinning broken for good. Those are overwritten.
+  bool _readFailed = false;
+
   /// Tail of the write chain, so writes land in call order.
   Future<void> _writes = Future<void>.value();
 
@@ -122,9 +134,19 @@ class SettlementTermsStore {
   /// legacy.
   Future<void> init() async {
     if (_initialized) return;
+
+    final String? raw;
     try {
-      final raw = await _prefs.getString(_prefsKey);
-      if (raw != null) {
+      raw = await _prefs.getString(_prefsKey);
+    } catch (e) {
+      logger.e('Failed to read pinned settlement terms: $e');
+      _readFailed = true;
+      _initialized = true;
+      return;
+    }
+
+    if (raw != null) {
+      try {
         final decoded = jsonDecode(raw);
         if (decoded is Map) {
           final loaded = <String, PinnedTerms>{};
@@ -135,11 +157,12 @@ class SettlementTermsStore {
           });
           _terms = loaded;
         }
+      } catch (e) {
+        logger.e('Discarding unreadable pinned settlement terms: $e');
+        _terms = {};
       }
-    } catch (e) {
-      logger.e('Failed to load pinned settlement terms: $e');
-      _terms = {};
     }
+
     _initialized = true;
     _prune();
   }
@@ -199,6 +222,11 @@ class SettlementTermsStore {
   /// one. Failures are logged and swallowed: one bad write must not poison
   /// every later one, and memory stays authoritative for this run.
   Future<void> _flush() {
+    if (_readFailed) {
+      logger.w('Not flushing settlement anchors: the persisted map went unread');
+      return Future<void>.value();
+    }
+
     final snapshot = jsonEncode(
       _terms.map((key, value) => MapEntry(key, value.toJson())),
     );

@@ -123,8 +123,13 @@ final marketCheckProvider =
     fiatAmount = fiat.minimum;
   }
 
+  // Only a cold fetch holds the flow. The TTL refresh also reports isLoading,
+  // but Riverpod keeps the previous value alongside it, so treating every
+  // loading state as "no answer yet" would pull the settlement actions off
+  // both screens for the length of an HTTP request, every two minutes, in
+  // front of a user who is mid-payment.
   final rate = ref.watch(independentFiatPerBtcProvider(fiatCode));
-  if (rate.isLoading) return MarketCheckResult.loading;
+  if (rate.isLoading && !rate.hasValue) return MarketCheckResult.loading;
 
   final fiatPerBtc = rate.valueOrNull;
   if (fiatPerBtc == null) return MarketCheckResult.unavailable;

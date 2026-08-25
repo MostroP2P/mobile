@@ -146,6 +146,25 @@ void main() {
       expect(reopened.termsFor(_otherKey), isNotNull);
     });
 
+    test('will not write over anchors it never managed to read', () async {
+      // The read failing says nothing about the contents: the persisted map
+      // may be perfectly good. Serializing memory over it would erase the
+      // anchors of every other trade in flight, and those trades would go
+      // back to whatever the node currently advertises.
+      final seeded = _store();
+      await seeded.init();
+      await seeded.pin(_otherKey, amountSats: 50000);
+      await seeded.pendingWrites;
+
+      final unreadable = _ThrowingReadPrefs();
+      final blind = SettlementTermsStore(unreadable);
+      await blind.init();
+      await blind.pin(_tradeKey, amountSats: 100000);
+      await blind.pendingWrites;
+
+      expect(unreadable.writes, isEmpty);
+    });
+
     test('treats an unreadable record as no record at all', () async {
       SharedPreferencesAsyncPlatform.instance =
           InMemorySharedPreferencesAsync.withData(<String, Object>{
@@ -157,5 +176,42 @@ void main() {
 
       expect(store.termsFor(_tradeKey), isNull);
     });
+
+    test('overwrites a stored value it could read but not parse', () async {
+      // The opposite of the case above: there is nothing behind a corrupt
+      // value to preserve, so refusing to write would leave pinning broken
+      // for good.
+      SharedPreferencesAsyncPlatform.instance =
+          InMemorySharedPreferencesAsync.withData(<String, Object>{
+        'settlement_pinned_terms': 'not json',
+      });
+
+      final store = _store();
+      await store.init();
+      await store.pin(_tradeKey, amountSats: 100000);
+      await store.pendingWrites;
+
+      final reopened = _store();
+      await reopened.init();
+      expect(reopened.termsFor(_tradeKey)!.amountSats, 100000);
+    });
   });
+}
+
+/// Reads throw; writes are recorded so a test can assert none happened.
+class _ThrowingReadPrefs implements SharedPreferencesAsync {
+  final List<String> writes = [];
+
+  @override
+  Future<String?> getString(String key, {Object? options}) async {
+    throw StateError('platform unavailable');
+  }
+
+  @override
+  Future<void> setString(String key, String value, {Object? options}) async {
+    writes.add(key);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

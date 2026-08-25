@@ -350,6 +350,21 @@ void main() {
       expect(find.byType(PayLightningInvoiceWidget), findsOneWidget);
     });
 
+    testWidgets('keeps cancel reachable while the rate is in flight',
+        (tester) async {
+      // Every other branch offers it. A request that never comes back would
+      // otherwise leave the user with no way forward and no way out.
+      await pumpPayScreen(
+        tester,
+        lnInvoice: invoiceFor(100000),
+        messageSats: 100000,
+        anchoredSats: 100000,
+        marketResult: MarketCheckResult.loading,
+      );
+
+      expect(find.text(_s(tester).cancel), findsOneWidget);
+    });
+
     testWidgets('says so when the rate could not be had, without refusing',
         (tester) async {
       // An unreachable third party is not evidence against a settlement, so

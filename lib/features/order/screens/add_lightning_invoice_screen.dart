@@ -327,6 +327,10 @@ class _AddLightningInvoiceScreenState
   /// The check is the only protection a market-price settlement has, and it
   /// has not come back yet. Opening the invoice flows here and withdrawing
   /// them a moment later would be worse than waiting for the answer.
+  ///
+  /// Cancel stays reachable. Every other branch on this screen offers it, and
+  /// a request that never comes back would otherwise leave the user with no
+  /// way forward and no way out.
   Widget _buildMarketPendingFlow({required Widget header}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,6 +349,8 @@ class _AddLightningInvoiceScreenState
             ],
           ),
         ),
+        const Spacer(),
+        _buildCancelButton(),
       ],
     );
   }
