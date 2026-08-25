@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_description.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_header.dart';
@@ -11,7 +12,27 @@ import 'package:mostro_mobile/features/disputes/widgets/dispute_list_item.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_order_id.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_status_badge.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_status_content.dart';
+import 'package:mostro_mobile/services/dispute_read_status_service.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
+
+/// A preferences store whose every operation fails, standing in for a
+/// platform-channel error, a full disk or corrupted preferences.
+class _ThrowingStore extends SharedPreferencesStorePlatform {
+  @override
+  Future<bool> clear() async => throw StateError('preferences unavailable');
+
+  @override
+  Future<Map<String, Object>> getAll() async =>
+      throw StateError('preferences unavailable');
+
+  @override
+  Future<bool> remove(String key) async =>
+      throw StateError('preferences unavailable');
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) async =>
+      throw StateError('preferences unavailable');
+}
 
 DisputeData disputeData({
   String status = 'initiated',
@@ -243,6 +264,63 @@ void main() {
 
       expect(find.byType(DisputeListItem), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    // Regression test: marking the dispute as read used to be awaited before
+    // the tap callback ran, so a failing write left the row dead to the touch.
+    testWidgets('reports taps even when preferences are unavailable',
+        (tester) async {
+      final realStore = SharedPreferencesStorePlatform.instance;
+      SharedPreferencesStorePlatform.instance = _ThrowingStore();
+      SharedPreferences.resetStatic();
+      addTearDown(() {
+        SharedPreferencesStorePlatform.instance = realStore;
+        SharedPreferences.resetStatic();
+      });
+
+      var taps = 0;
+      await pump(
+        tester,
+        DisputeListItem(dispute: disputeData(), onTap: () => taps++),
+      );
+
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(DisputeListItem),
+              matching: find.byType(GestureDetector),
+            )
+            .first,
+        warnIfMissed: false,
+      );
+      await tester.pumpAndSettle();
+
+      expect(taps, 1);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('still records the dispute as read', (tester) async {
+      expect(
+          await DisputeReadStatusService.getLastReadTime('dispute-1'), isNull);
+
+      await pump(
+        tester,
+        DisputeListItem(dispute: disputeData(), onTap: () {}),
+      );
+
+      await tester.tap(
+        find
+            .descendant(
+              of: find.byType(DisputeListItem),
+              matching: find.byType(GestureDetector),
+            )
+            .first,
+        warnIfMissed: false,
+      );
+      await tester.pumpAndSettle();
+
+      expect(await DisputeReadStatusService.getLastReadTime('dispute-1'),
+          isNotNull);
     });
   });
 }

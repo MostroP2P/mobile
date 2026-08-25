@@ -42,9 +42,11 @@ class TradeDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tradeState = ref.watch(orderNotifierProvider(orderId));
     final originalOrder = ref.watch(eventProvider(orderId));
-    // If message is null or doesn't have an Order payload, show loading
+    // If message is null or doesn't have an Order payload, show loading.
+    // The public 38383 is only needed for the creator reputation below, and the
+    // book cache only holds the last 48h, so it must not gate the whole screen.
     final orderPayload = tradeState.order;
-    if (orderPayload == null || originalOrder == null) {
+    if (orderPayload == null) {
       return const Scaffold(
         backgroundColor: AppTheme.backgroundDark,
         body: Center(child: CircularProgressIndicator()),
@@ -77,7 +79,7 @@ class TradeDetailScreen extends ConsumerWidget {
                 _buildOrderId(context),
                 const SizedBox(height: 16),
                 // For pending orders created by the user, show creator's reputation
-                if (isPending && isCreator) ...[
+                if (isPending && isCreator && originalOrder != null) ...[
                   // TODO: Change this to use `orderPayload` after Order model is updated
                   // with rating information
                   _buildCreatorReputation(context, originalOrder),
@@ -382,8 +384,12 @@ class TradeDetailScreen extends ConsumerWidget {
 
         case actions.Action.addInvoice:
           if (userRole == Role.buyer) {
+            // On a settled order the invoice is not part of the trade any
+            // more: it is the only way left to collect, so the label says so.
             widgets.add(_buildNostrButton(
-              S.of(context)!.addInvoiceButton,
+              tradeState.status.isPayoutInvoice
+                  ? S.of(context)!.collectSatsButton
+                  : S.of(context)!.addInvoiceButton,
               action: actions.Action.addInvoice,
               backgroundColor: AppTheme.mostroGreen,
               onPressed: () => context.push('/add_invoice/$orderId'),
@@ -571,11 +577,6 @@ class TradeDetailScreen extends ConsumerWidget {
 
         case actions.Action.sendDm:
           widgets.add(_buildContactButton(context));
-          break;
-
-        case actions.Action.paymentFailed:
-          // Payment failed - Mostro is still retrying, only show Close button
-          // No additional buttons (Add Invoice, Cancel, Dispute) should appear
           break;
 
         case actions.Action.holdInvoicePaymentCanceled:

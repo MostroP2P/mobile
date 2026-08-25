@@ -4,13 +4,13 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:dart_nostr/nostr/model/ease.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
-import 'package:mostro_mobile/core/test_environment.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'relay.dart';
+import 'relay_url_validator.dart';
 
 class RelayValidationResult {
   final bool success;
@@ -40,7 +40,14 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   // Timestamp validation to ignore older events
   DateTime? _lastProcessedEventTime;
 
-  RelaysNotifier(this.settings, this.ref) : super([]) {
+  /// Validates user-entered relay URLs. Injectable so the policy wiring
+  /// (release builds never accept plain `ws://`) can be unit-tested.
+  final RelayUrlValidator _urlValidator;
+
+  RelaysNotifier(this.settings, this.ref, {RelayUrlValidator? urlValidator})
+      : _urlValidator = urlValidator ??
+            RelayUrlValidator(allowInsecure: Config.allowInsecureRelays),
+        super([]) {
     _loadRelays();
     _initMostroRelaySync();
     _initSettingsListener();
@@ -77,12 +84,13 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   }
 
   Future<void> _saveRelays() async {
-    // Get blacklisted relays
+    // Get blacklisted relays (membership is checked through the canonical
+    // key: stored relay URLs may predate normalization)
     final blacklistedUrls = settings.state.blacklistedRelays;
     
     // Include ALL active relays (Mostro/default + user) that are NOT blacklisted
     final allActiveRelayUrls = state
-        .where((r) => !blacklistedUrls.contains(r.url))
+        .where((r) => !_isBlacklisted(r.url))
         .map((r) => r.url)
         .toList();
     
@@ -116,53 +124,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     await _saveRelays();
   }
 
-  /// Smart URL normalization - handles different input formats
-  String? normalizeRelayUrl(String input) {
-    input = input.trim().toLowerCase();
-
-    if (!isValidDomainFormat(input)) return null;
-
-    if (input.startsWith('wss://')) {
-      return input; // Already properly formatted
-    } else if (input.startsWith('ws://')) {
-      // Plain WebSocket relays are accepted only inside the Mortsom test
-      // environment, where the relay is a local process on a private address.
-      return TestEnvironment.allowInsecureRelays ? input : null;
-    } else if (input.startsWith('http')) {
-      return null; // Reject non-secure protocols
-    } else {
-      return 'wss://$input'; // Auto-add wss:// prefix
-    }
-  }
-
-  /// Domain validation using RegExp
-  bool isValidDomainFormat(String input) {
-    // Remove protocol prefix if present
-    if (input.startsWith('wss://')) {
-      input = input.substring(6);
-    } else if (input.startsWith('ws://')) {
-      input = input.substring(5);
-    } else if (input.startsWith('http://')) {
-      input = input.substring(7);
-    } else if (input.startsWith('https://')) {
-      input = input.substring(8);
-    }
-
-    // Reject IP addresses (basic check for numbers and dots only), except
-    // the emulator's host address family inside the test environment.
-    if (TestEnvironment.allowInsecureRelays &&
-        RegExp(r'^[\d.]+(:\d+)?$').hasMatch(input)) {
-      return true;
-    }
-    if (RegExp(r'^[\d.]+$').hasMatch(input)) {
-      return false;
-    }
-
-    // Domain regex: valid domain format with at least one dot
-    final domainRegex = RegExp(
-        r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$');
-    return domainRegex.hasMatch(input) && input.contains('.');
-  }
+  /// Smart URL normalization - handles different input formats.
+  /// Plain `ws://` and local hosts are accepted only when
+  /// [Config.allowInsecureRelays] is true (non-release builds or the Mortsom
+  /// test environment), see [RelayUrlValidator].
+  String? normalizeRelayUrl(String input) => _urlValidator.normalize(input);
 
   /// Test connectivity using proper Nostr protocol validation
   /// Sends REQ message and waits for EVENT + EOSE responses
@@ -345,28 +311,19 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     required String errorNotValid,
   }) async {
     // Step 1: Normalize URL
-    final normalizedUrl = normalizeRelayUrl(input);
+    final validation = _urlValidator.validate(input);
+    final normalizedUrl = validation.url;
     if (normalizedUrl == null) {
-      if (input.trim().toLowerCase().startsWith('ws://')) {
-        return RelayValidationResult(
-          success: false,
-          error: errorOnlySecure,
-        );
-      } else if (input.trim().toLowerCase().startsWith('http')) {
-        return RelayValidationResult(
-          success: false,
-          error: errorNoHttp,
-        );
-      } else {
-        return RelayValidationResult(
-          success: false,
-          error: errorInvalidDomain,
-        );
-      }
+      final error = switch (validation.rejection!) {
+        RelayUrlRejection.insecureScheme => errorOnlySecure,
+        RelayUrlRejection.httpScheme => errorNoHttp,
+        RelayUrlRejection.invalidHost => errorInvalidDomain,
+      };
+      return RelayValidationResult(success: false, error: error);
     }
 
-    // Step 2: Check for duplicates
-    if (state.any((relay) => relay.url == normalizedUrl)) {
+    // Step 2: Check for duplicates (stored URLs may predate normalization)
+    if (state.any((relay) => _normalizeRelayUrl(relay.url) == normalizedUrl)) {
       return RelayValidationResult(
         success: false,
         error: errorAlreadyExists,
@@ -384,10 +341,15 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       );
     }
 
-    // Step 5: Remove from blacklist if present (user wants to manually add it)
-    if (settings.state.blacklistedRelays.contains(normalizedUrl)) {
-      await settings.removeFromBlacklist(normalizedUrl);
-      logger.i('Removed $normalizedUrl from blacklist - user manually added it');
+    // Step 5: Remove from blacklist if present (user wants to manually add it).
+    // Compare through the canonical key: stored entries may predate
+    // normalization.
+    final blacklisted = settings.state.blacklistedRelays
+        .where((url) => _normalizeRelayUrl(url) == normalizedUrl)
+        .toList();
+    for (final url in blacklisted) {
+      await settings.removeFromBlacklist(url);
+      logger.i('Removed $url from blacklist - user manually added it');
     }
 
     // Step 6: Add relay as user relay
@@ -739,8 +701,14 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   }
 
   /// Check if a relay URL is currently blacklisted
-  bool isRelayBlacklisted(String url) {
-    return settings.state.blacklistedRelays.contains(url);
+  bool isRelayBlacklisted(String url) => _isBlacklisted(url);
+
+  /// Blacklist membership through the canonical key, so legacy entries and
+  /// relay URLs that differ only in case or trailing slashes still match.
+  bool _isBlacklisted(String url) {
+    final key = _normalizeRelayUrl(url);
+    return settings.state.blacklistedRelays
+        .any((b) => _normalizeRelayUrl(b) == key);
   }
 
   /// Get all blacklisted relay URLs
@@ -751,7 +719,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   /// Order: [Default relays...] [Mostro relays...] [User relays...]
   List<MostroRelayInfo> get mostroRelaysWithStatus {
     final blacklistedUrls = settings.state.blacklistedRelays;
-    final activeRelays = state.map((r) => r.url).toSet();
+    final activeRelays = state.map((r) => _normalizeRelayUrl(r.url)).toSet();
     final allRelayInfos = <MostroRelayInfo>[];
     
     // 1. Get active Mostro and default relays
@@ -760,7 +728,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         .map((r) => MostroRelayInfo(
               url: r.url,
               // Check if this relay is blacklisted (even if it's still in state)
-              isActive: !blacklistedUrls.contains(r.url),
+              isActive: !_isBlacklisted(r.url),
               isHealthy: r.isHealthy,
               source: r.source,
             ))
@@ -768,7 +736,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     
     // 2. Add blacklisted Mostro/default relays that are NOT in the active state
     final mostroBlacklistedRelays = blacklistedUrls
-        .where((url) => !activeRelays.contains(url))
+        .where((url) => !activeRelays.contains(_normalizeRelayUrl(url)))
         .map((url) => MostroRelayInfo(
               url: url,
               isActive: false,
@@ -787,7 +755,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         .where((r) => r.source == RelaySource.user)
         .map((r) => MostroRelayInfo(
               url: r.url,
-              isActive: !blacklistedUrls.contains(r.url), // User relays can also be blacklisted
+              isActive: !_isBlacklisted(r.url), // User relays can also be blacklisted
               isHealthy: r.isHealthy,
               source: r.source,
             ))
@@ -802,12 +770,19 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
 
   /// Check if blacklisting this relay would leave the app without any active relays
   bool wouldLeaveNoActiveRelays(String urlToBlacklist) {
-    final currentActiveRelays = state.map((r) => r.url).toList();
-    final currentBlacklist = settings.state.blacklistedRelays;
-    
+    final currentActiveRelays =
+        state.map((r) => _normalizeRelayUrl(r.url)).toList();
+    final currentBlacklist =
+        settings.state.blacklistedRelays.map(_normalizeRelayUrl);
+
     // Simulate what would happen if we blacklist this URL
-    final wouldBeBlacklisted = [...currentBlacklist, urlToBlacklist];
-    final wouldRemainActive = currentActiveRelays.where((url) => !wouldBeBlacklisted.contains(url)).toList();
+    final wouldBeBlacklisted = {
+      ...currentBlacklist,
+      _normalizeRelayUrl(urlToBlacklist),
+    };
+    final wouldRemainActive = currentActiveRelays
+        .where((url) => !wouldBeBlacklisted.contains(url))
+        .toList();
     
     logger.d('Current active: ${currentActiveRelays.length}, Would remain: ${wouldRemainActive.length}');
     return wouldRemainActive.isEmpty;
@@ -817,7 +792,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   /// If active -> blacklist it and remove from active relays  
   /// If blacklisted -> remove from blacklist and trigger re-sync to add back
   Future<void> toggleMostroRelayBlacklist(String url) async {
-    final isCurrentlyBlacklisted = settings.state.blacklistedRelays.contains(url);
+    final isCurrentlyBlacklisted = _isBlacklisted(url);
     
     if (isCurrentlyBlacklisted) {
       // Remove from blacklist and trigger sync to add back
@@ -868,12 +843,9 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
     }
   }
 
-  /// Normalize relay URL to prevent duplicates (removes trailing slash)
-  String _normalizeRelayUrl(String url) {
-    // Remove every trailing slash so `wss://relay//` and `wss://relay/`
-    // normalize to the same key as `wss://relay`.
-    return url.trim().replaceAll(RegExp(r'/+$'), '');
-  }
+  /// Canonical key used for every dedupe/blacklist comparison, shared with
+  /// the add-relay validation so both sides normalize the same way.
+  String _normalizeRelayUrl(String url) => RelayUrlValidator.canonicalKey(url);
 
   @override
   void dispose() {

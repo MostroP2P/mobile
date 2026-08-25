@@ -50,7 +50,10 @@ When implementing or debugging protocol-related features (order flows, actions, 
 ### Nostr Integration
 - **NostrService** (`services/nostr_service.dart`) manages relay connections and messaging
 - All Nostr protocol interactions go through this service
-- **MostroFSM** (`core/mostro_fsm.dart`) manages order state transitions
+- **MostroFSM** (`core/mostro_fsm.dart`) defines a transition matrix but is **not wired in** — nothing imports it
+  - Order status is actually derived by `OrderState._getStatusFromAction` (`features/order/models/order_state.dart`), which maps actions to statuses without consulting the matrix
+  - Do not read `mostro_fsm.dart` as an active validation layer. Its role axis models who performs an action, not the local user's role in the trade (the app never assigns `Role.admin` to a session), so wiring it as-is would reject legitimate admin resolutions
+  - The only transition guard that runs today is the dispute-evidence check on `admin-*` actions in `OrderState.updateWith`
 
 ### Navigation and UI
 - **GoRouter** for navigation (configured in `core/app_routes.dart`)
@@ -66,7 +69,7 @@ When implementing or debugging protocol-related features (order flows, actions, 
 
 ### Relay Management System
 - **Automatic Sync**: Real-time synchronization with Mostro instance relay lists via kind 10002 events
-- **Manual Addition**: Users can add custom relays with strict validation (wss://, domains only, connectivity required)
+- **Manual Addition**: Users can add custom relays with strict validation (wss:// to domain names with optional port, connectivity required). Non-release builds and the Mortsom test environment (`Config.allowInsecureRelays`) additionally accept local hosts (`localhost` or a private IPv4 address: loopback, 10/8, 172.16/12, 192.168/16) and plain `ws://` **only** towards those local hosts
 - **Instance Validation**: Author pubkey checking prevents relay contamination between Mostro instances  
 - **Two-tier Testing**: Nostr protocol + WebSocket connectivity validation
 - **Memory Safety**: Isolated test instances protect main app connectivity during validation
@@ -80,7 +83,8 @@ When implementing or debugging protocol-related features (order flows, actions, 
 #### Manual Relay Addition
 - Users can manually add relays via `addRelayWithSmartValidation()` method
 - Five sequential validations: URL normalization, duplicate check, domain validation, connectivity testing, blacklist management  
-- Security requirements: Only wss:// protocol, domain-only (no IP addresses), mandatory connectivity test
+- Security requirements: Only wss:// protocol to domain names (optional port), no IP addresses, mandatory connectivity test. When `Config.allowInsecureRelays` is true (debug/profile builds, Mortsom test environment) local hosts are also accepted and plain `ws://` is allowed only towards them; release builds never accept `ws://`. A public IPv4 address is never a local host, so it is rejected in every build
+- Validation logic lives in `lib/features/relays/relay_url_validator.dart` (`RelayUrlValidator.validate()` returns the URL or a typed `RelayUrlRejection` used to pick the error message)
 - Smart URL handling: Auto-adds "wss://" prefix if missing
 - Source tracking: Manual relays marked as `RelaySource.user`
 - Blacklist override: Manual addition automatically removes relay from blacklist
@@ -98,7 +102,7 @@ When implementing or debugging protocol-related features (order flows, actions, 
 
 #### Relay Validation System  
 - Two-tier connectivity testing: Primary Nostr protocol test (REQ/EVENT/EOSE), WebSocket fallback
-- Domain-only policy: IP addresses completely rejected
+- Domain-only policy in release builds: IP addresses rejected; local hosts (`localhost` or a private IPv4 address, optional port) accepted only when `Config.allowInsecureRelays` is true. Public IPv4 addresses are rejected in every build
 - URL normalization: Trailing slash removal prevents duplicate entries
 - Instance-isolated testing: Test connections don't affect main app connectivity
 
@@ -428,7 +432,7 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 - **Dual Storage Implementation**: Mostro/default relays persist in `settings.relays` and use blacklist for deactivation, user relays persist in `settings.userRelays` with complete JSON metadata via `toJson()`/`fromJson()`
 - **Differentiated Lifecycle Management**: `removeRelayWithBlacklist()` adds Mostro/default relays to blacklist for potential restoration, `removeRelay()` permanently deletes user relays from both state and storage
 - **Storage Synchronization**: `_saveRelays()` method saves all active relays to `settings.relays` while separately preserving user relay metadata in `settings.userRelays`
-- **URL Normalization Process**: Relay URLs undergo normalization by trimming whitespace and removing trailing slashes using `_normalizeRelayUrl()` method throughout blacklist operations in `_handleMostroRelayListUpdate()`
+- **URL Normalization Process**: Every dedupe/blacklist comparison goes through `RelayUrlValidator.canonicalKey()` (trim, strip trailing slashes, lowercase scheme and host); `RelaysNotifier._normalizeRelayUrl()` delegates to it so stored legacy URLs and newly validated input compare the same way
 - **Settings Persistence Mechanism**: The Settings `copyWith()` method uses null-aware operators (`??`) to preserve existing values for selectedLanguage and defaultLightningAddress when not explicitly overridden
 - **Relay Validation Protocol**: Connectivity testing follows a two-tier approach: primary Nostr protocol test (sends REQ, waits for EVENT/EOSE) via `_testNostrProtocol()`, fallback WebSocket test via `_testBasicWebSocketConnectivity()`
 - **Blacklist Matching Logic**: All blacklist operations normalize both stored blacklist URLs and incoming relay URLs to ensure consistent string matching regardless of format variations
@@ -519,6 +523,7 @@ For complete technical documentation, see `RELAY_SYNC_IMPLEMENTATION.md`.
 ### Relay System Files
 - `lib/core/models/relay_list_event.dart` - NIP-65 event parser for kind 10002
 - `lib/features/relays/relay.dart` - Enhanced relay model with source tracking
+- `lib/features/relays/relay_url_validator.dart` - Pure URL validation/normalization and canonical comparison key
 - `lib/features/relays/relays_notifier.dart` - Core relay management and sync logic
 - `lib/features/relays/relays_provider.dart` - Riverpod provider configuration
 - `lib/features/settings/settings.dart` - Settings model with blacklist support

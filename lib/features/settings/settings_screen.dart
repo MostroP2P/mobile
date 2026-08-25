@@ -64,7 +64,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           icon:
               const HeroIcon(HeroIcons.arrowLeft, color: AppTheme.textPrimary),
           onPressed: () => context.pop(),
-        ),
+        ).withAutomationId(AutomationIds.appBarBack),
         title: Text(
           S.of(context)!.settings,
           style: const TextStyle(

@@ -44,8 +44,13 @@ class Community {
     );
   }
 
-  /// Display name: kind 0 name, or region as fallback.
-  String get displayName => name ?? region;
+  /// Display name: kind 0 name, or region as fallback. The region flag is
+  /// appended when the profile name does not already carry it.
+  String get displayName {
+    final profileName = name;
+    if (profileName == null || profileName.isEmpty) return region;
+    return nameWithRegionFlag(profileName, region);
+  }
 
   /// Copy with updated metadata fields.
   Community copyWith({

@@ -57,6 +57,29 @@ void main() {
       expect(community(name: 'Mostro AR').displayName, 'Mostro AR');
     });
 
+    test('appends the region flag when the profile name lacks it', () {
+      Community flagged({String? name}) => Community(
+            pubkey: _pubkey,
+            region: '\u{1F1E7}\u{1F1F7} Brasil',
+            name: name,
+          );
+
+      expect(flagged(name: 'Mostro Brasil').displayName,
+          'Mostro Brasil \u{1F1E7}\u{1F1F7}');
+      expect(flagged(name: 'Mostro Brasil \u{1F1E7}\u{1F1F7}').displayName,
+          'Mostro Brasil \u{1F1E7}\u{1F1F7}');
+      expect(flagged().displayName, '\u{1F1E7}\u{1F1F7} Brasil');
+    });
+
+    test('leaves the name untouched when the region has no flag', () {
+      expect(community(name: 'Mostro AR').displayName, 'Mostro AR');
+      expect(
+        Community(pubkey: _pubkey, region: '\u{1F310} Default', name: 'Mostro')
+            .displayName,
+        'Mostro',
+      );
+    });
+
     test('starts with no metadata and no trade info', () {
       final c = community();
 

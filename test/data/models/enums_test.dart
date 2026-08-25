@@ -86,6 +86,17 @@ void main() {
 
       expect(terminalCount + liveCount, Status.values.length);
     });
+
+    test('isPayoutInvoice covers exactly the settled statuses', () {
+      expect(Status.settledHoldInvoice.isPayoutInvoice, isTrue);
+      expect(Status.paymentFailed.isPayoutInvoice, isTrue);
+
+      for (final status in Status.values.where(
+          (s) => s != Status.settledHoldInvoice && s != Status.paymentFailed)) {
+        expect(status.isPayoutInvoice, isFalse,
+            reason: '$status is not a payout invoice');
+      }
+    });
   });
 
   group('Role', () {

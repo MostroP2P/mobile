@@ -67,8 +67,10 @@ class TestEnvironment {
   /// bootstrap relays: a disconnected local relay must fail the test.
   static bool get disableBootstrapFallback => enabled;
 
-  /// Local test relays are plain `ws://` on a private address; that is
-  /// only acceptable inside the test environment.
+  /// Local test relays are plain `ws://` on a private address (for example
+  /// `ws://localhost:7000`), so the test environment accepts them. The
+  /// general build policy (non-release builds accept them too) lives in
+  /// `Config.allowInsecureRelays`, not here.
   static bool get allowInsecureRelays => enabled;
 
   /// Copy of the visible environment marker.
