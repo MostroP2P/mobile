@@ -338,7 +338,10 @@ class AboutScreen extends ConsumerWidget {
             _buildInfoRowWithDialog(
               context,
               S.of(context)!.protocolVersion,
-              instance.protocolVersion.toString(),
+              // Null when the node sent a protocol_version this client could
+              // not read. Showing "1" for it would claim the node speaks gift
+              // wrap when the transport may well have resolved to NIP-44.
+              instance.protocolVersion?.toString() ?? S.of(context)!.unknown,
               S.of(context)!.protocolVersionExplanation,
             ),
             const SizedBox(height: 16),

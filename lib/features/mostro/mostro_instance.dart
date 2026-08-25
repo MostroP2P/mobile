@@ -1,4 +1,5 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
+import 'package:mostro_mobile/features/mostro/transport.dart';
 
 /// Anti-abuse bond policy advertised by a Mostro daemon via the kind-38385
 /// info event.
@@ -39,9 +40,16 @@ class MostroInstance {
   final int maxOrdersPerResponse;
 
   /// Wire transport advertised via the `protocol_version` tag (§2 of the
-  /// transport v2 migration). Defaults to `1` (NIP-59 gift wrap) when the tag
-  /// is absent or unparseable, matching the legacy-daemon behaviour.
-  final int protocolVersion;
+  /// transport v2 migration), in the three states the tag can be in: the
+  /// version it names, [kLegacyProtocolVersion] when the tag is absent, and
+  /// null when it is present but unusable.
+  ///
+  /// Nullable because those last two are different facts. Reading a malformed
+  /// value as v1 is the conflation [advertisesProtocolVersion] exists to avoid,
+  /// and it would show a node whose transport actually resolved to v2 as
+  /// speaking v1. This field is display state — the transport itself comes from
+  /// [anchoredProtocolVersionFor], never from here.
+  final int? protocolVersion;
 
   /// Bond policy state. See [BondPolicy] for the three-state semantics.
   final BondPolicy bondPolicy;
@@ -78,7 +86,7 @@ class MostroInstance {
     this.lndNodeUri,
     this.fiatCurrenciesAccepted,
     this.maxOrdersPerResponse, {
-    this.protocolVersion = 1,
+    this.protocolVersion,
     this.bondPolicy = BondPolicy.unsupported,
     this.bondApplyTo,
     this.bondSlashOnWaitingTimeout,
@@ -111,7 +119,7 @@ class MostroInstance {
       event.lndNodeUri,
       event.fiatCurrenciesAccepted,
       event.maxOrdersPerResponse,
-      protocolVersion: event.protocolVersion ?? 1,
+      protocolVersion: event.assertedProtocolVersion,
       bondPolicy: event.bondPolicy,
       bondApplyTo: event.bondApplyTo,
       bondSlashOnWaitingTimeout: event.bondSlashOnWaitingTimeout,
@@ -198,6 +206,24 @@ extension MostroInstanceExtensions on NostrEvent {
   /// malformed value as legacy and pair itself with gift wrap.
   bool get advertisesProtocolVersion =>
       tags?.any((t) => t.isNotEmpty && t[0] == 'protocol_version') ?? false;
+
+  /// What this event asserts about its transport, resolving the three states
+  /// [protocolVersion] and [advertisesProtocolVersion] describe between them:
+  ///
+  /// - Tag present and parseable → that version, whatever it is. What to do
+  ///   with one this client does not speak is `resolveTransport`'s call.
+  /// - Tag absent entirely → [kLegacyProtocolVersion]. Silence from a verified
+  ///   event is a pre-v0.18.0 daemon asserting v1 by omission.
+  /// - Tag present but unusable → null. The node meant to state a version and
+  ///   the value says nothing, so there is no evidence to act on.
+  ///
+  /// The single reading of the tag, so display and transport resolution cannot
+  /// disagree about what a node claims.
+  int? get assertedProtocolVersion {
+    final parsed = protocolVersion;
+    if (parsed != null) return parsed;
+    return advertisesProtocolVersion ? null : kLegacyProtocolVersion;
+  }
 
   /// Parses the anti-abuse bond policy from the `bond_enabled` tag.
   ///

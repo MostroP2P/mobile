@@ -343,18 +343,20 @@ int? anchoredProtocolVersionFor(Ref ref) {
 ///
 /// The assertion carries the event's signed `created_at`, which is what
 /// [anchoredProtocolVersion] weighs it against the remembered one with.
+///
+/// The reading itself is [MostroInstanceExtensions.assertedProtocolVersion], so
+/// what the About screen displays and what the transport resolves from are the
+/// same judgement about the same tag.
 VersionAssertion? _advertisedBy(NostrEvent? infoEvent) {
   if (infoEvent == null) return null;
 
-  final parsed = infoEvent.protocolVersion;
-  if (parsed != null) return VersionAssertion(parsed, infoEvent.createdAt);
-
-  if (infoEvent.advertisesProtocolVersion) {
+  final asserted = infoEvent.assertedProtocolVersion;
+  if (asserted == null) {
     logger.w(
       'Node ${infoEvent.pubkey} advertises an unparseable protocol_version; '
       'treating the transport as unknown rather than legacy',
     );
     return null;
   }
-  return VersionAssertion(kLegacyProtocolVersion, infoEvent.createdAt);
+  return VersionAssertion(asserted, infoEvent.createdAt);
 }

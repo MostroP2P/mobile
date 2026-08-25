@@ -1,6 +1,7 @@
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/features/mostro/transport.dart';
 
 void main() {
   group('MostroInstance anti-abuse bond tags', () {
@@ -326,9 +327,12 @@ void main() {
       );
     }
 
-    test('tag absent → getter null, model defaults to v1', () {
+    // Silence from a verified event is a pre-v0.18.0 daemon asserting v1 by
+    // omission — a fact about the node, unlike a tag it failed to write.
+    test('tag absent → raw getter null, asserted and model read v1', () {
       final event = buildEvent(const []);
       expect(event.protocolVersion, isNull);
+      expect(event.assertedProtocolVersion, kLegacyProtocolVersion);
       expect(MostroInstance.fromEvent(event).protocolVersion, 1);
     });
 
@@ -337,6 +341,7 @@ void main() {
         ['protocol_version', '2'],
       ]);
       expect(event.protocolVersion, 2);
+      expect(event.assertedProtocolVersion, 2);
       expect(MostroInstance.fromEvent(event).protocolVersion, 2);
     });
 
@@ -345,15 +350,40 @@ void main() {
         ['protocol_version', '1'],
       ]);
       expect(event.protocolVersion, 1);
+      expect(event.assertedProtocolVersion, 1);
       expect(MostroInstance.fromEvent(event).protocolVersion, 1);
     });
 
-    test('unparseable value → getter null, model defaults to v1', () {
+    // The conflation advertisesProtocolVersion exists to avoid: the node meant
+    // to state a version and the value says nothing, so the model must not
+    // report v1 for a node whose transport may well have resolved to v2.
+    test('unparseable value → asserted null, model reports nothing', () {
       final event = buildEvent(const [
         ['protocol_version', 'abc'],
       ]);
       expect(event.protocolVersion, isNull);
-      expect(MostroInstance.fromEvent(event).protocolVersion, 1);
+      expect(event.advertisesProtocolVersion, isTrue);
+      expect(event.assertedProtocolVersion, isNull);
+      expect(MostroInstance.fromEvent(event).protocolVersion, isNull);
+    });
+
+    test('empty value → asserted null, model reports nothing', () {
+      final event = buildEvent(const [
+        ['protocol_version', ''],
+      ]);
+      expect(event.assertedProtocolVersion, isNull);
+      expect(MostroInstance.fromEvent(event).protocolVersion, isNull);
+    });
+
+    // A version this client does not speak is still what the node said, and
+    // the About screen shows it as such; resolveTransport is what decides not
+    // to pair with it.
+    test('a version this client does not speak is reported as advertised', () {
+      final event = buildEvent(const [
+        ['protocol_version', '3'],
+      ]);
+      expect(event.assertedProtocolVersion, 3);
+      expect(MostroInstance.fromEvent(event).protocolVersion, 3);
     });
   });
 }
