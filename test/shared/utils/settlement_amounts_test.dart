@@ -21,20 +21,57 @@ void main() {
       expect(SettlementAmounts.feeFor(amountSats: 2000, feeRate: 0.001), 1);
     });
 
-    test('is zero when there is no rate or no amount', () {
+    test('is zero when the node charges nothing', () {
+      // Distinct from null: a rate of zero is a term the settlement can be
+      // checked against, an unusable rate is not.
       expect(SettlementAmounts.feeFor(amountSats: 100000, feeRate: 0), 0);
-      expect(SettlementAmounts.feeFor(amountSats: 0, feeRate: feeRate), 0);
-      expect(SettlementAmounts.feeFor(amountSats: -1, feeRate: feeRate), 0);
     });
 
-    test('is zero for a rate that is not a number', () {
+    test('is null when there is no amount to charge on', () {
+      expect(SettlementAmounts.feeFor(amountSats: 0, feeRate: feeRate), isNull);
+      expect(
+          SettlementAmounts.feeFor(amountSats: -1, feeRate: feeRate), isNull);
+    });
+
+    test('is null for a rate that is not a number', () {
       expect(
         SettlementAmounts.feeFor(amountSats: 100000, feeRate: double.nan),
-        0,
+        isNull,
       );
       expect(
         SettlementAmounts.feeFor(amountSats: 100000, feeRate: double.infinity),
-        0,
+        isNull,
+      );
+      expect(
+        SettlementAmounts.feeFor(amountSats: 100000, feeRate: -0.006),
+        isNull,
+      );
+    });
+
+    test('is null for a finite rate that overflows the multiplication', () {
+      // 1e308 is finite and clears every check on the rate itself, but the
+      // product is infinity and rounding it throws.
+      expect(
+        SettlementAmounts.feeFor(amountSats: 200000, feeRate: 1e308),
+        isNull,
+      );
+    });
+
+    test('is null for a finite rate that would saturate the result', () {
+      // The quieter half of the same bug: this product stays finite, so
+      // round() does not throw — it pins to the int64 ceiling and hands back
+      // a figure the node never asked for.
+      expect(
+        SettlementAmounts.feeFor(amountSats: 200000, feeRate: 1e30),
+        isNull,
+      );
+    });
+
+    test('is null for an amount beyond the supply cap', () {
+      expect(
+        SettlementAmounts.feeFor(
+            amountSats: SettlementAmounts.maxSats + 1, feeRate: feeRate),
+        isNull,
       );
     });
   });
@@ -71,6 +108,19 @@ void main() {
         isNull,
       );
     });
+
+    test('is null rather than crashing on an extreme finite rate', () {
+      // The settlement screen reads this on build, so an unguarded rate here
+      // took the screen down instead of reporting a check it could not make.
+      expect(
+        SettlementAmounts.sellerPays(amountSats: 200000, feeRate: 1e308),
+        isNull,
+      );
+      expect(
+        SettlementAmounts.sellerPays(amountSats: 200000, feeRate: 1e30),
+        isNull,
+      );
+    });
   });
 
   group('SettlementAmounts.buyerReceives', () {
@@ -101,6 +151,17 @@ void main() {
         isNull,
       );
     });
+
+    test('is null rather than crashing on an extreme finite rate', () {
+      expect(
+        SettlementAmounts.buyerReceives(amountSats: 200000, feeRate: 1e308),
+        isNull,
+      );
+      expect(
+        SettlementAmounts.buyerReceives(amountSats: 200000, feeRate: 1e30),
+        isNull,
+      );
+    });
   });
 
   group('the two sides against one order', () {
@@ -111,7 +172,7 @@ void main() {
       final buyer = SettlementAmounts.buyerReceives(
           amountSats: amount, feeRate: feeRate)!;
       final half =
-          SettlementAmounts.feeFor(amountSats: amount, feeRate: feeRate);
+          SettlementAmounts.feeFor(amountSats: amount, feeRate: feeRate)!;
 
       expect(seller - buyer, half * 2);
       expect(seller - amount, half);

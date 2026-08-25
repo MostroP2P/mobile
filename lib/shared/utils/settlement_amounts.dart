@@ -24,13 +24,35 @@
 class SettlementAmounts {
   const SettlementAmounts._();
 
+  /// Bitcoin's supply cap, in satoshis.
+  ///
+  /// Nothing derived here can exceed it and still be a settlement figure,
+  /// whatever the node published to produce it. The same bound guards the
+  /// amount parsed out of an invoice.
+  static const int maxSats = 21000000 * 100000000;
+
   /// The node's fee on an order of [amountSats], in satoshis.
   ///
   /// Half the configured rate: each side pays its own half, so neither can
   /// derive the other's figure by halving the total.
-  static int feeFor({required int amountSats, required double feeRate}) {
-    if (amountSats <= 0 || feeRate <= 0 || !feeRate.isFinite) return 0;
-    return (feeRate * amountSats / 2.0).round();
+  ///
+  /// Null when no fee can be derived, which is not the same as a fee of zero
+  /// — a node that charges nothing is a term the client can check against,
+  /// and a rate it cannot use is not. Checking `isFinite` on the rate alone
+  /// does not settle it: the multiplication is where the domain is actually
+  /// left. A rate of 1e308 is finite and passes every input check, but the
+  /// product overflows to infinity and `round()` throws on it; a rate a
+  /// little under that stays finite and `round()` saturates silently at the
+  /// int64 ceiling, which is worse — the caller would carry the ceiling into
+  /// a derived amount as though the node had really asked for it.
+  static int? feeFor({required int amountSats, required double feeRate}) {
+    if (amountSats <= 0 || amountSats > maxSats) return null;
+    if (!feeRate.isFinite || feeRate < 0) return null;
+    if (feeRate == 0) return 0;
+
+    final fee = feeRate * amountSats / 2.0;
+    if (!fee.isFinite || fee < 0 || fee > maxSats) return null;
+    return fee.round();
   }
 
   /// What the seller's hold invoice should ask for: the order amount plus
@@ -40,15 +62,20 @@ class SettlementAmounts {
   /// been resolved yet reads as zero, and a client that treated that as a
   /// real figure would expect a settlement of exactly the fee.
   static int? sellerPays({required int amountSats, required double feeRate}) {
-    if (amountSats <= 0 || feeRate < 0 || !feeRate.isFinite) return null;
-    return amountSats + feeFor(amountSats: amountSats, feeRate: feeRate);
+    final fee = feeFor(amountSats: amountSats, feeRate: feeRate);
+    if (fee == null) return null;
+
+    final total = amountSats + fee;
+    return total <= maxSats ? total : null;
   }
 
   /// What the buyer's payout invoice should ask for: the order amount less
   /// their half of the fee.
   static int? buyerReceives({required int amountSats, required double feeRate}) {
-    if (amountSats <= 0 || feeRate < 0 || !feeRate.isFinite) return null;
-    final net = amountSats - feeFor(amountSats: amountSats, feeRate: feeRate);
+    final fee = feeFor(amountSats: amountSats, feeRate: feeRate);
+    if (fee == null) return null;
+
+    final net = amountSats - fee;
     return net > 0 ? net : null;
   }
 }
