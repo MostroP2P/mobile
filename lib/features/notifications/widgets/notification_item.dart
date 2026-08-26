@@ -9,6 +9,7 @@ import 'package:mostro_mobile/features/notifications/widgets/notification_type_i
 import 'package:mostro_mobile/features/notifications/widgets/notification_content.dart';
 import 'package:mostro_mobile/features/notifications/widgets/notification_menu.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class NotificationItem extends ConsumerWidget {
@@ -105,9 +106,14 @@ class NotificationItem extends ConsumerWidget {
         case mostro_action.Action.cooperativeCancelNoFiatByPeer:
         case mostro_action.Action.cooperativeCancelFiatSentByYou:
         case mostro_action.Action.cooperativeCancelFiatSentByPeer:
-        case mostro_action.Action.sendDm:
-        case mostro_action.Action.chatMessage:
           context.push('/trade_detail/${notification.orderId}');
+          break;
+        case mostro_action.Action.chatMessage:
+          // Peer-to-peer chat message: open the conversation itself.
+          context.push('/chat_room/${notification.orderId}');
+          break;
+        case mostro_action.Action.sendDm:
+          _handleSolverDmTap(context, ref);
           break;
         case mostro_action.Action.cantDo:
         case mostro_action.Action.rateReceived:
@@ -140,6 +146,21 @@ class NotificationItem extends ConsumerWidget {
           _showBondSlashedDialog(context);
           break;
       }
+    }
+  }
+
+  /// Opens the solver (dispute) chat for an admin DM. Falls back to the trade
+  /// detail when the session does not know its dispute id yet, since the
+  /// dispute chat cannot be addressed without it.
+  void _handleSolverDmTap(BuildContext context, WidgetRef ref) {
+    final orderId = notification.orderId;
+    if (orderId == null) return;
+
+    final disputeId = ref.read(sessionProvider(orderId))?.disputeId;
+    if (disputeId != null && disputeId.isNotEmpty) {
+      context.push('/dispute_details/$disputeId');
+    } else {
+      context.push('/trade_detail/$orderId');
     }
   }
 
