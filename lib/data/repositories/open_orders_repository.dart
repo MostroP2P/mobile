@@ -12,6 +12,21 @@ const orderEventKind = 38383;
 const infoEventKind = 38385;
 const orderFilterDurationHours = 48;
 
+/// Upper bound on the stored order events a relay may return when the book
+/// subscription opens.
+///
+/// A backstop, not a page size. Kind 38383 is addressable, so a relay that
+/// follows NIP-01 already holds one event per order rather than one per status
+/// change, and this figure sits well above what any node's 48-hour window
+/// carries — the book is not expected to reach it, and a relay that honours it
+/// returns the most recent events, which is where an in-flight trade's own
+/// order sits.
+///
+/// What it bounds is the pathological case: every event that arrives is parsed
+/// on the main isolate, so an unbounded backlog is unbounded work between
+/// launch and the first thing the user can act on.
+const orderFilterLimit = 1000;
+
 class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final NostrService _nostrService;
   NostrEvent? _mostroInstance;
@@ -113,6 +128,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
           kinds: [orderEventKind],
           since: filterTime,
           authors: [nodePubkey],
+          limit: orderFilterLimit,
         ),
       ],
     );

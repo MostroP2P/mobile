@@ -72,6 +72,7 @@ void main() {
       expect(orders.kinds, [orderEventKind]);
       expect(orders.authors, [_nodePubkey]);
       expect(orders.since, isNotNull);
+      expect(orders.limit, orderFilterLimit);
     });
 
     test('resubscribes both when the node changes', () {
