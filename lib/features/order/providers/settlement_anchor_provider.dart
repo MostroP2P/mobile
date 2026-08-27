@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
+import 'package:mostro_mobile/features/order/settlement_terms_store.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
@@ -46,7 +47,7 @@ final signedOrderAmountProvider = Provider.family<int?, String>((ref, orderId) {
   return ref.watch(publishedOrderAmountProvider(orderId));
 });
 
-/// The node's fee rate, from its kind-38385 info event.
+/// The node's fee rate, and when the node published the event carrying it.
 ///
 /// Followed rather than sampled: the info event arrives asynchronously after
 /// the order subscription is opened, so a screen built first would otherwise
@@ -58,22 +59,59 @@ final signedOrderAmountProvider = Provider.family<int?, String>((ref, orderId) {
 /// unpinned fee rate would go on deriving amounts from the previous node's
 /// terms and refuse settlements that are in fact correct.
 ///
+/// `publishedAt` travels with the rate rather than being read off the event
+/// again elsewhere, because it is what separates a term the node supplied
+/// after an agreement from one this client was merely late to receive. See
+/// [orderFeeRateProvider], which is the only thing that needs the
+/// distinction.
+///
 /// Null when the info event has not arrived, belongs to another node, or does
 /// not carry the tag. The getter parses eagerly and throws on a missing tag,
 /// which is fine for the About screen it was written for and not for a
 /// payment check.
-final nodeFeeRateProvider = Provider<double?>((ref) {
+final nodeFeeTermsProvider =
+    Provider<({double rate, DateTime? publishedAt})?>((ref) {
   final nodePubkey = ref.watch(
     settingsProvider.select((settings) => settings.mostroPublicKey),
   );
   final info = ref.watch(mostroInfoEventProvider).valueOrNull;
   if (info == null || info.pubkey != nodePubkey) return null;
   try {
-    return info.fee;
+    return (rate: info.fee, publishedAt: info.createdAt);
   } catch (e) {
     logger.w('Node info event carries no usable fee rate: $e');
     return null;
   }
+});
+
+/// The fee rate the node currently advertises. See [nodeFeeTermsProvider].
+///
+/// What a commitment pins, and what a session predating pinning follows.
+final nodeFeeRateProvider = Provider<double?>(
+  (ref) => ref.watch(nodeFeeTermsProvider)?.rate,
+);
+
+/// When the trade behind [orderId] committed, from the durable anchor store.
+///
+/// Deliberately not `Session.startTime`. A restore rebuilds every session with
+/// `DateTime.now()`, so that field records when the app last reconstructed the
+/// trade rather than when the user agreed to it — and a term the node
+/// published after the agreement but before the restore would then read as one
+/// that preceded it, which is the substitution pinning exists to refuse. The
+/// anchor is written once, before the commitment is published, and a restore
+/// does not touch it.
+///
+/// Null for a session that pinned nothing: one written before pinning existed
+/// has no instant of agreement to hold anything to.
+final commitmentTimeProvider =
+    Provider.family<DateTime?, String>((ref, orderId) {
+  final session = ref.watch(sessionProvider(orderId));
+  if (session == null || !session.termsPinned) return null;
+
+  return ref
+      .read(settlementTermsStoreProvider)
+      .termsFor(session.tradeKey.public)
+      ?.pinnedAt;
 });
 
 /// The fee rate this settlement is held to.
@@ -107,17 +145,52 @@ final orderFeeRateProvider = Provider.family<double?, String>((ref, orderId) {
   final pinned = session?.pinnedFeeRate;
   if (pinned != null) return pinned;
 
-  // Pinning ran for this session and came up with no rate, so the node had
-  // none to offer at the moment of agreement. Reading the live rate here
-  // would let it supply the term afterwards, which is the whole of what
-  // pinning exists to prevent. Report it unknown instead and let the screen
-  // say the check could not be made.
+  // Pinning ran for this session and came up with no rate. Two unrelated
+  // things put a session here, and only one of them is the node's doing:
   //
-  // This cannot be inferred from a pinned amount being present: a
+  //  - the node published no rate at the moment of agreement and supplied
+  //    one afterwards. That is not a term of the agreement, and adopting it
+  //    is the move pinning exists to stop.
+  //  - the node had published one, signed, before the agreement, and this
+  //    client had not finished receiving it. Nothing was supplied after the
+  //    fact; the client was behind.
+  //
+  // Refusing both put the second — an ordinary trade on an honest node, over
+  // a link slow enough to still be draining the order book — behind a caution
+  // for the life of the trade. A warning that fires on honest trades is read
+  // once and furniture by the twentieth, which costs more than it buys the
+  // one time it fires for the reason it exists.
+  //
+  // The event's own created_at separates them, and is covered by the
+  // signature and the recomputed id, so a node cannot move it without
+  // signing for it. It does not hold against one willing to backdate; that
+  // case is not blocked today either, only warned about, and a warning that
+  // is read beats one that is not.
+  //
+  // Skew is not compensated. The two sides come from different clocks — the
+  // node's for created_at, the device's for the commitment — so a device
+  // running behind keeps the caution where an honest node published seconds
+  // before the take. That direction is the safe one, and the race this closes
+  // is a client draining a backlog, where the event predates the commitment
+  // by far more than any plausible skew.
+  //
+  // None of this can be inferred from a pinned amount being present: a
   // market-price order resolves no sats until after the take, so it pins
   // none, and inferring from that would leave exactly those orders following
   // whatever rate the node publishes next.
-  if (session?.termsPinned == true) return null;
+  if (session?.termsPinned == true) {
+    final committedAt = ref.watch(commitmentTimeProvider(orderId));
+    final terms = ref.watch(nodeFeeTermsProvider);
+    final publishedAt = terms?.publishedAt;
+
+    // An anchor with no instant behind it, or an event that does not say when
+    // it was published, is not evidence that it predates anything.
+    if (committedAt == null || terms == null || publishedAt == null) {
+      return null;
+    }
+
+    return publishedAt.isAfter(committedAt) ? null : terms.rate;
+  }
 
   return ref.watch(nodeFeeRateProvider);
 });

@@ -114,6 +114,25 @@ void main() {
       expect(terms.feeRate, isNull);
     });
 
+    test('keeps the instant of agreement across a reopen', () async {
+      // Not only a pruning clock any more: where a commitment pinned no fee
+      // rate, this is what a later info event is measured against to tell a
+      // term supplied after the agreement from one the client was late to
+      // receive. A range remainder is anchored at its parent's instant, so it
+      // has to survive storage rather than being recomputed on read.
+      final store = _store();
+      await store.init();
+
+      final committedAt = DateTime.fromMillisecondsSinceEpoch(1781000000000);
+      await store.pin(_tradeKey, pinnedAt: committedAt);
+      await store.pendingWrites;
+
+      final reopened = _store();
+      await reopened.init();
+
+      expect(reopened.termsFor(_tradeKey)!.pinnedAt, committedAt);
+    });
+
     test('drops an anchor for a session the user deleted', () async {
       final store = _store();
       await store.init();

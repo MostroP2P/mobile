@@ -329,6 +329,11 @@ class MostroService {
         // which is the market check's territory.
         pinnedFiatCode: currentSession.pinnedFiatCode,
         pinnedPremium: currentSession.pinnedPremium,
+        // The parent's instant of agreement, so the child is held to when the
+        // range order was made rather than to when its remainder was released.
+        committedAt: sessionNotifier
+            .anchoredTermsFor(currentSession.tradeKey.public)
+            ?.pinnedAt,
         termsPinned: currentSession.termsPinned,
       );
       logger.i(

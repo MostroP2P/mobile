@@ -427,6 +427,12 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   /// child inherits that absence rather than a rate read later, which was
   /// never part of the agreement either. Its sats are not pinned: no taker
   /// has resolved them yet, which is the market check's territory.
+  ///
+  /// [committedAt] is the parent's instant of agreement, not this moment. The
+  /// remainder is a leg of an order the user already made, so it is held to
+  /// when that was made — otherwise a rate the node published between the
+  /// parent's commitment and this release would count as having preceded the
+  /// child, and the child would adopt a term nobody agreed to.
   Future<Session> createChildOrderSession({
     required NostrKeyPairs tradeKey,
     required int keyIndex,
@@ -435,6 +441,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     double? pinnedFeeRate,
     String? pinnedFiatCode,
     double? pinnedPremium,
+    DateTime? committedAt,
     bool termsPinned = false,
   }) async {
     final masterKey = ref.read(keyManagerProvider).masterKeyPair!;
@@ -459,6 +466,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
               feeRate: pinnedFeeRate,
               fiatCode: pinnedFiatCode,
               premium: pinnedPremium,
+              pinnedAt: committedAt,
             );
       } on SettlementTermsNotDurable catch (e) {
         logger.e(

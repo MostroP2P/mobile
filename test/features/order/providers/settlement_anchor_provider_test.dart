@@ -4,6 +4,7 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mostro_mobile/features/order/settlement_terms_store.dart';
 import 'package:mostro_mobile/features/order/providers/settlement_anchor_provider.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
@@ -18,16 +19,27 @@ final _nodePubkey = 'a' * 64;
 final _otherNodePubkey = 'b' * 64;
 const _orderId = 'order-1';
 
+/// When the trade under test committed, and the two instants either side of
+/// it that an info event can carry.
+final _commitment = DateTime.utc(2026, 6, 15, 12);
+final _beforeCommitment = _commitment.subtract(const Duration(hours: 1));
+final _afterCommitment = _commitment.add(const Duration(hours: 1));
+
 /// The kind-38385 info event, carrying only the tags the fee rate is read
 /// from. `MostroInstance.fee` parses the `fee` tag eagerly and throws when it
 /// is absent, which is what the provider's guard is there to absorb.
-NostrEvent _infoEvent({String? pubkey, String? fee}) => NostrEvent(
+///
+/// [createdAt] is load-bearing where the session pinned no rate: it is what
+/// separates a rate the node published after the agreement from one this
+/// client was merely late to receive.
+NostrEvent _infoEvent({String? pubkey, String? fee, DateTime? createdAt}) =>
+    NostrEvent(
       id: 'info-event',
       kind: 38385,
       content: '',
       sig: 'sig',
       pubkey: pubkey ?? _nodePubkey,
-      createdAt: DateTime.utc(2026),
+      createdAt: createdAt ?? DateTime.utc(2026),
       tags: [
         ['d', pubkey ?? _nodePubkey],
         if (fee != null) ['fee', fee],
@@ -98,7 +110,20 @@ void main() {
   late StreamController<List<NostrEvent>> orderEvents;
   late _StubSettingsNotifier settings;
   late Session? session;
+  late SettlementTermsStore termsStore;
   late ProviderContainer container;
+
+  /// An anchor store holding nothing, so a test that does not care about the
+  /// commitment instant behaves as one whose trade never recorded it.
+  Future<SettlementTermsStore> emptyStore() async {
+    final prefs = MockSharedPreferencesAsync();
+    when(prefs.getString(any)).thenAnswer((_) async => null);
+    when(prefs.setString(any, any)).thenAnswer((_) async {});
+
+    final store = SettlementTermsStore(prefs);
+    await store.init();
+    return store;
+  }
 
   /// Rebuilds the container so a session set by a test is in place before the
   /// providers first read it.
@@ -107,14 +132,23 @@ void main() {
       orderRepositoryProvider.overrideWithValue(repository),
       settingsProvider.overrideWith((ref) => settings),
       sessionProvider.overrideWith((ref, id) => id == _orderId ? session : null),
+      settlementTermsStoreProvider.overrideWithValue(termsStore),
     ]);
     addTearDown(container.dispose);
+  }
+
+  /// Anchors the trade under test at [at], the way a take does before it
+  /// publishes, and rebuilds the container around the result.
+  Future<void> commitAt(DateTime at) async {
+    termsStore = await emptyStore();
+    await termsStore.pin(_keyPair.public, pinnedAt: at);
+    build();
   }
 
   /// Lets the stream deliveries behind the providers settle.
   Future<void> flush() => Future<void>.delayed(Duration.zero);
 
-  setUp(() {
+  setUp(() async {
     repository = MockOpenOrdersRepository();
     infoEvents = StreamController<NostrEvent>.broadcast();
     orderEvents = StreamController<List<NostrEvent>>.broadcast();
@@ -124,6 +158,7 @@ void main() {
 
     settings = _StubSettingsNotifier(_nodePubkey);
     session = null;
+    termsStore = await emptyStore();
     build();
 
     addTearDown(infoEvents.close);
@@ -215,17 +250,17 @@ void main() {
       expect(container.read(anchoredBuyerAmountProvider(_orderId)), 99700);
     });
 
-    test('a fee missing at commitment does not become a term afterwards',
+    test('a fee published after the commitment does not become a term of it',
         () async {
-      // The take landed before the info event, so there was an amount to pin
-      // and no rate. Reading the rate later would let the node choose it.
+      // The node had published no rate when the user agreed, and signs one
+      // afterwards. Adopting it would let it choose the term after the fact.
       session = _session(pinnedAmountSats: 100000);
-      build();
+      await commitAt(_commitment);
 
       container.read(anchoredSellerAmountProvider(_orderId));
       orderEvents.add([_orderEvent()]);
-      // The node now publishes a rate more than sixteen times the usual.
-      infoEvents.add(_infoEvent(fee: '0.1'));
+      // A rate more than sixteen times the usual, signed after the agreement.
+      infoEvents.add(_infoEvent(fee: '0.1', createdAt: _afterCommitment));
       await flush();
 
       expect(container.read(orderFeeRateProvider(_orderId)), isNull);
@@ -278,17 +313,16 @@ void main() {
       expect(container.read(anchoredSellerAmountProvider(_orderId)), 100300);
     });
 
-    test('a market-price take with no rate at commitment stays unknown',
-        () async {
+    test('a market-price take stays unknown against a later rate', () async {
       // Nothing to pin on either side: the sats are unresolved until a taker
-      // fixes them, and the info event had not arrived. The absent rate must
-      // not be filled in from a later event.
+      // fixes them, and the node had published no rate. One signed afterwards
+      // must not fill the absence in.
       session = _session();
-      build();
+      await commitAt(_commitment);
 
       container.read(anchoredSellerAmountProvider(_orderId));
       orderEvents.add([_orderEvent()]);
-      infoEvents.add(_infoEvent(fee: '0.1'));
+      infoEvents.add(_infoEvent(fee: '0.1', createdAt: _afterCommitment));
       await flush();
 
       expect(container.read(orderFeeRateProvider(_orderId)), isNull);
@@ -297,18 +331,77 @@ void main() {
 
     test('a range remainder inherits the absence its parent committed to',
         () async {
-      // The child session carries the parent's pinned rate, which is none.
-      // Reading one now would promote an event published after the agreement
-      // into a term of it.
+      // The child session carries the parent's pinned rate, which is none,
+      // and is anchored at the parent's instant of agreement rather than at
+      // the release. A rate signed between the two is not a term of either.
       session = _session(pinnedFeeRate: null);
+      await commitAt(_commitment);
+
+      container.read(anchoredSellerAmountProvider(_orderId));
+      orderEvents.add([_orderEvent()]);
+      infoEvents.add(_infoEvent(fee: '0.05', createdAt: _afterCommitment));
+      await flush();
+
+      expect(container.read(orderFeeRateProvider(_orderId)), isNull);
+    });
+  });
+
+  group('a rate the client was late to receive', () {
+    test('is adopted when the node signed it before the commitment', () async {
+      // The honest race: the rate was public and signed before the user
+      // agreed, and this client was still draining the order book. Nothing
+      // was supplied after the fact, so there is nothing to caution about.
+      session = _session(pinnedAmountSats: 100000);
+      await commitAt(_commitment);
+
+      container.read(anchoredSellerAmountProvider(_orderId));
+      orderEvents.add([_orderEvent()]);
+      infoEvents.add(_infoEvent(fee: '0.006', createdAt: _beforeCommitment));
+      await flush();
+
+      expect(container.read(orderFeeRateProvider(_orderId)), 0.006);
+      expect(container.read(anchoredSellerAmountProvider(_orderId)), 100300);
+    });
+
+    test('is refused when the node signed it after the commitment', () async {
+      session = _session(pinnedAmountSats: 100000);
+      await commitAt(_commitment);
+
+      container.read(anchoredSellerAmountProvider(_orderId));
+      orderEvents.add([_orderEvent()]);
+      infoEvents.add(_infoEvent(fee: '0.006', createdAt: _afterCommitment));
+      await flush();
+
+      expect(container.read(orderFeeRateProvider(_orderId)), isNull);
+    });
+
+    test('is refused when the trade recorded no instant of agreement',
+        () async {
+      // Pinning ran but left no anchor to compare against, so there is no
+      // evidence the rate preceded anything. An absence is not a licence.
+      session = _session(pinnedAmountSats: 100000);
       build();
 
       container.read(anchoredSellerAmountProvider(_orderId));
       orderEvents.add([_orderEvent()]);
-      infoEvents.add(_infoEvent(fee: '0.05'));
+      infoEvents.add(_infoEvent(fee: '0.006', createdAt: _beforeCommitment));
       await flush();
 
       expect(container.read(orderFeeRateProvider(_orderId)), isNull);
+    });
+
+    test('is not consulted at all once a rate was pinned', () async {
+      // The commitment recorded a rate, so the event's age is beside the
+      // point: an older one must not displace what the user agreed to.
+      session = _session(pinnedAmountSats: 100000, pinnedFeeRate: 0.006);
+      await commitAt(_commitment);
+
+      container.read(anchoredSellerAmountProvider(_orderId));
+      orderEvents.add([_orderEvent()]);
+      infoEvents.add(_infoEvent(fee: '0.1', createdAt: _beforeCommitment));
+      await flush();
+
+      expect(container.read(orderFeeRateProvider(_orderId)), 0.006);
     });
   });
 }
