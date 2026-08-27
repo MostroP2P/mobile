@@ -29,6 +29,10 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final Map<String, NostrEvent> _events = {};
   StreamSubscription<NostrEvent>? _subscription;
 
+  /// The node info subscription, kept apart from the order one. See
+  /// [_subscribeToOrders] for why it does not share a filter.
+  StreamSubscription<NostrEvent>? _infoSubscription;
+
   /// Polls for NostrService readiness when the repository is built before
   /// init() completes, so the order subscription can be opened once Nostr is up.
   Timer? _initRetryTimer;
@@ -48,9 +52,28 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     _emitEvents();
   }
 
-  /// Subscribes to events matching the given filter.
+  /// Subscribes to the node's order book and to its info event.
+  ///
+  /// The two go out as separate requests, and the info one first. Sharing a
+  /// filter put the info event behind the entire order backlog: one request,
+  /// answered in whatever order the relay holds its events, and the book is
+  /// every order the node touched in [orderFilterDurationHours].
+  ///
+  /// That ordering is not cosmetic. The fee rate the settlement checks are
+  /// anchored to is read off this event, and it is pinned at the moment the
+  /// user commits to a trade. A take that lands before the event does pins no
+  /// rate at all, and the settlement screens then report — for the life of
+  /// that trade — an amount they could not verify. On a slow link, or via a
+  /// `mostro:` deep link that opens straight onto the take screen, that is a
+  /// caution the user's bandwidth decides rather than the node's honesty.
+  ///
+  /// Its own request also lets the filter drop `since`. The node republishes
+  /// its info event on its own schedule, not the order book's, so a node that
+  /// has been quiet for longer than the order window would otherwise never
+  /// announce itself at all.
   void _subscribeToOrders() {
     _subscription?.cancel();
+    _infoSubscription?.cancel();
     _initRetryTimer?.cancel();
 
     // The repository can be built before NostrService.init() completes (the
@@ -63,30 +86,41 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       return;
     }
 
+    final nodePubkey = _settings.mostroPublicKey;
+
+    _infoSubscription = _nostrService
+        .subscribeToEvents(
+          NostrRequest(
+            filters: [
+              NostrFilter(
+                kinds: [infoEventKind],
+                authors: [nodePubkey],
+                limit: 1,
+              ),
+            ],
+          ),
+        )
+        .listen(_handleInfoEvent, onError: (error) {
+      logger.e('Error in Mostro info subscription: $error');
+    });
+
     final filterTime =
         DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
 
-    final filter = NostrFilter(
-      kinds: [orderEventKind, infoEventKind],
-      since: filterTime,
-      authors: [_settings.mostroPublicKey],
-    );
-
     final request = NostrRequest(
-      filters: [filter],
+      filters: [
+        NostrFilter(
+          kinds: [orderEventKind],
+          since: filterTime,
+          authors: [nodePubkey],
+        ),
+      ],
     );
 
     _subscription = _nostrService.subscribeToEvents(request).listen((event) {
       if (event.type == 'order') {
         _events[event.orderId!] = event;
         _eventStreamController.add(_events.values.toList());
-      } else if (event.kind == infoEventKind &&
-          event.pubkey == _settings.mostroPublicKey) {
-        logger.i('Mostro instance info loaded: $event');
-        _mostroInstance = event;
-        if (!_mostroInstanceController.isClosed) {
-          _mostroInstanceController.add(event);
-        }
       }
     }, onError: (error) {
       logger.e('Error in order subscription: $error');
@@ -95,6 +129,24 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
     // Ensure listeners receive at least one snapshot right after (re)subscription
     _emitEvents();
+  }
+
+  /// Records the node's info event and announces it.
+  ///
+  /// The author is checked rather than assumed: a node switch cancels this
+  /// subscription, but an event already in flight when it does must not be
+  /// reported as the new node's terms.
+  void _handleInfoEvent(NostrEvent event) {
+    if (event.kind != infoEventKind ||
+        event.pubkey != _settings.mostroPublicKey) {
+      return;
+    }
+
+    logger.i('Mostro instance info loaded: $event');
+    _mostroInstance = event;
+    if (!_mostroInstanceController.isClosed) {
+      _mostroInstanceController.add(event);
+    }
   }
 
   /// Polls NostrService until it reports initialized, then opens the order
@@ -127,6 +179,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   @override
   void dispose() {
     _subscription?.cancel();
+    _infoSubscription?.cancel();
     _initRetryTimer?.cancel();
     _eventStreamController.close();
     _mostroInstanceController.close();
