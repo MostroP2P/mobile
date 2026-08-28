@@ -84,7 +84,7 @@ listed below disappears, is renamed, or stops being namespaced.
 | `order.create.submit`, `order.create.cancel`, `order.confirm.home` | create order | Submit / cancel; back to home from the confirmation screen. |
 | `order.take.confirm`, `order.take.close`, `order.take.amount`, `order.take.amount.confirm` | take order | Take the order; range amount dialog. |
 | `order.id` | trade | Read-only order id (label = id). |
-| `order.status` | trade | Read-only order status; label is the wire status (`pending`, `waiting-payment`, `active`, `fiat-sent`, `success`, `canceled`, ...). |
+| `order.status` | trade | Read-only order status; label is the wire status (`pending`, `waiting-payment`, `active`, `fiat-sent`, `success`, `canceled`, ...). On the maker's own pending order the trade detail shows the creator reputation instead of the Mostro message card, so there the status comes from an invisible readout; exactly one node either way. |
 | `trades.item.<orderId>`, `trades.item.status` | trades | Trade row; status chip whose label is the wire status. |
 | `trade.<action>` (`trade.payInvoice`, `trade.addInvoice`, `trade.fiatSent`, `trade.release`, `trade.takeSell`, `trade.takeBuy`, `trade.rate`, `trade.cancel`, `trade.dispute`, ...) | trade | Trade action buttons named after the protocol action. |
 | `trade.release.confirm`, `trade.cancel.confirm`, `trade.dispute.confirm` | trade | Confirmation dialogs. |

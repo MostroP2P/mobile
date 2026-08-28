@@ -80,13 +80,10 @@ class _PayLightningInvoiceScreenState
               // NWC auto-payment flow
               header,
               const SizedBox(height: 24),
-              // Automation readout: the invoice being paid, so a black-box
-              // driver can correlate the payment by hash without reading the
-              // QR code. Invisible; screen readers get the invoice string.
-              const SizedBox(width: 1, height: 1).withAutomationId(
-                  AutomationIds.payInvoiceText,
-                  merge: false,
-                  label: lnInvoice),
+              // The invoice being paid, so a black-box driver can correlate
+              // the payment by hash without reading the QR code.
+              AutomationReadout(AutomationIds.payInvoiceText,
+                  value: lnInvoice),
               NwcPaymentWidget(
                 lnInvoice: lnInvoice,
                 sats: sats,

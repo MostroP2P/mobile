@@ -76,3 +76,28 @@ extension AutomationIdExtension on Widget {
   Widget withAutomationId(String id, {bool merge = true, String? label}) =>
       AutomationId(id, merge: merge, label: label, child: this);
 }
+
+/// An invisible readout that puts a business state on the accessibility tree.
+///
+/// Some screens carry state that no visible control names: the invoice being
+/// paid, or the order status on a branch that replaces the card normally
+/// showing it. This draws nothing (a one-pixel box) and exposes [value] as
+/// the label of the node identified by [id], so a black-box driver — and a
+/// screen reader — can read the state where there would otherwise be
+/// silence.
+///
+/// [value] is the wire value the harness asserts on, not a localized string;
+/// see `docs/automation-contract.md`.
+class AutomationReadout extends StatelessWidget {
+  const AutomationReadout(this.id, {super.key, required this.value});
+
+  /// One of the `AutomationIds` constants or helpers.
+  final String id;
+
+  /// The wire value exposed as the accessibility label.
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => const SizedBox(width: 1, height: 1)
+      .withAutomationId(id, merge: false, label: value);
+}
