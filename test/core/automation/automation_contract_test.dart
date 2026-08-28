@@ -252,6 +252,18 @@ void main() {
       expect(semantics.label, 'connected');
       expect(semantics.getSemanticsData().label, 'connected');
     });
+
+    testWidgets('an invisible readout still carries id and value',
+        (tester) async {
+      // `AutomationReadout` draws nothing, so the node it adds is the only
+      // thing a driver or a screen reader has to go on.
+      await tester.pumpWidget(
+          harness(const AutomationReadout('demo.readout', value: 'pending')));
+
+      final semantics =
+          tester.getSemantics(find.bySemanticsIdentifier('demo.readout'));
+      expect(semantics.getSemanticsData().label, 'pending');
+    });
   });
 
   group('contract identifiers on real widgets', () {

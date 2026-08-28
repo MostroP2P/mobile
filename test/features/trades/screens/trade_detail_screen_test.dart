@@ -3,19 +3,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mostro_mobile/core/automation/automation_ids.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart' as actions;
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/notifiers/order_notifier.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/trades/screens/trade_detail_screen.dart';
+import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/services/mostro_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
@@ -60,6 +66,39 @@ class _FixedOrderNotifier extends OrderNotifier {
   void subscribe() {}
 }
 
+/// The maker's own session for the order: a seller session on a sell order
+/// is what `_isUserCreator` reads as "you created this".
+Session _makerSession() => Session(
+      masterKey: NostrKeyPairs(private: '0' * 63 + '1'),
+      tradeKey: NostrKeyPairs(private: '0' * 63 + '1'),
+      keyIndex: 1,
+      fullPrivacy: false,
+      startTime: DateTime.utc(2026, 1, 1),
+      orderId: 'order-1',
+      role: Role.seller,
+    );
+
+/// The public 38383 the creator reputation card is built from.
+NostrEvent _publicOrderEvent() => NostrEvent(
+      id: 'event-id',
+      kind: 38383,
+      content: '',
+      sig: 'sig',
+      pubkey: 'a' * 64,
+      createdAt: DateTime.utc(2026, 1, 1),
+      tags: const [
+        ['d', 'order-1'],
+        ['k', 'sell'],
+        ['f', 'CUP'],
+        ['s', 'pending'],
+        ['amt', '495'],
+        ['fa', '333'],
+        ['pm', 'Saldo movil'],
+        ['premium', '0'],
+        ['rating', '{"total_reviews":3,"total_rating":4.5,"days":10}'],
+      ],
+    );
+
 Order _order(Status status) => Order(
       id: 'order-1',
       kind: OrderType.sell,
@@ -84,9 +123,16 @@ void main() {
 
   tearDown(() async => db.close());
 
-  Future<void> pumpDetail(WidgetTester tester, OrderState tradeState) async {
+  Future<void> pumpDetail(
+    WidgetTester tester,
+    OrderState tradeState, {
+    Session? session,
+    NostrEvent? publicEvent,
+  }) async {
     await tester.pumpWidget(ProviderScope(
       overrides: [
+        sessionProvider(orderId).overrideWith((ref) => session),
+        eventProvider(orderId).overrideWithValue(publicEvent),
         sharedPreferencesProvider.overrideWithValue(SharedPreferencesAsync()),
         mostroDatabaseProvider.overrideWithValue(db),
         nostrServiceProvider.overrideWithValue(_SilentNostrService()),
@@ -161,6 +207,59 @@ void main() {
       );
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+  });
+
+  group('order.status on the trade detail', () {
+    // Regression: on the maker's own pending order the screen swaps the
+    // Mostro message card — the only widget carrying `order.status` — for the
+    // creator reputation, so the status vanished from the whole pending phase
+    // of every order this app creates. See docs/automation-contract.md.
+    testWidgets('is exposed on a pending order you created', (tester) async {
+      await pumpDetail(
+        tester,
+        OrderState(
+          status: Status.pending,
+          action: actions.Action.newOrder,
+          order: _order(Status.pending),
+        ),
+        session: _makerSession(),
+        publicEvent: _publicOrderEvent(),
+      );
+
+      // The branch under test: reputation shown, message card gone.
+      expect(find.byType(MostroMessageDetail), findsNothing);
+
+      final status = find.bySemanticsIdentifier(AutomationIds.orderStatus);
+      expect(status, findsOneWidget);
+      expect(
+        tester.getSemantics(status).getSemanticsData().label,
+        Status.pending.value,
+      );
+    });
+
+    testWidgets('is exposed once on the message card branch', (tester) async {
+      // The other branch still owns the identifier, and the two never both
+      // render: a driver always finds exactly one node.
+      await pumpDetail(
+        tester,
+        OrderState(
+          status: Status.waitingPayment,
+          action: actions.Action.payInvoice,
+          order: _order(Status.waitingPayment),
+        ),
+        session: _makerSession(),
+        publicEvent: _publicOrderEvent(),
+      );
+
+      expect(find.byType(MostroMessageDetail), findsOneWidget);
+
+      final status = find.bySemanticsIdentifier(AutomationIds.orderStatus);
+      expect(status, findsOneWidget);
+      expect(
+        tester.getSemantics(status).getSemanticsData().label,
+        Status.waitingPayment.value,
+      );
     });
   });
 }
