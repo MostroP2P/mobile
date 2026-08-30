@@ -1,4 +1,6 @@
-class Settings {
+import 'package:equatable/equatable.dart';
+
+class Settings extends Equatable {
   final bool fullPrivacyMode;
   final List<String> relays;
   final String mostroPublicKey;
@@ -14,7 +16,7 @@ class Settings {
   final bool notificationVibrationEnabled;
   final int? sessionExpirationHours;
 
-  Settings({
+  const Settings({
     required this.relays,
     required this.fullPrivacyMode,
     required this.mostroPublicKey,
@@ -29,6 +31,25 @@ class Settings {
     this.notificationVibrationEnabled = true,
     this.sessionExpirationHours,
   });
+
+  /// Value equality (deep on lists): the relay sync rewrites settings twice
+  /// per kind 10002 event; without this every write rebuilt each watcher.
+  @override
+  List<Object?> get props => [
+        fullPrivacyMode,
+        relays,
+        mostroPublicKey,
+        defaultFiatCode,
+        selectedLanguage,
+        defaultLightningAddress,
+        blacklistedRelays,
+        userRelays,
+        isLoggingEnabled,
+        pushNotificationsEnabled,
+        notificationSoundEnabled,
+        notificationVibrationEnabled,
+        sessionExpirationHours,
+      ];
 
   Settings copyWith({
     List<String>? relays,

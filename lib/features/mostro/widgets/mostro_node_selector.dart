@@ -36,7 +36,8 @@ class _MostroNodeSelectorState extends ConsumerState<MostroNodeSelector> {
   @override
   Widget build(BuildContext context) {
     ref.watch(mostroNodesProvider);
-    final currentPubkey = ref.watch(settingsProvider).mostroPublicKey;
+    final currentPubkey =
+        ref.watch(settingsProvider.select((s) => s.mostroPublicKey));
     final notifier = ref.read(mostroNodesProvider.notifier);
     final trustedNodes = notifier.trustedNodes;
     final customNodes = notifier.customNodes;

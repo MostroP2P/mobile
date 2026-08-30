@@ -11,8 +11,8 @@ import 'package:mostro_mobile/features/order/providers/order_notifier_provider.d
 /// Provider for the dispute repository
 final disputeRepositoryProvider = Provider.autoDispose<DisputeRepository>((ref) {
   final nostrService = ref.watch(nostrServiceProvider);
-  final settings = ref.watch(settingsProvider);
-  final mostroPubkey = settings.mostroPublicKey;
+  final mostroPubkey =
+      ref.watch(settingsProvider.select((s) => s.mostroPublicKey));
   
   return DisputeRepository(nostrService, mostroPubkey, ref);
 });
