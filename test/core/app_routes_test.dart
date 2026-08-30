@@ -11,23 +11,35 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 const _mostroLink =
     'mostro:8927bb1d-da68-491e-b0e2-db0ed548d52c?relays=wss://relay.mostro.network';
 
+/// Holds a single router for the test, so a rebuild cannot make another one.
+class _RouterHost extends ConsumerStatefulWidget {
+  const _RouterHost();
+
+  @override
+  ConsumerState<_RouterHost> createState() => _RouterHostState();
+}
+
+class _RouterHostState extends ConsumerState<_RouterHost> {
+  late final GoRouter router = createRouter(ref);
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
+}
+
 /// Builds the app's real router inside a scope that can resolve it, and hands
 /// it back without mounting any screen.
 Future<GoRouter> buildRouter(WidgetTester tester) async {
-  late GoRouter router;
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(SharedPreferencesAsync()),
       ],
-      child: Consumer(
-        builder: (context, ref, _) {
-          router = createRouter(ref);
-          return const SizedBox.shrink();
-        },
-      ),
+      child: const _RouterHost(),
     ),
   );
+  final router =
+      tester.state<_RouterHostState>(find.byType(_RouterHost)).router;
+  addTearDown(router.dispose);
   return router;
 }
 
