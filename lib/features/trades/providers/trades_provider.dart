@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -31,9 +30,6 @@ final filteredTradesWithOrderStateProvider =
   final allOrdersAsync = ref.watch(orderEventsProvider);
   final sessions = ref.watch(sessionNotifierProvider);
   final selectedStatusFilter = ref.watch(statusFilterProvider);
-
-  logger.d(
-      'Filtering trades with OrderState: Orders state=${allOrdersAsync.toString().substring(0, math.min(100, allOrdersAsync.toString().length))}, Sessions count=${sessions.length}, Status filter=${selectedStatusFilter?.value}');
 
   return allOrdersAsync.when(
     data: (allOrders) {

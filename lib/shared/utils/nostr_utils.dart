@@ -67,9 +67,19 @@ class NostrUtils {
     return _instance.services.keys.derivePublicKey(privateKey: privateKey);
   }
 
+  /// Deep validation (constructs an EC key pair, one scalar multiplication).
+  /// Use only at real input boundaries (auth/key import); hot paths guard
+  /// session-derived keys with the syntactic [isHexPrivateKey] instead.
   static bool isValidPrivateKey(String privateKey) {
     return _instance.services.keys.isValidPrivateKey(privateKey);
   }
+
+  static final RegExp _hexKey = RegExp(r'^[0-9a-fA-F]{64}$');
+
+  /// Cheap syntactic check for keys the app derived itself. The previous
+  /// EC-based guard cost one scalar multiplication per gift wrap decrypt.
+  static bool isHexPrivateKey(String privateKey) =>
+      _hexKey.hasMatch(privateKey);
 
   // Signing and verification
   static String signMessage(String message, String privateKey) {
@@ -348,7 +358,7 @@ class NostrUtils {
     if (recipientPubKey.length != 64) {
       throw ArgumentError('Invalid recipient public key');
     }
-    if (!isValidPrivateKey(senderPrivateKey)) {
+    if (!isHexPrivateKey(senderPrivateKey)) {
       throw ArgumentError('Invalid sender private key');
     }
 
@@ -391,7 +401,7 @@ class NostrUtils {
     if (event.content == null || event.content!.isEmpty) {
       throw ArgumentError('Event content is empty');
     }
-    if (!isValidPrivateKey(privateKey)) {
+    if (!isHexPrivateKey(privateKey)) {
       throw ArgumentError('Invalid private key');
     }
 
@@ -467,7 +477,7 @@ class NostrUtils {
     if (event.content == null || event.content!.isEmpty) {
       throw ArgumentError('Event content is empty');
     }
-    if (!isValidPrivateKey(privateKey)) {
+    if (!isHexPrivateKey(privateKey)) {
       throw ArgumentError('Invalid private key');
     }
     if (event.pubkey != expectedAuthor) {
