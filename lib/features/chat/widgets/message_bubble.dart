@@ -47,7 +47,7 @@ class MessageBubble extends ConsumerWidget {
             Flexible(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                  maxWidth: MediaQuery.sizeOf(context).width * 0.75,
                   minWidth: 0,
                 ),
                 child: Container(
@@ -95,7 +95,7 @@ class MessageBubble extends ConsumerWidget {
             Flexible(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                  maxWidth: MediaQuery.sizeOf(context).width * 0.75,
                   minWidth: 0,
                 ),
                 child: Container(
@@ -141,7 +141,7 @@ class MessageBubble extends ConsumerWidget {
           Flexible(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75, // Max 75% of screen width
+                maxWidth: MediaQuery.sizeOf(context).width * 0.75, // Max 75% of screen width
                 minWidth: 0,
               ),
               child: GestureDetector(
@@ -182,10 +182,15 @@ class MessageBubble extends ConsumerWidget {
     );
   }
 
+  // Hoisted: DateFormat parses its pattern on construction, and one was
+  // built per bubble per build.
+  static final DateFormat _format24h = DateFormat('HH:mm');
+  static final DateFormat _format12h = DateFormat('h:mm a');
+
   String _formatTime(BuildContext context) {
     if (message.createdAt == null) return '';
     final use24h = MediaQuery.alwaysUse24HourFormatOf(context);
-    return DateFormat(use24h ? 'HH:mm' : 'h:mm a')
+    return (use24h ? _format24h : _format12h)
         .format(message.createdAt!.toLocal());
   }
 
