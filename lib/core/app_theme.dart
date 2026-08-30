@@ -88,7 +88,12 @@ class AppTheme {
       EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0);
   static const EdgeInsets largeMargin = EdgeInsets.all(20.0);
 
-  static ThemeData get theme {
+  /// Built once: `ThemeData` is immutable and this is read on every rebuild
+  /// of the root `MaterialApp`, the drawer and the reactive buttons. A getter
+  /// rebuilt the whole theme (plus ~20 `GoogleFonts` descriptors) per access.
+  static final ThemeData theme = _buildTheme();
+
+  static ThemeData _buildTheme() {
     return ThemeData(
       hoverColor: dark1,
       primaryColor: mostroGreen,
@@ -235,7 +240,7 @@ class AppTheme {
   }
 
   // helpers for shadows
-  static List<BoxShadow> get cardShadow => [
+  static final List<BoxShadow> cardShadow = List.unmodifiable([
         BoxShadow(
           color: Colors.black.withValues(alpha: 0.7),
           blurRadius: 15,
@@ -248,14 +253,14 @@ class AppTheme {
           offset: const Offset(0, -1),
           spreadRadius: 0,
         ),
-      ];
+      ]);
 
-  static List<BoxShadow> get buttonShadow => [
+  static final List<BoxShadow> buttonShadow = List.unmodifiable([
         BoxShadow(
           color: Colors.black.withValues(alpha: 0.4),
           blurRadius: 6,
           offset: const Offset(0, 3),
           spreadRadius: -2,
         ),
-      ];
+      ]);
 }
