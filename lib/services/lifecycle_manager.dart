@@ -66,7 +66,10 @@ class LifecycleManager extends WidgetsBindingObserver {
       await Future.delayed(const Duration(milliseconds: 500));
 
       final subscriptionManager = ref.read(subscriptionManagerProvider);
-      subscriptionManager.subscribeAll();
+      // resume() rather than subscribeAll(): the relay-list subscription is
+      // not derived from sessions, so subscribeAll() alone cannot bring it
+      // back after _switchToBackground() tore it down.
+      subscriptionManager.resume();
 
       // Reinitialize the mostro service
       logger.i("Reinitializing MostroService");
@@ -132,7 +135,7 @@ class LifecycleManager extends WidgetsBindingObserver {
           logger.e('Failed to persist background filters: $e');
         }
 
-        subscriptionManager.unsubscribeAll();
+        subscriptionManager.suspend();
 
         // Transfer active subscriptions to background service
         final backgroundService = ref.read(backgroundServiceProvider);
@@ -142,6 +145,9 @@ class LifecycleManager extends WidgetsBindingObserver {
         backgroundService.subscribe(activeFilters);
       } else {
         _isInBackground = true;
+        // Still suspend: a pending relay sync retry must not re-open a REQ
+        // while the background service owns connectivity.
+        subscriptionManager.suspend();
         logger.w("No active subscriptions to transfer to background service");
         // Clear any previously persisted filters to prevent stale subscriptions
         // on service revival
