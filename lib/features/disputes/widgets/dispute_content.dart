@@ -5,7 +5,6 @@ import 'package:mostro_mobile/features/disputes/widgets/dispute_order_id.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_description.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_read_status_provider.dart';
-import 'package:mostro_mobile/services/dispute_read_status_service.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 
 /// Main content widget for dispute information
@@ -56,29 +55,18 @@ class _DisputeContentState extends ConsumerState<DisputeContent> {
               child: DisputeHeader(dispute: widget.dispute),
             ),
             // Unread indicator for in-progress disputes
-            if (normalizedStatus == 'in-progress')
-              FutureBuilder<bool>(
-                future: DisputeReadStatusService.hasUnreadMessages(
-                  widget.dispute.disputeId,
-                  ref.watch(disputeChatNotifierProvider(widget.dispute.disputeId)).messages,
-                  isFromUser: ref.read(
-                    disputeChatNotifierProvider(widget.dispute.disputeId).notifier,
-                  ).isFromUser,
+            if (normalizedStatus == 'in-progress' &&
+                ref
+                    .watch(
+                        disputeHasUnreadProvider(widget.dispute.disputeId))
+                    .maybeWhen(data: (unread) => unread, orElse: () => false))
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
                 ),
-                builder: (context, snapshot) {
-                  final hasUnread = snapshot.data ?? false;
-                  if (!hasUnread) {
-                    return const SizedBox.shrink();
-                  }
-                  return Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  );
-                },
               ),
           ],
         ),
