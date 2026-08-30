@@ -95,7 +95,6 @@ class NwcNotifier extends StateNotifier<NwcState> {
   Timer? _balanceRefreshTimer;
 
   /// Timer for connection health checks.
-  Timer? _healthCheckTimer;
 
   /// Number of consecutive reconnect attempts.
   int _reconnectAttempts = 0;
@@ -191,7 +190,6 @@ class NwcNotifier extends StateNotifier<NwcState> {
       _startBalanceRefresh();
 
       // Start connection health checks (every 30 seconds)
-      _startHealthChecks();
 
       logger.i('NWC: Connected to wallet "${info?.alias ?? "unknown"}"');
     } on NwcInvalidUriException catch (e) {
@@ -242,45 +240,36 @@ class NwcNotifier extends StateNotifier<NwcState> {
     );
   }
 
-  /// Starts periodic balance refresh.
+  /// Starts the periodic balance-and-health tick. A single get_balance per
+  /// minute both refreshes the balance and proves the connection is alive;
+  /// the previous separate 30 s health check tripled the relay round trips.
   void _startBalanceRefresh() {
     _balanceRefreshTimer?.cancel();
     _balanceRefreshTimer = Timer.periodic(
       const Duration(seconds: 60),
-      (_) => refreshBalance(),
+      (_) => _refreshBalanceAndHealth(),
     );
   }
 
-  /// Starts periodic connection health checks.
-  void _startHealthChecks() {
-    _healthCheckTimer?.cancel();
-    _healthCheckTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => _checkHealth(),
-    );
-  }
-
-  /// Checks connection health by attempting a get_balance call.
-  Future<void> _checkHealth() async {
+  Future<void> _refreshBalanceAndHealth() async {
     if (_client == null || !_client!.isConnected) {
       _handleConnectionDrop();
       return;
     }
 
     try {
-      await _client!.getBalance();
-      if (!state.connectionHealthy) {
-        state = state.copyWith(
-          connectionHealthy: true,
-          lastSuccessfulContact: DateTime.now().millisecondsSinceEpoch,
-        );
-      }
+      final balance = await _client!.getBalance();
+      state = state.copyWith(
+        balanceMsats: balance.balance,
+        lastSuccessfulContact: DateTime.now().millisecondsSinceEpoch,
+        connectionHealthy: true,
+      );
     } on NwcTimeoutException {
       logger.w('NWC: Health check timed out');
       state = state.copyWith(connectionHealthy: false);
       _handleConnectionDrop();
     } catch (e) {
-      logger.w('NWC: Health check failed: $e');
+      logger.w('NWC: Balance/health refresh failed: $e');
       state = state.copyWith(connectionHealthy: false);
     }
   }
@@ -350,8 +339,6 @@ class NwcNotifier extends StateNotifier<NwcState> {
     _notificationSub = null;
     _balanceRefreshTimer?.cancel();
     _balanceRefreshTimer = null;
-    _healthCheckTimer?.cancel();
-    _healthCheckTimer = null;
     _client?.disconnect();
     _client = null;
   }

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
+import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -31,7 +32,6 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   final Ref ref;
   SubscriptionManager? _subscriptionManager;
   StreamSubscription<RelayListEvent>? _relayListSubscription;
-  Timer? _settingsWatchTimer;
   Timer? _retryTimer;
   
   // Hash-based deduplication to prevent processing identical relay lists
@@ -644,31 +644,28 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
 
   /// Initialize settings listener to watch for Mostro pubkey changes
   void _initSettingsListener() {
-    // Watch settings changes and re-sync when Mostro pubkey changes
-    String? currentPubkey = settings.state.mostroPublicKey;
-    
-    // Use a simple timer to periodically check for changes
-    // This avoids circular dependency issues with provider watching
-    _settingsWatchTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      final newPubkey = settings.state.mostroPublicKey;
-      
-      // Only reset if there's a REAL change (both values are non-empty and different)
-      if (newPubkey != currentPubkey && 
-          currentPubkey != null && 
-          newPubkey.isNotEmpty && 
-          currentPubkey!.isNotEmpty) {
-        logger.i('Detected REAL Mostro pubkey change: $currentPubkey -> $newPubkey');
-        currentPubkey = newPubkey;
-        
-        // Full reset: clear all relays and perform a fresh sync
-        _cleanAllRelaysAndResync();
-      } else if (newPubkey != currentPubkey) {
-        // Just update the tracking variable without reset (initial load)
-        logger.i('Initial Mostro pubkey load: $newPubkey');
-        currentPubkey = newPubkey;
-        syncWithMostroInstance();
-      }
-    });
+    // React to Mostro pubkey changes; replaces a 5 s polling timer that ran
+    // for the app's whole life. try/catch keeps construction usable with
+    // fake refs in unit tests (same pattern as _initMostroRelaySync).
+    try {
+      ref.listen<String>(
+        settingsProvider.select((s) => s.mostroPublicKey),
+        (previous, next) {
+          if (previous == next) return;
+          if (previous != null && previous.isNotEmpty && next.isNotEmpty) {
+            logger.i('Detected REAL Mostro pubkey change: $previous -> $next');
+            // Full reset: clear all relays and perform a fresh sync
+            _cleanAllRelaysAndResync();
+          } else {
+            // Initial load: sync without wiping state
+            logger.i('Initial Mostro pubkey load: $next');
+            syncWithMostroInstance();
+          }
+        },
+      );
+    } catch (e) {
+      logger.w('Settings listener unavailable (test environment?): $e');
+    }
   }
 
   /// Clean all relays and perform fresh sync with new Mostro
@@ -851,7 +848,6 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   void dispose() {
     _relayListSubscription?.cancel();
     _subscriptionManager?.dispose();
-    _settingsWatchTimer?.cancel();
     _retryTimer?.cancel();  // Cancel retry timer to prevent leak
     super.dispose();
   }
