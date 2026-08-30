@@ -1,13 +1,18 @@
 import 'package:mostro_mobile/data/models/payload.dart';
 
-class PaymentFailed implements Payload {
+import 'package:equatable/equatable.dart';
+
+class PaymentFailed extends Equatable implements Payload {
   final int paymentAttempts;
   final int paymentRetriesInterval;
 
-  PaymentFailed({
+  const PaymentFailed({
     required this.paymentAttempts,
     required this.paymentRetriesInterval,
   });
+
+  @override
+  List<Object?> get props => [paymentAttempts, paymentRetriesInterval];
 
   factory PaymentFailed.fromJson(Map<String, dynamic> json) {
     return PaymentFailed(

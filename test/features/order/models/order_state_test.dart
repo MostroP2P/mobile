@@ -109,12 +109,11 @@ void main() {
       expect(build().hashCode, build().hashCode);
     });
 
-    // `Order` declares no `==`/`hashCode`, so two structurally identical
-    // orders are different values and the surrounding states compare unequal.
-    // Tracked as a separate defect; pinned here so a fix shows up as a
-    // deliberate change rather than a silent behaviour shift.
-    test('states holding equal-but-distinct orders compare unequal today', () {
-      expect(baseState(), isNot(baseState()));
+    // `Order` now declares value equality, so two structurally identical
+    // orders make the surrounding states compare equal — replayed messages
+    // no longer look like state changes to watchers.
+    test('states holding equal-but-distinct orders compare equal', () {
+      expect(baseState(), baseState());
     });
 
     test('states differing in any field are not equal', () {
