@@ -134,6 +134,7 @@ The app follows a specific initialization order in `appInitializerProvider`:
 - SessionNotifier must complete initialization before SubscriptionManager setup
 - SubscriptionManager uses `fireImmediately: false` to prevent premature execution
 - Proper sequence ensures orders appear consistently in UI across app restarts
+- There is exactly **one** `SubscriptionManager`, owned by `subscriptionManagerProvider`. `RelaysNotifier` borrows it (`ref.read`) for the kind 10002 relay-list stream and must never construct its own instance nor dispose the shared one — a private copy re-issues every orders/chat/dispute REQ on every relay (regression test: `test/features/relays/relays_notifier_subscription_manager_test.dart`). Because `RelaysNotifier` is read during bootstrap, the shared manager may be created before `SessionNotifier.init()`; that is safe since `init()` always emits state, which the manager's session listener turns into the initial subscriptions
 
 ## Timeout Detection & Orphan Session Prevention
 
