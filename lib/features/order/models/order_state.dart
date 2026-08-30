@@ -175,7 +175,7 @@ class OrderState {
       (!_acceptsAdminDisputeAction || _hasMismatchedDisputePayload(message));
 
   OrderState updateWith(MostroMessage message) {
-    logger.i('Updating OrderState with Action: ${message.action}');
+    logger.d('Updating OrderState with Action: ${message.action}');
 
     // Preserve the current state entirely for cantDo messages - they are informational only
     if (message.action == Action.cantDo) {
@@ -217,12 +217,12 @@ class OrderState {
       effectiveAction = newFiatWasSent
           ? Action.cooperativeCancelFiatSentByYou
           : Action.cooperativeCancelNoFiatByYou;
-      logger.i('Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
+      logger.d('Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
     } else if (message.action == Action.cooperativeCancelInitiatedByPeer) {
       effectiveAction = newFiatWasSent
           ? Action.cooperativeCancelFiatSentByPeer
           : Action.cooperativeCancelNoFiatByPeer;
-      logger.i('Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
+      logger.d('Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
     }
 
     // Determine the new status based on the action received
@@ -230,21 +230,21 @@ class OrderState {
         effectiveAction, message.getPayload<Order>()?.status);
 
     // DEBUG: Log status mapping
-    logger.i('Status mapping: $effectiveAction → $newStatus');
+    logger.d('Status mapping: $effectiveAction → $newStatus');
 
     // A pending order has no counterpart: when Mostro republishes it after the
     // taker times out, the previous taker's snapshot must not be carried into
     // the next take and shown as if it belonged to whoever takes it next.
     final bool orderReactivated = newStatus == Status.pending;
     if (orderReactivated && peerReputation != null) {
-      logger.i('Order returned to pending: dropping the taker reputation');
+      logger.d('Order returned to pending: dropping the taker reputation');
     }
 
     // Preserve PaymentRequest correctly
     PaymentRequest? newPaymentRequest;
     if (message.payload is PaymentRequest) {
       newPaymentRequest = message.getPayload<PaymentRequest>();
-      logger.i('New PaymentRequest found in message');
+      logger.d('New PaymentRequest found in message');
     } else {
       newPaymentRequest = paymentRequest; // Preserve existing
     }
@@ -253,7 +253,7 @@ class OrderState {
     if (message.payload is Peer &&
         message.getPayload<Peer>()!.publicKey.isNotEmpty) {
       newPeer = message.getPayload<Peer>();
-      logger.i('👤 New Peer found in message');
+      logger.d('👤 New Peer found in message');
     } else if (message.payload is Order) {
       if (message.getPayload<Order>()!.buyerTradePubkey != null) {
         newPeer =
@@ -262,7 +262,7 @@ class OrderState {
         newPeer =
             Peer(publicKey: message.getPayload<Order>()!.sellerTradePubkey!);
       }
-      logger.i('👤 New Peer found in message');
+      logger.d('👤 New Peer found in message');
     } else {
       newPeer = peer; // Preserve existing
     }
@@ -298,7 +298,7 @@ class OrderState {
           updatedDispute = updatedDispute.copyWith(
             createdAt: DateTime.fromMillisecondsSinceEpoch(tsMs),
           );
-          logger.i('Updated dispute ${updatedDispute.disputeId} createdAt from message timestamp: ${updatedDispute.createdAt}');
+          logger.d('Updated dispute ${updatedDispute.disputeId} createdAt from message timestamp: ${updatedDispute.createdAt}');
         }
       }
     }
@@ -318,7 +318,7 @@ class OrderState {
         final peerPayload = message.getPayload<Peer>();
         if (peerPayload != null && peerPayload.publicKey.isNotEmpty) {
           adminPubkey = peerPayload.publicKey;
-          logger.i('Extracted admin pubkey from Peer payload: $adminPubkey');
+          logger.d('Extracted admin pubkey from Peer payload: $adminPubkey');
         }
       }
       
@@ -327,22 +327,22 @@ class OrderState {
         adminTookAt: DateTime.now(),
         adminPubkey: adminPubkey,
       );
-      logger.i('Updated dispute status to in-progress for adminTookDispute action');
+      logger.d('Updated dispute status to in-progress for adminTookDispute action');
     } else if (message.action == Action.adminSettled && updatedDispute != null) {
       // When admin settles dispute, update status to resolved with settlement info
       updatedDispute = updatedDispute.copyWith(
         status: 'resolved',
         action: 'admin-settled', // Store the resolution type
       );
-      logger.i('Updated dispute status to resolved for adminSettled action');
+      logger.d('Updated dispute status to resolved for adminSettled action');
     } else if (message.action == Action.adminCanceled && updatedDispute != null) {
       // When admin cancels order, update dispute status to seller-refunded
       updatedDispute = updatedDispute.copyWith(
         status: 'seller-refunded',
         action: 'admin-canceled', // Store the resolution type
       );
-      logger.i('Updated dispute status to seller-refunded for adminCanceled action');
-      logger.i('Dispute status updated to: ${updatedDispute.status}');
+      logger.d('Updated dispute status to seller-refunded for adminCanceled action');
+      logger.d('Dispute status updated to: ${updatedDispute.status}');
     }
 
     // Auto-close dispute when order reaches terminal state by user action
@@ -356,7 +356,7 @@ class OrderState {
         status: 'closed',
         action: 'user-completed',
       );
-      logger.i('Auto-closed dispute: order completed by users');
+      logger.d('Auto-closed dispute: order completed by users');
     } else if (updatedDispute != null &&
         !disputeAlreadyTerminal &&
         newStatus == Status.canceled &&
@@ -365,7 +365,7 @@ class OrderState {
         status: 'closed',
         action: 'cooperative-cancel',
       );
-      logger.i('Auto-closed dispute: cooperative cancellation');
+      logger.d('Auto-closed dispute: cooperative cancellation');
     }
 
     // Bond acks (3.5) and slash notice (4): their SmallOrder has a null status
@@ -395,7 +395,7 @@ class OrderState {
       clearPeerReputation: orderReactivated,
     );
 
-    logger.i('New state: ${newState.status} - ${newState.action}');
+    logger.d('New state: ${newState.status} - ${newState.action}');
     logger
         .i('PaymentRequest preserved: ${newState.paymentRequest != null}');
 
