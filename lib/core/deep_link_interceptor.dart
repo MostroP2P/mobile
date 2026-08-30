@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
+import 'package:mostro_mobile/core/deep_link_schemes.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 
 /// A deep link interceptor that prevents custom schemes from reaching GoRouter
@@ -23,7 +24,7 @@ class DeepLinkInterceptor extends WidgetsBindingObserver {
     logger.i('DeepLinkInterceptor: Route information received: $uri');
 
     // Check if this is a custom scheme URL
-    if (_isCustomScheme(uri)) {
+    if (isCustomSchemeUri(uri)) {
       logger.i('DeepLinkInterceptor: Custom scheme detected: ${uri.scheme}, intercepting and preventing GoRouter processing');
 
       // Emit the custom URL for processing
@@ -48,7 +49,7 @@ class DeepLinkInterceptor extends WidgetsBindingObserver {
 
     try {
       final uri = Uri.parse(route);
-      if (_isCustomScheme(uri)) {
+      if (isCustomSchemeUri(uri)) {
         logger.i('DeepLinkInterceptor: Custom scheme detected in didPushRoute: ${uri.scheme}, intercepting');
         _customUrlController.add(route);
         return true;
@@ -59,19 +60,6 @@ class DeepLinkInterceptor extends WidgetsBindingObserver {
 
     // ignore: deprecated_member_use
     return super.didPushRoute(route);
-  }
-
-  /// Check if the URI uses a custom scheme
-  bool _isCustomScheme(Uri uri) => isCustomSchemeUri(uri);
-
-  /// Whether the URI uses a scheme the app resolves itself, such as `mostro:`
-  static bool isCustomSchemeUri(Uri uri) =>
-      uri.scheme.isNotEmpty && uri.scheme != 'http' && uri.scheme != 'https';
-
-  /// [isCustomSchemeUri] for an unparsed location; unparseable means no
-  static bool isCustomSchemeLocation(String location) {
-    final uri = Uri.tryParse(location);
-    return uri != null && isCustomSchemeUri(uri);
   }
 
   /// Dispose the interceptor
