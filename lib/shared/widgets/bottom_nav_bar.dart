@@ -179,7 +179,10 @@ class BottomNavBar extends ConsumerWidget {
 
     final currentLocation = GoRouterState.of(context).uri.toString();
     if (currentLocation != nextRoute) {
-      context.push(nextRoute);
+      // Tabs are root destinations: replace the page instead of pushing it.
+      // Pushed tabs stayed mounted (maintainState) and kept rebuilding on
+      // every order/chat event, one live screen per tap.
+      context.go(nextRoute);
     }
   }
 }
