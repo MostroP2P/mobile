@@ -8,10 +8,12 @@ import 'package:mostro_mobile/core/app_routes.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/deep_link_handler.dart';
 import 'package:mostro_mobile/core/deep_link_interceptor.dart';
+import 'package:mostro_mobile/core/deep_link_schemes.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/features/auth/notifiers/auth_state.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/notifications/services/background_notification_service.dart';
 import 'package:mostro_mobile/shared/providers/app_init_provider.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
@@ -32,11 +34,16 @@ class MostroApp extends ConsumerStatefulWidget {
   ConsumerState<MostroApp> createState() => _MostroAppState();
 }
 
+/// How many frames a pending deep link waits before it is dropped
+const _maxDeepLinkAttempts = 10;
+
 class _MostroAppState extends ConsumerState<MostroApp> {
   GoRouter? _router;
   bool _deepLinksInitialized = false;
   bool _notificationLaunchHandled = false;
   DeepLinkInterceptor? _deepLinkInterceptor;
+  Uri? _pendingDeepLink;
+  int _deepLinkAttempts = 0;
   StreamSubscription<String>? _customUrlSubscription;
 
   @override
@@ -54,60 +61,110 @@ class _MostroAppState extends ConsumerState<MostroApp> {
 
     // Listen for intercepted custom URLs
     _customUrlSubscription = _deepLinkInterceptor!.customUrlStream.listen(
-      (url) async {
-        debugPrint('Intercepted custom URL: $url');
-
-        // Process the URL through our deep link handler
-        if (_router != null) {
-          try {
-            final uri = Uri.parse(url);
-            final deepLinkHandler = ref.read(deepLinkHandlerProvider);
-            await deepLinkHandler.handleInitialDeepLink(uri, _router!);
-          } catch (e) {
-            debugPrint('Error handling intercepted URL: $e');
-          }
+      (url) {
+        logger.i('Intercepted custom URL: $url');
+        final uri = Uri.tryParse(url);
+        if (uri == null) {
+          logger.w('Ignoring unparseable custom URL: $url');
+          return;
         }
+        _queueDeepLink(uri);
       },
       onError: (error) {
-        debugPrint('Error in custom URL stream: $error');
+        logger.e('Error in custom URL stream: $error');
       },
     );
   }
 
   /// Process initial deep link before router initialization
   Future<void> _processInitialDeepLink() async {
+    Uri? initialUri;
     try {
-      final appLinks = AppLinks();
-      final initialUri = await appLinks.getInitialLink();
+      initialUri = await AppLinks().getInitialLink();
+    } catch (e, stack) {
+      logger.e('Error processing initial deep link',
+          error: e, stackTrace: stack);
+    }
+    initialUri ??= _platformDefaultDeepLink();
 
-      if (initialUri != null && initialUri.scheme == 'mostro') {
-        // Store the initial mostro URL for later processing
-        // and prevent it from being passed to GoRouter
-        debugPrint('Initial mostro deep link detected: $initialUri');
-
-        // Schedule the deep link processing after the router is ready
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _handleInitialMostroLink(initialUri);
-        });
-      }
-    } catch (e) {
-      debugPrint('Error processing initial deep link: $e');
+    if (initialUri != null && isCustomSchemeUri(initialUri)) {
+      logger.i('Initial deep link detected: $initialUri');
+      _queueDeepLink(initialUri);
     }
   }
 
-  /// Handle initial mostro link after router is ready
-  Future<void> _handleInitialMostroLink(Uri uri) async {
-    try {
-      // Wait for router to be ready
-      await Future.delayed(const Duration(milliseconds: 100));
+  /// The cold start link createRouter discards, in case app_links missed it
+  Uri? _platformDefaultDeepLink() {
+    final location =
+        WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+    if (!isCustomSchemeLocation(location)) return null;
+    logger.i('Falling back to the platform default location: $location');
+    return Uri.tryParse(location);
+  }
 
-      if (_router != null) {
-        final deepLinkHandler = ref.read(deepLinkHandlerProvider);
-        await deepLinkHandler.handleInitialDeepLink(uri, _router!);
-      }
-    } catch (e) {
-      debugPrint('Error handling initial mostro link: $e');
+  /// Keep the link until there is a router and a navigator to open it with.
+  /// One slot is enough: links arrive one at a time, and the newest is the one
+  /// the user just asked for.
+  void _queueDeepLink(Uri uri) {
+    if (_pendingDeepLink != null && _pendingDeepLink != uri) {
+      logger.w('Replacing pending deep link $_pendingDeepLink with $uri');
     }
+    _pendingDeepLink = uri;
+    _deepLinkAttempts = 0;
+    _deliverPendingDeepLink();
+  }
+
+  void _deliverPendingDeepLink() {
+    if (!mounted) return;
+    final uri = _pendingDeepLink;
+    final router = _router;
+    if (uri == null || router == null) return;
+
+    // The handler needs the navigator, which only exists once the router has
+    // rendered a frame.
+    if (router.routerDelegate.navigatorKey.currentContext == null) {
+      _retryPendingDeepLink();
+      return;
+    }
+
+    _pendingDeepLink = null;
+    unawaited(_handleDeepLink(uri, router));
+  }
+
+  /// Try again on the next frame, up to [_maxDeepLinkAttempts]. Retrying on
+  /// consecutive frames keeps a link from opening an order long after the user
+  /// asked for it.
+  void _retryPendingDeepLink() {
+    _deepLinkAttempts++;
+    if (_deepLinkAttempts > _maxDeepLinkAttempts) {
+      logger.w('Giving up on deep link $_pendingDeepLink');
+      _pendingDeepLink = null;
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _deliverPendingDeepLink();
+    });
+    // A post frame callback does not request a frame on its own.
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  Future<void> _handleDeepLink(Uri uri, GoRouter router) async {
+    var handled = false;
+    try {
+      handled = await ref
+          .read(deepLinkHandlerProvider)
+          .handleInitialDeepLink(uri, router);
+    } catch (e, stack) {
+      logger.e('Error handling deep link', error: e, stackTrace: stack);
+    }
+    if (handled) {
+      _deepLinkAttempts = 0;
+      return;
+    }
+    // The app was not in a state to open it, so keep it for another frame.
+    if (!mounted) return;
+    _pendingDeepLink ??= uri;
+    _retryPendingDeepLink();
   }
 
   @override
@@ -150,6 +207,7 @@ class _MostroAppState extends ConsumerState<MostroApp> {
 
         // Initialize router if not already done
         _router ??= createRouter(ref);
+        _deliverPendingDeepLink();
 
         // Initialize deep links after router is created
         if (!_deepLinksInitialized && _router != null) {
@@ -162,8 +220,8 @@ class _MostroAppState extends ConsumerState<MostroApp> {
             } catch (e, stackTrace) {
               // Log the error but don't set _deepLinksInitialized to true
               // This allows retries on subsequent builds
-              debugPrint('Failed to initialize deep links: $e');
-              debugPrint('Stack trace: $stackTrace');
+              logger.e('Failed to initialize deep links',
+                  error: e, stackTrace: stackTrace);
             }
           });
         }
@@ -176,7 +234,7 @@ class _MostroAppState extends ConsumerState<MostroApp> {
             if (!mounted) return;
             if (payload != null && payload.isNotEmpty) {
               final route = resolveNotificationRoute(payload);
-              debugPrint(
+              logger.i(
                   'App launched from notification tap, navigating to: $route');
               _router!.push(route);
             }
