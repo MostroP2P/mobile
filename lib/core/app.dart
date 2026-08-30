@@ -144,9 +144,12 @@ class _MostroAppState extends ConsumerState<MostroApp> {
           });
         });
 
-        // Watch both system locale and settings for changes
+        // Watch both system locale and the language override. Only the
+        // language matters here; watching the whole Settings object rebuilt
+        // MaterialApp.router on every relay sync write.
         final systemLocale = ref.watch(systemLocaleProvider);
-        final settings = ref.watch(settingsProvider);
+        final selectedLanguage =
+            ref.watch(settingsProvider.select((s) => s.selectedLanguage));
 
         // Initialize router if not already done
         _router ??= createRouter(ref);
@@ -201,8 +204,8 @@ class _MostroAppState extends ConsumerState<MostroApp> {
             );
           },
           // Use language override from settings if available, otherwise let callback handle detection
-          locale: settings.selectedLanguage != null
-              ? Locale(settings.selectedLanguage!)
+          locale: selectedLanguage != null
+              ? Locale(selectedLanguage)
               : systemLocale,
           localizationsDelegates: const [
             S.delegate,

@@ -9,10 +9,13 @@ import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 
 final exchangeServiceProvider = Provider<ExchangeService>((ref) {
   final nostrService = ref.watch(nostrServiceProvider);
-  final settings = ref.watch(settingsProvider);
+  // Select: recreating this service on unrelated settings writes dropped its
+  // 1 h rate cache and refetched every watched currency over the relays.
+  final mostroPubkey =
+      ref.watch(settingsProvider.select((s) => s.mostroPublicKey));
   return NostrExchangeService(
     nostrService: nostrService,
-    mostroPubkey: settings.mostroPublicKey,
+    mostroPubkey: mostroPubkey,
   );
 });
 
