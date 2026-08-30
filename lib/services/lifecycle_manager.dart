@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -18,33 +19,54 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class LifecycleManager extends WidgetsBindingObserver {
   final Ref ref;
+  final bool _isMobilePlatform;
   bool _isInBackground = false;
+  Timer? _backgroundDebounce;
 
-  LifecycleManager(this.ref) {
+  /// A background switch is expensive (unsubscribe everything, start the
+  /// background service) and the matching resume redoes cold-start work, so
+  /// it only runs once the app has stayed away for this long. A quick resume
+  /// cancels it.
+  static const Duration backgroundDebounce = Duration(seconds: 2);
+
+  @visibleForTesting
+  bool get isInBackground => _isInBackground;
+
+  LifecycleManager(this.ref, {bool? isMobilePlatform})
+      : _isMobilePlatform =
+            isMobilePlatform ?? (Platform.isAndroid || Platform.isIOS) {
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      switch (state) {
-        case AppLifecycleState.resumed:
-          // App is in foreground
-          if (_isInBackground) {
-            await _switchToForeground();
-          }
-          break;
-        case AppLifecycleState.paused:
-        case AppLifecycleState.inactive:
-        case AppLifecycleState.detached:
-          // App is in background
-          if (!_isInBackground) {
-            await _switchToBackground();
-          }
-          break;
-        default:
-          break;
-      }
+    if (!_isMobilePlatform) return;
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _backgroundDebounce?.cancel();
+        _backgroundDebounce = null;
+        if (_isInBackground) {
+          await _switchToForeground();
+        }
+        break;
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.detached:
+        // Schedule, don't switch: paused can be a blip (app switcher glance).
+        if (!_isInBackground && _backgroundDebounce == null) {
+          _backgroundDebounce = Timer(backgroundDebounce, () {
+            _backgroundDebounce = null;
+            if (!_isInBackground) {
+              _switchToBackground();
+            }
+          });
+        }
+        break;
+      case AppLifecycleState.inactive:
+        // Fires for the notification shade, permission/biometric dialogs and
+        // the app switcher on Android. Never a reason to tear down
+        // subscriptions and start the background service.
+        break;
     }
   }
 
@@ -161,6 +183,7 @@ class LifecycleManager extends WidgetsBindingObserver {
   }
 
   void dispose() {
+    _backgroundDebounce?.cancel();
     WidgetsBinding.instance.removeObserver(this);
   }
 }
