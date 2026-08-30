@@ -62,6 +62,11 @@ class Config {
   // Debug mode
   static bool get isDebug => !kReleaseMode;
 
+  /// Console logging and full log verbosity. Deliberately [kDebugMode] and not
+  /// [isDebug]: profile builds are for performance measurement and must not
+  /// pay for per-call stack-trace capture and console formatting.
+  static bool get verboseLogging => kDebugMode;
+
   /// Whether the add-relay validation accepts plain `ws://` towards local
   /// hosts (`localhost`, IPv4). True in the Mortsom test environment and in
   /// any non-release build (debug and profile); never in release builds.
