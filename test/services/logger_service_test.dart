@@ -41,10 +41,46 @@ void main() {
   });
 
   group('buildLogPrinter', () {
-    test('non-verbose printer produces no output lines', () {
+    test('non-verbose printer does not format the event', () {
+      // Arrange
       final printer = buildLogPrinter(verbose: false);
 
-      expect(printer.log(event(Level.error)), isEmpty);
+      // Act
+      final lines = printer.log(event(Level.error));
+
+      // Assert: a single blank sentinel, no message, level or stack trace.
+      expect(lines, ['']);
+      expect(lines.join(), isEmpty);
+    });
+
+    test('non-verbose logging still reaches the in-app Logs screen', () {
+      // Arrange: the release wiring. `Logger.log` drops the event before it
+      // ever reaches the output when the printer returns no lines, so an
+      // empty printer would leave the Logs screen permanently blank.
+      MemoryLogOutput.isLoggingEnabled = true;
+      MemoryLogOutput.instance.clear();
+      addTearDown(() {
+        MemoryLogOutput.instance.clear();
+        MemoryLogOutput.isLoggingEnabled = false;
+      });
+
+      final releaseLogger = Logger(
+        printer: buildLogPrinter(verbose: false),
+        output: MemoryLogOutput.instance,
+        level: Level.warning,
+        filter: MostroLogFilter(verbose: false)..level = Level.warning,
+      );
+
+      // Act
+      releaseLogger.e('boom');
+      releaseLogger.w('careful');
+      releaseLogger.i('below the configured level');
+
+      // Assert
+      expect(MemoryLogOutput.instance.logCount, 2);
+      final captured = MemoryLogOutput.instance.getAllLogs();
+      expect(captured.map((e) => e.message), ['boom', 'careful']);
+      expect(captured.map((e) => e.level), [Level.error, Level.warning]);
     });
 
     test('verbose printer is the pretty console printer', () {

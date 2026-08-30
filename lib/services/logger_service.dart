@@ -312,9 +312,19 @@ LogPrinter buildLogPrinter({bool? verbose}) {
   return _NoopPrinter();
 }
 
+/// Emits a single constant sentinel line instead of formatting anything.
+///
+/// It cannot return an empty list: `Logger.log` only forwards to the
+/// configured `LogOutput` when the printer produced at least one line
+/// (`logger/src/logger.dart`, `if (output.isNotEmpty)`), so an empty result
+/// would starve [MemoryLogOutput] and leave the in-app Logs screen empty in
+/// release builds. The line itself is never read — [MemoryLogOutput] rebuilds
+/// the entry from `event.origin`, and no console output is attached in
+/// non-verbose builds — so a `const` list keeps the no-formatting, no-stack-
+/// capture, zero-allocation behaviour.
 class _NoopPrinter extends LogPrinter {
   @override
-  List<String> log(LogEvent event) => const [];
+  List<String> log(LogEvent event) => const [''];
 }
 
 Logger? _cachedLogger;
