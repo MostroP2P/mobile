@@ -68,6 +68,47 @@ void main() {
     expect(lifecycle.isInBackground, isTrue);
   });
 
+  testWidgets(
+      'a return that stalls in inactive cancels the pending background switch',
+      (tester) async {
+    // The return path is paused -> hidden -> inactive -> resumed, and the app
+    // can sit in `inactive` for a while behind a permission or biometric
+    // dialog. If the debounce fires there, the whole teardown runs while the
+    // app is already foregrounding.
+    lifecycle = build();
+
+    // Arrange: backgrounded, switch pending but not yet fired.
+    lifecycle.didChangeAppLifecycleState(AppLifecycleState.paused);
+    await tester.pump(LifecycleManager.backgroundDebounce -
+        const Duration(milliseconds: 100));
+
+    // Act: the user comes back, then a dialog holds the app in `inactive`
+    // well past the original deadline.
+    lifecycle.didChangeAppLifecycleState(AppLifecycleState.hidden);
+    lifecycle.didChangeAppLifecycleState(AppLifecycleState.inactive);
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pump();
+
+    // Assert
+    expect(lifecycle.isInBackground, isFalse);
+    verifyNever(manager.unsubscribeAll());
+  });
+
+  testWidgets('leaving inactive outwards reschedules the switch',
+      (tester) async {
+    // Cancelling on `inactive` must not strand the manager in the foreground:
+    // going further out delivers `hidden`, which schedules again.
+    lifecycle = build();
+
+    lifecycle.didChangeAppLifecycleState(AppLifecycleState.inactive);
+    await tester.pump(const Duration(milliseconds: 100));
+    lifecycle.didChangeAppLifecycleState(AppLifecycleState.hidden);
+    lifecycle.didChangeAppLifecycleState(AppLifecycleState.paused);
+    await settle(tester);
+
+    expect(lifecycle.isInBackground, isTrue);
+  });
+
   testWidgets('a quick resume cancels a pending background switch',
       (tester) async {
     lifecycle = build();

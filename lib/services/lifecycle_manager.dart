@@ -66,6 +66,16 @@ class LifecycleManager extends WidgetsBindingObserver {
         // Fires for the notification shade, permission/biometric dialogs and
         // the app switcher on Android. Never a reason to tear down
         // subscriptions and start the background service.
+        //
+        // A pending switch is cancelled here, not only on `resumed`: the
+        // return path is paused -> hidden -> inactive -> resumed, and the app
+        // can sit in `inactive` past the deadline behind a permission or
+        // biometric dialog. Letting the timer fire there would run the whole
+        // teardown while the app is already coming back, which is exactly the
+        // churn the debounce exists to avoid. Nothing is stranded by this:
+        // leaving `inactive` outwards delivers `hidden`, which reschedules.
+        _backgroundDebounce?.cancel();
+        _backgroundDebounce = null;
         break;
     }
   }
