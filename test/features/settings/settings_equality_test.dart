@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/storage_providers.dart';
@@ -14,19 +15,41 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 /// was recreated — dropping its 1 h rate cache and refetching over relays.
 void main() {
   Settings base() => Settings(
-        relays: const ['wss://relay.a'],
+        relays: ['wss://relay.a'],
         fullPrivacyMode: false,
         mostroPublicKey: 'pk1',
-        blacklistedRelays: const ['wss://bad'],
-        userRelays: const [
+        blacklistedRelays: ['wss://bad'],
+        userRelays: [
           {'url': 'wss://mine', 'source': 'user'},
         ],
       );
 
   group('Settings value equality', () {
     test('equal field values compare equal, including lists', () {
-      expect(base(), base());
+      final first = base();
+      final second = base();
+
+      expect(identical(first.relays, second.relays), isFalse);
+      expect(identical(first.blacklistedRelays, second.blacklistedRelays),
+          isFalse);
+      expect(identical(first.userRelays, second.userRelays), isFalse);
+      expect(identical(first.userRelays.single, second.userRelays.single),
+          isFalse);
+      expect(first, second);
       expect(base().hashCode, base().hashCode);
+    });
+
+    test('value-equal replacements do not notify settings listeners', () async {
+      SharedPreferencesAsyncPlatform.instance =
+          InMemorySharedPreferencesAsync.empty();
+      final notifier = SettingsNotifier(SharedPreferencesAsync());
+      addTearDown(notifier.dispose);
+      var notifications = 0;
+      notifier.addListener((_) => notifications++, fireImmediately: false);
+
+      await notifier.updateRelays(<String>[]);
+
+      expect(notifications, 0);
     });
 
     test('copyWith of an unrelated field breaks equality', () {
