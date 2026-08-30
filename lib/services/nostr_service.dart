@@ -43,6 +43,11 @@ class NostrService {
       configured.isEmpty ? Config.discoveryRelays : configured;
 
   Future<void> init(Settings settings) async {
+    if (!Config.verboseLogging) {
+      // dart_nostr ships with logging enabled and builds 2-3 full-payload
+      // strings per relay frame for dart:developer.log.
+      _nostr.disableLogs();
+    }
     final relays = effectiveRelays(settings.relays);
     if (settings.relays.isEmpty) {
       logger.w(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/services/nwc/nwc_connection.dart';
@@ -89,6 +90,11 @@ class NwcClient {
     required NostrService nostrService,
     this.requestTimeout = const Duration(seconds: 30),
   }) : _nostrService = nostrService {
+    if (!Config.verboseLogging) {
+      // dart_nostr ships with logging enabled and builds full-payload strings
+      // per relay frame for dart:developer.log.
+      _nostr.disableLogs();
+    }
     _keyPair = NostrUtils.generateKeyPairFromPrivateKey(connection.secret);
     _clientPubkey = _keyPair.public;
   }
