@@ -33,6 +33,11 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   /// init() completes, so the order subscription can be opened once Nostr is up.
   Timer? _initRetryTimer;
 
+  /// Coalesces stream emissions: during a 48 h replay burst every relay copy
+  /// used to trigger a full-list emission (and downstream sort/filter).
+  static const Duration emitDebounce = Duration(milliseconds: 50);
+  Timer? _emitTimer;
+
   static const _initRetryInterval = Duration(milliseconds: 200);
   static const _maxInitRetries = 150; // ~30s before giving up
 
@@ -78,8 +83,18 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
     _subscription = _nostrService.subscribeToEvents(request).listen((event) {
       if (event.type == 'order') {
-        _events[event.orderId!] = event;
-        _eventStreamController.add(_events.values.toList());
+        final orderId = event.orderId!;
+        // Drop duplicate/stale relay copies: kind 38383 is replaceable, only
+        // the newest created_at per order id matters.
+        final known = _events[orderId];
+        if (known != null &&
+            known.createdAt != null &&
+            event.createdAt != null &&
+            !event.createdAt!.isAfter(known.createdAt!)) {
+          return;
+        }
+        _events[orderId] = event;
+        _scheduleEmit();
       } else if (event.kind == infoEventKind &&
           event.pubkey == _settings.mostroPublicKey) {
         logger.i('Mostro instance info loaded: $event');
@@ -119,15 +134,23 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   }
 
   void _emitEvents() {
+    _emitTimer?.cancel();
+    _emitTimer = null;
     if (!_eventStreamController.isClosed) {
       _eventStreamController.add(_events.values.toList());
     }
+  }
+
+  /// Emits once per [emitDebounce] window instead of once per event.
+  void _scheduleEmit() {
+    _emitTimer ??= Timer(emitDebounce, _emitEvents);
   }
 
   @override
   void dispose() {
     _subscription?.cancel();
     _initRetryTimer?.cancel();
+    _emitTimer?.cancel();
     _eventStreamController.close();
     _mostroInstanceController.close();
     _events.clear();
