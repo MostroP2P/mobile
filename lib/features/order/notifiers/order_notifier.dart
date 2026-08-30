@@ -100,11 +100,9 @@ class OrderNotifier extends AbstractMostroNotifier {
         }
       }
 
-      // Skip identical replays: with value equality on the payloads this
-      // avoids notifying every watcher for a no-op assignment.
-      if (currentState != state) {
-        state = currentState;
-      }
+      // A replay that lands on the same values notifies nobody:
+      // AbstractMostroNotifier.updateShouldNotify compares by value.
+      state = currentState;
 
       logger.i(
           'Synced order $orderId to state: ${state.status} - ${state.action}');
@@ -280,10 +278,7 @@ class OrderNotifier extends AbstractMostroNotifier {
   /// Update state from MostroMessage (used during restore)
   void updateStateFromMessage(MostroMessage message) {
     if (mounted) {
-      final next = state.updateWith(message);
-      if (next != state) {
-        state = next;
-      }
+      state = state.updateWith(message);
     }
   }
 

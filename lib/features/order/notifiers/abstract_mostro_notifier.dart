@@ -73,6 +73,20 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
     }
   }
 
+  /// Emit only when the state actually changed.
+  ///
+  /// `OrderState` and its payloads compare by value, but `StateNotifier`'s
+  /// default check is identity: a replayed history message, a duplicated
+  /// gift wrap or a peer/dispute refresh that carries the same data would
+  /// still hand every watcher a "new" state and re-run the order book sort,
+  /// the dispute futures and every `MostroReactiveButton`. Comparing by
+  /// value here covers every assignment in this hierarchy — live events,
+  /// restore replays and order creation alike — instead of guarding call
+  /// sites one at a time.
+  @override
+  bool updateShouldNotify(OrderState old, OrderState current) =>
+      old != current;
+
   void subscribe() {
     subscription = ref.listen(
       mostroMessageStreamProvider(orderId),
