@@ -196,7 +196,10 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildFilterButton(BuildContext context, WidgetRef ref) {
-    final filteredOrders = ref.watch(filteredOrdersProvider);
+    // Only the count is rendered; watching the list rebuilt the pill (and
+    // its shadowed containers) on every book emission.
+    final offersCount =
+        ref.watch(filteredOrdersProvider.select((orders) => orders.length));
     final activeFilterCount = ref.watch(activeFilterCountProvider);
     final hasFilters = activeFilterCount > 0;
 
@@ -294,7 +297,7 @@ class HomeScreen extends ConsumerWidget {
                         Text(
                           S
                               .of(context)!
-                              .offersCount(filteredOrders.length.toString()),
+                              .offersCount(offersCount.toString()),
                           style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 12,
