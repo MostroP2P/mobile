@@ -34,6 +34,26 @@ class NostrService {
   final StreamController<int> _relayGenerationController =
       StreamController<int>.broadcast();
 
+  /// Per-relay probes waiting for a dropped socket to come back. A relay with
+  /// no REQs sends nothing, so `onRelayListening` alone can never observe the
+  /// reconnect this class exists to repair — the registry has to be polled.
+  final Map<String, Timer> _reconnectProbes = {};
+
+  /// How often a dropped relay is polled for reconnection, and for how many
+  /// attempts before giving up. dart_nostr makes one immediate reconnect
+  /// attempt per drop (bounded by [Config.relayConnectionTimeout]), so a
+  /// probe outliving that window can never observe a success; longer outages
+  /// are covered by the relay health monitor and foreground resume.
+  /// Overridable in tests.
+  @visibleForTesting
+  Duration reconnectProbeInterval = const Duration(seconds: 2);
+  static const int _maxReconnectProbes = 10; // 20 s per drop
+
+  /// Test seam for the socket-open check, which otherwise reads the global
+  /// [Nostr.instance] registry.
+  @visibleForTesting
+  bool Function(String relayUrl)? relaySocketProbeOverride;
+
   NostrService();
 
   /// Safe getter for settings with fallback
@@ -55,7 +75,7 @@ class NostrService {
   /// Emits after every [relayGeneration] bump.
   Stream<int> get relayGenerationStream => _relayGenerationController.stream;
 
-  /// Records data from [relayUrl] and bumps the generation on the transition
+  /// Records [relayUrl] as alive and bumps the generation on the transition
   /// from unknown/disconnected to alive.
   void _markRelayAlive(String relayUrl) {
     if (_connectedRelays.add(relayUrl)) {
@@ -64,6 +84,46 @@ class NostrService {
         _relayGenerationController.add(_relayGeneration);
       }
     }
+  }
+
+  /// Whether dart_nostr currently holds an open websocket for [relayUrl].
+  /// True only after `onConnectionSuccess` re-registered the channel, i.e.
+  /// after a reconnect actually completed.
+  bool _isRelaySocketOpen(String relayUrl) {
+    final override = relaySocketProbeOverride;
+    if (override != null) {
+      return override(relayUrl);
+    }
+    try {
+      return _nostr.services.relays.nostrRegistry
+          .isRelayRegisteredAndConnectedSuccesfully(relayUrl);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Polls the registry until the dropped [relayUrl] is connected again, then
+  /// marks it alive (bumping [relayGeneration]). An idle reconnected socket
+  /// carries no REQs and therefore sends no data, so waiting for
+  /// `onRelayListening` would deadlock: the REQ replay is what would produce
+  /// the first frame. Bounded so a relay that stays down does not keep a
+  /// timer forever.
+  @visibleForTesting
+  void watchRelayReconnect(String relayUrl) {
+    _reconnectProbes.remove(relayUrl)?.cancel();
+    var attempts = 0;
+    _reconnectProbes[relayUrl] = Timer.periodic(reconnectProbeInterval, (t) {
+      attempts++;
+      if (_isRelaySocketOpen(relayUrl)) {
+        t.cancel();
+        _reconnectProbes.remove(relayUrl);
+        _markRelayAlive(relayUrl);
+      } else if (attempts >= _maxReconnectProbes) {
+        t.cancel();
+        _reconnectProbes.remove(relayUrl);
+        logger.w('Relay $relayUrl did not reconnect; probe abandoned');
+      }
+    });
   }
 
   /// Relays to connect to: the configured relays, or the defensive bootstrap
@@ -120,13 +180,29 @@ class NostrService {
         onRelayConnectionError: (relay, error, channel) {
           _connectedRelays.remove(relay);
           logger.w('Failed to connect to relay $relay: $error');
+          // retryOnError reconnects silently; watch for the new socket so
+          // the open REQs get replayed onto it.
+          watchRelayReconnect(relay);
         },
         onRelayConnectionDone: (relay, socket) {
           // Fired when the relay websocket is closed (disconnected).
           _connectedRelays.remove(relay);
           logger.i('Relay disconnected (socket closed): $relay');
+          // retryOnClose reconnects silently; watch for the new socket so
+          // the open REQs get replayed onto it.
+          watchRelayReconnect(relay);
         },
       );
+
+      // Relays that just connected for the first time (cold start, or added
+      // later by the kind 10002 sync via additive init) also start with no
+      // REQs on their socket; watching them bumps the generation once the
+      // registry confirms the connection.
+      for (final relay in effectiveSettings.relays) {
+        if (!_connectedRelays.contains(relay)) {
+          watchRelayReconnect(relay);
+        }
+      }
 
       _isInitialized = true;
       logger.i(
