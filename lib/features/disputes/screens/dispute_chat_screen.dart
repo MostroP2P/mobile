@@ -35,10 +35,18 @@ class _DisputeChatScreenState extends ConsumerState<DisputeChatScreen> {
     // Mark dispute as read when screen is opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      unawaited(DisputeReadStatusService.markDisputeAsRead(widget.disputeId));
-      // Notify that the dispute has been marked as read
-      ref.read(disputeReadStatusProvider(widget.disputeId).notifier).state =
-          DateTime.now().millisecondsSinceEpoch;
+      // Bump the read-status provider only after the cursor write completes:
+      // disputeHasUnreadProvider recomputes on the bump and caches the
+      // result, so a bump racing the write could pin a stale unread dot.
+      unawaited(
+        DisputeReadStatusService.markDisputeAsRead(widget.disputeId)
+            .then((_) {
+          if (!mounted) return;
+          ref
+              .read(disputeReadStatusProvider(widget.disputeId).notifier)
+              .state = DateTime.now().millisecondsSinceEpoch;
+        }),
+      );
       ref
           .read(activeChatScreensProvider.notifier)
           .register(widget.disputeId);
