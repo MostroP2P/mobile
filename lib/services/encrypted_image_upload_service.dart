@@ -91,17 +91,12 @@ class EncryptedImageUploadService {
       );
       
       // 3. Encrypt with ChaCha20-Poly1305
-      final encryptionResult = EncryptionService.encryptChaCha20Poly1305(
+      final encryptedBlob = await EncryptionService.encryptToBlobAsync(
         key: sharedKey,
         plaintext: validationResult.validatedData,
       );
-      
-      final encryptedBlob = encryptionResult.toBlob();
       logger.i(
         '🔐 Image encrypted successfully: ${encryptedBlob.length} bytes '
-        '(nonce: ${encryptionResult.nonce.length}B, '
-        'data: ${encryptionResult.encryptedData.length}B, '
-        'tag: ${encryptionResult.authTag.length}B)'
       );
       
       // 4. Upload encrypted blob to Blossom
@@ -151,7 +146,7 @@ class EncryptedImageUploadService {
       logger.i('📥 Downloaded encrypted blob: ${encryptedBlob.length} bytes');
       
       // 2. Decrypt with ChaCha20-Poly1305
-      final decryptedImage = EncryptionService.decryptFromBlob(
+      final decryptedImage = await EncryptionService.decryptFromBlobAsync(
         key: sharedKey,
         blob: encryptedBlob,
       );
