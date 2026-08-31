@@ -190,6 +190,22 @@ class EncryptionService {
   /// (pointycastle) over whole files (up to 25 MB), which froze the UI while
   /// sending or opening media. Inputs and outputs are plain byte buffers, so
   /// they transfer cheaply.
+  /// Isolate-backed encrypt that preserves access to the nonce/tag parts
+  /// (the upload results carry the nonce as protocol metadata).
+  static Future<EncryptionResult> encryptChaCha20Poly1305Async({
+    required Uint8List key,
+    required Uint8List plaintext,
+    Uint8List? additionalData,
+  }) {
+    return Isolate.run(
+      () => encryptChaCha20Poly1305(
+        key: key,
+        plaintext: plaintext,
+        additionalData: additionalData,
+      ),
+    );
+  }
+
   static Future<Uint8List> encryptToBlobAsync({
     required Uint8List key,
     required Uint8List plaintext,

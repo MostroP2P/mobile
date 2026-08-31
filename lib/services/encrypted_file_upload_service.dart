@@ -80,12 +80,17 @@ class EncryptedFileUploadService {
       );
       
       // 2. Encrypt with ChaCha20-Poly1305
-      final encryptedBlob = await EncryptionService.encryptToBlobAsync(
+      final encryptionResult = await EncryptionService.encryptChaCha20Poly1305Async(
         key: sharedKey,
         plaintext: validationResult.validatedData,
       );
+      
+      final encryptedBlob = encryptionResult.toBlob();
       logger.i(
         '🔐 File encrypted successfully: ${encryptedBlob.length} bytes '
+        '(nonce: ${encryptionResult.nonce.length}B, '
+        'data: ${encryptionResult.encryptedData.length}B, '
+        'tag: ${encryptionResult.authTag.length}B)'
       );
       
       // 3. Upload encrypted blob to Blossom
