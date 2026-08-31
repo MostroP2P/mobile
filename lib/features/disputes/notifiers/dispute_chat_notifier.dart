@@ -92,6 +92,21 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
   ProviderSubscription<dynamic>? _sessionListener;
   bool _isInitialized = false;
 
+  /// Outer envelope ids this notifier has fully processed: verified,
+  /// decrypted, persisted and put in state. A later copy of one of these is a
+  /// pure duplicate and is dropped.
+  final Set<String> _unwrappedOuterIds = {};
+  static const int _unwrappedOuterIdsLimit = 2000;
+
+  /// Envelopes currently being processed, keyed by outer id and reserved
+  /// synchronously — before any await — so two relays delivering the same
+  /// envelope at once share one unwrap instead of each paying for the ~5 EC
+  /// multiplications. A copy arriving mid-flight awaits this future instead
+  /// of being dropped: the id is only public data, so the in-flight copy may
+  /// be a forgery that fails verification, and the waiter must then get its
+  /// own chance to be verified.
+  final Map<String, Future<void>> _inFlightOuterIds = {};
+
   ChatKeys? _chatKeys;
   String? _chatKeysSource;
 
@@ -213,67 +228,126 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       final chatKeys = _getChatKeys(session);
       if (event.pubkey != chatKeys.sign.public) return;
 
-      // Check for duplicate outer events (relay re-deliveries)
-      final wrapperEventId = event.id;
-      if (wrapperEventId == null) return;
-      // Already on disk means a relay re-delivery, an own echo, or an event
-      // the background service stored while the app slept. Keep processing:
-      // state is keyed by inner id, so only the write is redundant.
-      final eventStore = ref.read(eventStorageProvider);
-      final alreadyStored = await eventStore.hasItem(wrapperEventId);
+      final wrapperEventId = event.id!;
 
-      // Unwrap and authenticate BEFORE persisting: the signature is not part
-      // of the event id, so storing an unverified copy would let a corrupted
-      // duplicate occupy the id and dedup away the valid one for good
-      final unwrappedEvent = await event.chatUnwrap(
-        chatKeys,
-        session.disputeChatAllowedSigners,
-      );
+      // A copy of an envelope this notifier already processed end to end (a
+      // relay re-delivery or an own echo): dropped. Nothing is written and
+      // the cursor is NOT advanced from here — this copy's signature has not
+      // been checked, and both the envelope id and the author key are public,
+      // so its created_at is attacker controlled. For legitimate traffic the
+      // advance would be a no-op anyway: a re-delivery carries the same id
+      // and therefore the same created_at, which the store already rejects as
+      // not newer.
+      if (_unwrappedOuterIds.contains(wrapperEventId)) return;
 
-      // Store the outer event (encrypted) to disk — same pattern as P2P chat
-      if (!alreadyStored) {
-        await eventStore.putItem(
-          wrapperEventId,
-          event.disputeChatRecord(disputeId),
-        );
-      }
-      if (!mounted) return;
-
-      // Advance the persisted since cursor only after the event is accepted
-      // (clamped to the local clock inside the store)
-      unawaited(
-        ref
-            .read(disputeChatCursorStoreProvider)
-            .advance(disputeId, event.createdAt!),
-      );
-
-      final messageText = unwrappedEvent.content ?? '';
-      if (messageText.isEmpty) {
-        logger.w('Received empty message, skipping');
-        return;
+      // A copy arriving while another one holding the same id is still being
+      // processed waits for it instead of racing a second verification. If
+      // that one fails — an unverifiable forgery reuses the id of a valid
+      // envelope, since the signature is not part of the id — this copy falls
+      // through and gets verified on its own, so the forgery cannot suppress
+      // the real message.
+      final inFlight = _inFlightOuterIds[wrapperEventId];
+      if (inFlight != null) {
+        try {
+          await inFlight;
+          return;
+        } catch (_) {
+          // Fall through: the in-flight copy did not make it.
+        }
+        if (!mounted) return;
       }
 
-      final isFromAdmin = unwrappedEvent.pubkey != session.tradeKey.public;
-      final message = DisputeChatMessage(event: unwrappedEvent);
-
-      // Dedup by inner event ID (handles relay echo of sent messages)
-      final allMessages = [...state.messages, message];
-      final deduped = {for (var m in allMessages) m.id: m}.values.toList();
-      deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
-      state = state.copyWith(messages: deduped);
-
-      if (isFromAdmin) {
-        _maybeShowInAppNotification();
+      // Reserved synchronously — the map entry is written before the first
+      // await below — so two relays delivering the same envelope at once
+      // share one unwrap.
+      final processing = _processChatEvent(event, session, chatKeys);
+      _inFlightOuterIds[wrapperEventId] = processing;
+      try {
+        await processing;
+      } finally {
+        _inFlightOuterIds.remove(wrapperEventId);
       }
-
-      // Fire-and-forget: pre-download media after message is in state
-      unawaited(_processMessageContent(unwrappedEvent));
-      logger.i('Added dispute chat message for dispute: $disputeId '
-          '(from ${isFromAdmin ? "admin" : "user"})');
     } catch (e, stackTrace) {
       logger.e('Error processing dispute chat event: $e', stackTrace: stackTrace);
     }
+  }
+
+  /// Verifies, persists and displays one envelope. Throws on any failure so
+  /// the id is never marked processed: a later copy retries the whole path.
+  Future<void> _processChatEvent(
+    NostrEvent event,
+    Session session,
+    ChatKeys chatKeys,
+  ) async {
+    final wrapperEventId = event.id!;
+
+      // Already on disk means an event the background service stored while
+    // the app slept, or an own echo. It is not in _unwrappedOuterIds, so it
+    // is still verified below; only the redundant write is skipped.
+    final eventStore = ref.read(eventStorageProvider);
+    final alreadyStored = await eventStore.hasItem(wrapperEventId);
+
+    // Unwrap and authenticate BEFORE persisting: the signature is not part
+    // of the event id, so storing an unverified copy would let a corrupted
+    // duplicate occupy the id and dedup away the valid one for good
+    final unwrappedEvent = await event.chatUnwrap(
+      chatKeys,
+      session.disputeChatAllowedSigners,
+    );
+
+    // Store the outer event (encrypted) to disk — same pattern as P2P chat
+    if (!alreadyStored) {
+      await eventStore.putItem(
+        wrapperEventId,
+        event.disputeChatRecord(disputeId),
+      );
+    }
+    if (!mounted) return;
+
+    // Advance the persisted since cursor only after the event is accepted
+    // (clamped to the local clock inside the store)
+    unawaited(
+      ref
+          .read(disputeChatCursorStoreProvider)
+          .advance(disputeId, event.createdAt!),
+    );
+
+    // Only now is the envelope done: everything that could throw (unwrap,
+    // disk) has succeeded, so a copy arriving later is a true duplicate. A
+    // failure above leaves the id unmarked and the next copy retries.
+    _markOuterProcessed(wrapperEventId);
+
+    final messageText = unwrappedEvent.content ?? '';
+    if (messageText.isEmpty) {
+      logger.w('Received empty message, skipping');
+      return;
+    }
+
+    final isFromAdmin = unwrappedEvent.pubkey != session.tradeKey.public;
+    final message = DisputeChatMessage(event: unwrappedEvent);
+
+    // Dedup by inner event ID (handles relay echo of sent messages)
+    final allMessages = [...state.messages, message];
+    final deduped = {for (var m in allMessages) m.id: m}.values.toList();
+    deduped.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    state = state.copyWith(messages: deduped);
+
+    if (isFromAdmin) {
+      _maybeShowInAppNotification();
+    }
+
+    // Fire-and-forget: pre-download media after message is in state
+    unawaited(_processMessageContent(unwrappedEvent));
+    logger.i('Added dispute chat message for dispute: $disputeId '
+        '(from ${isFromAdmin ? "admin" : "user"})');
+  }
+
+  void _markOuterProcessed(String wrapperEventId) {
+    if (_unwrappedOuterIds.length >= _unwrappedOuterIdsLimit) {
+      _unwrappedOuterIds.clear();
+    }
+    _unwrappedOuterIds.add(wrapperEventId);
   }
 
   /// Show an in-app snackbar for incoming admin messages when the user is not

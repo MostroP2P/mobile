@@ -55,6 +55,58 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
   ChatKeys? _chatKeys;
   String? _chatKeysSource;
 
+  /// Unwrapped inner events by outer envelope id, keyed on the *in-flight*
+  /// future so the reservation is made synchronously. An envelope is verified
+  /// and decrypted (~5 EC multiplications) exactly once per notifier: relay
+  /// re-deliveries, concurrent deliveries and history reloads reuse the
+  /// result.
+  final Map<String, Future<NostrEvent>> _unwrapCache = {};
+  static const int _unwrapCacheLimit = 2000;
+
+  /// Test hook: number of chatUnwrap executions performed by this notifier.
+  @visibleForTesting
+  int debugUnwrapCount = 0;
+
+  /// Start the single unwrap of [event], or join the one already running.
+  /// The reservation happens synchronously — before any await — so a second
+  /// relay copy arriving while the first is still being verified shares its
+  /// result instead of paying for another verification. A failed unwrap is
+  /// never cached: the reservation is dropped so a later valid copy of the
+  /// envelope is verified normally.
+  Future<NostrEvent> _unwrapOnce(
+    NostrEvent event,
+    ChatKeys chatKeys,
+    Session session,
+  ) {
+    final outerId = event.id!;
+    final pending = _unwrapCache[outerId];
+    if (pending != null) return pending;
+    if (_unwrapCache.length >= _unwrapCacheLimit) {
+      _unwrapCache.clear();
+    }
+    debugUnwrapCount++;
+    // The map entry is written synchronously, before the first await inside
+    // chatUnwrap, so a second delivery arriving meanwhile joins this future.
+    final unwrap = _unwrapAndForgetOnFailure(event, chatKeys, session);
+    _unwrapCache[outerId] = unwrap;
+    return unwrap;
+  }
+
+  Future<NostrEvent> _unwrapAndForgetOnFailure(
+    NostrEvent event,
+    ChatKeys chatKeys,
+    Session session,
+  ) async {
+    try {
+      return await event.chatUnwrap(chatKeys, session.peerChatAllowedSigners);
+    } catch (_) {
+      // Never cache a rejection: a corrupted copy delivered first must not
+      // lock the envelope id out for the valid event that shares it.
+      _unwrapCache.remove(event.id!);
+      rethrow;
+    }
+  }
+
   ChatRoomNotifier(
     super.state,
     this.orderId,
@@ -161,22 +213,59 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         return;
       }
 
-      // Already on disk means a relay re-delivery, an own echo, or an event
-      // the background service stored while the app slept. Keep processing:
-      // state is keyed by inner id, so only the write is redundant.
-      final eventStore = ref.read(eventStorageProvider);
-      final alreadyStored = await eventStore.hasItem(event.id!);
+      final outerId = event.id!;
+
+      // This notifier already verified and decrypted this envelope (a relay
+      // re-delivery, an own echo, or a copy racing an unwrap still in
+      // flight): reuse the verified inner event and surface it if state lost
+      // it. Nothing is written and the cursor is NOT advanced from here —
+      // this copy's signature has not been checked, and both the envelope id
+      // and the author key are public, so its created_at is attacker
+      // controlled. For legitimate traffic the advance would be a no-op
+      // anyway: a re-delivery carries the same id and therefore the same
+      // created_at, which the store already rejects as not newer.
+      final pending = _unwrapCache[outerId];
+      if (pending != null) {
+        NostrEvent? cached;
+        try {
+          cached = await pending;
+        } catch (_) {
+          // The copy holding this id failed verification. Since the signature
+          // is not part of the id, that copy may be a forgery reusing a valid
+          // envelope's id, so this one falls through and is verified on its
+          // own instead of being suppressed by the forgery.
+          cached = null;
+        }
+        if (cached != null) {
+          final verified = cached;
+          if (!state.messages.any((m) => m.id == verified.id)) {
+            state = state.copy(messages: [...state.messages, verified]);
+          }
+          return;
+        }
+      }
 
       // Unwrap and authenticate BEFORE persisting: the signature is not part
       // of the event id, so storing an unverified copy would let a corrupted
-      // duplicate occupy the id and dedup away the valid one for good
-      final chat = await event.chatUnwrap(
-        chatKeys,
-        session.peerChatAllowedSigners,
-      );
+      // duplicate occupy the id and dedup away the valid one for good. An
+      // envelope the background service stored while the app slept is on disk
+      // but not in this cache, so it is verified here like any other.
+      final chat = await _unwrapOnce(event, chatKeys, session);
 
-      if (!alreadyStored) {
-        await eventStore.putItem(event.id!, event.peerChatRecord(orderId));
+      try {
+        final eventStore = ref.read(eventStorageProvider);
+        final alreadyStored = await eventStore.hasItem(outerId);
+
+        if (!alreadyStored) {
+          await eventStore.putItem(outerId, event.peerChatRecord(orderId));
+        }
+      } catch (_) {
+        // Persisting failed, so this envelope is not durably handled: drop
+        // the cached unwrap, or a later relay delivery would take the
+        // already-unwrapped shortcut above and never retry the write or the
+        // cursor advance, and the message would be gone after a restart.
+        _unwrapCache.remove(outerId);
+        rethrow;
       }
 
       // Advance the persisted since cursor only after the event is accepted
@@ -382,12 +471,19 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
           });
 
           // Decrypt and unwrap: kind 14 envelope, or legacy gift wrap
-          // stored before the kind-14 migration
+          // stored before the kind-14 migration. Envelopes already unwrapped
+          // by this notifier are reused instead of re-verified.
+          final cachedUnwrap = _unwrapCache[storedEvent.id];
+          if (cachedUnwrap != null) {
+            historicalMessages.add(await cachedUnwrap);
+            continue;
+          }
           final NostrEvent unwrappedMessage;
           if (storedEvent.kind == 14) {
-            unwrappedMessage = await storedEvent.chatUnwrap(
+            unwrappedMessage = await _unwrapOnce(
+              storedEvent,
               _getChatKeys(session),
-              session.peerChatAllowedSigners,
+              session,
             );
           } else {
             if (session.sharedKey?.public != storedEvent.recipient) {
