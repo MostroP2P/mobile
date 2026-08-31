@@ -258,7 +258,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       if (!messageExists) {
         // Add new message and sort
         final updatedMessages = [...state.messages, chat];
-        updatedMessages.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
         state = state.copy(messages: updatedMessages);
         logger.d('New message added from relay, total messages: ${updatedMessages.length}');
 
@@ -344,7 +343,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       final messageExists = state.messages.any((m) => m.id == innerEvent.id);
       if (!messageExists) {
         final updatedMessages = [...state.messages, innerEvent];
-        updatedMessages.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
         state = state.copy(messages: updatedMessages);
         logger.d('Message added to state optimistically, total messages: ${updatedMessages.length}');
       } else {
@@ -495,7 +493,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
           seen.add(m.id!);
           return true;
         }).toList();
-        deduped.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
         state = state.copy(messages: deduped);
         logger.i(
             'Successfully loaded and merged ${historicalMessages.length} historical messages, total: ${deduped.length} for chat $orderId');

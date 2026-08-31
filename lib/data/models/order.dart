@@ -4,7 +4,9 @@ import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/payload.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 
-class Order implements Payload {
+import 'package:equatable/equatable.dart';
+
+class Order extends Equatable implements Payload {
   final String? id;
   final OrderType kind;
   final Status status;
@@ -42,6 +44,29 @@ class Order implements Payload {
     this.createdAt = 0,
     this.expiresAt,
   });
+
+  /// Value equality: OrderState.== compares its order payload, and identity
+  /// equality made every replayed message look like a state change.
+  @override
+  List<Object?> get props => [
+        id,
+        kind,
+        status,
+        amount,
+        fiatCode,
+        minAmount,
+        maxAmount,
+        fiatAmount,
+        paymentMethod,
+        premium,
+        masterBuyerPubkey,
+        masterSellerPubkey,
+        buyerTradePubkey,
+        sellerTradePubkey,
+        buyerInvoice,
+        createdAt,
+        expiresAt,
+      ];
 
   @override
   Map<String, dynamic> toJson() {

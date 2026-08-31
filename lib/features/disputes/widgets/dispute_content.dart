@@ -5,7 +5,6 @@ import 'package:mostro_mobile/features/disputes/widgets/dispute_order_id.dart';
 import 'package:mostro_mobile/features/disputes/widgets/dispute_description.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
 import 'package:mostro_mobile/features/disputes/providers/dispute_read_status_provider.dart';
-import 'package:mostro_mobile/services/dispute_read_status_service.dart';
 import 'package:mostro_mobile/data/models/dispute.dart';
 
 /// Main content widget for dispute information
@@ -27,9 +26,6 @@ class _DisputeContentState extends ConsumerState<DisputeContent> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch the read status to trigger rebuilds when dispute is marked as read
-    ref.watch(disputeReadStatusProvider(widget.dispute.disputeId));
-    
     // Get the last message for in-progress disputes
     String descriptionText = widget.dispute.getLocalizedDescription(context);
     
@@ -55,30 +51,22 @@ class _DisputeContentState extends ConsumerState<DisputeContent> {
             Expanded(
               child: DisputeHeader(dispute: widget.dispute),
             ),
-            // Unread indicator for in-progress disputes
-            if (normalizedStatus == 'in-progress')
-              FutureBuilder<bool>(
-                future: DisputeReadStatusService.hasUnreadMessages(
-                  widget.dispute.disputeId,
-                  ref.watch(disputeChatNotifierProvider(widget.dispute.disputeId)).messages,
-                  isFromUser: ref.read(
-                    disputeChatNotifierProvider(widget.dispute.disputeId).notifier,
-                  ).isFromUser,
+            // Unread indicator for in-progress disputes. valueOrNull keeps
+            // the previous value while the provider recomputes, so the dot
+            // does not blink off for a frame on every chat emission.
+            if (normalizedStatus == 'in-progress' &&
+                (ref
+                        .watch(
+                            disputeHasUnreadProvider(widget.dispute.disputeId))
+                        .valueOrNull ??
+                    false))
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
                 ),
-                builder: (context, snapshot) {
-                  final hasUnread = snapshot.data ?? false;
-                  if (!hasUnread) {
-                    return const SizedBox.shrink();
-                  }
-                  return Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  );
-                },
               ),
           ],
         ),

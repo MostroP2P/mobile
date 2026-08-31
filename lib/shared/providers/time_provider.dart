@@ -11,7 +11,9 @@ final timeProvider = StreamProvider<DateTime>((ref) {
 
 /// Provides a more efficient countdown timer using Timer.periodic
 /// with automatic cleanup and debouncing
-final countdownTimeProvider = StreamProvider<DateTime>((ref) {
+// autoDispose: as keep-alive, the 1 s timer kept running for the app's whole
+// life after the first visit to a countdown screen.
+final countdownTimeProvider = StreamProvider.autoDispose<DateTime>((ref) {
   late StreamController<DateTime> controller;
   Timer? timer;
   DateTime? lastEmittedTime;
