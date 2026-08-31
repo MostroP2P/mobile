@@ -535,16 +535,14 @@ class _CountdownWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the countdown time provider for real-time updates
-    final timeAsync = ref.watch(countdownTimeProvider);
+    // The provider is only a 1 s rebuild ticker; its DateTime is never read
+    // (_buildCountDownTime calls DateTime.now() itself). Rendering is not
+    // gated on the AsyncValue: now that the provider is autoDispose its first
+    // frame after every screen entry is `loading`, and gating would flash a
+    // spinner over the countdown on each visit instead of only the first.
+    ref.watch(countdownTimeProvider);
 
-    return timeAsync.when(
-      data: (currentTime) {
-        return _buildCountDownTime(context, ref, order);
-      },
-      loading: () => const CircularProgressIndicator(),
-      error: (error, stack) => const SizedBox.shrink(),
-    );
+    return _buildCountDownTime(context, ref, order);
   }
 
   Widget _buildCountDownTime(

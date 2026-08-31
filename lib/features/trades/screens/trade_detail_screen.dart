@@ -1007,38 +1007,36 @@ class _CountdownWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the countdown time provider for real-time updates
-    final timeAsync = ref.watch(countdownTimeProvider);
+    // The provider is only a 1 s rebuild ticker; its DateTime is never read
+    // (_buildCountDownTime calls DateTime.now() itself). Rendering is not
+    // gated on the AsyncValue: now that the provider is autoDispose its first
+    // frame after every screen entry is `loading`, and gating would blank the
+    // countdown on each visit instead of only the first.
+    ref.watch(countdownTimeProvider);
     final messagesAsync = ref.watch(mostroMessageHistoryProvider(orderId));
 
-    return timeAsync.when(
-      data: (currentTime) {
-        return messagesAsync.maybeWhen(
-          data: (messages) {
-            final countdownWidget = _buildCountDownTime(
-              context,
-              ref,
-              tradeState,
-              messages,
-              expiresAtTimestamp,
-            );
-
-            if (countdownWidget != null) {
-              return Column(
-                children: [
-                  countdownWidget,
-                  const SizedBox(height: 36),
-                ],
-              );
-            } else {
-              return const SizedBox(height: 12);
-            }
-          },
-          orElse: () => const SizedBox(height: 12),
+    return messagesAsync.maybeWhen(
+      data: (messages) {
+        final countdownWidget = _buildCountDownTime(
+          context,
+          ref,
+          tradeState,
+          messages,
+          expiresAtTimestamp,
         );
+
+        if (countdownWidget != null) {
+          return Column(
+            children: [
+              countdownWidget,
+              const SizedBox(height: 36),
+            ],
+          );
+        } else {
+          return const SizedBox(height: 12);
+        }
       },
-      loading: () => const SizedBox(height: 12),
-      error: (error, stack) => const SizedBox(height: 12),
+      orElse: () => const SizedBox(height: 12),
     );
   }
 
