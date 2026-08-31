@@ -304,10 +304,12 @@ class NostrUtils {
       createdAt: randomNow(),
     );
 
+    // The wrapper key is single-use; never retain its conversation key.
     return await encryptNIP44(
       jsonEncode(sealEvent.toMap()),
       wrapperKey,
       recipientPubKey,
+      cacheConversationKey: false,
     );
   }
 
@@ -344,23 +346,47 @@ class NostrUtils {
 
   /// Conversation keys are constant per (our key, their key) pair, but every
   /// encrypt/decrypt recomputed them: one EC scalar multiplication plus HKDF
-  /// per message. Bounded cache; key material lives as long as the session
-  /// keys it derives from already do.
+  /// per message. Bounded cache; entries are evicted when their session is
+  /// cleaned up ([evictConversationKeysFor]) and one-shot NIP-59 wrapper
+  /// conversations are never stored (`cache: false`).
   static const int _conversationKeyCacheLimit = 512;
   static final Map<String, Uint8List> _conversationKeys = {};
 
-  static Uint8List conversationKeyFor(String privateKey, String publicKey) {
+  static Uint8List conversationKeyFor(
+    String privateKey,
+    String publicKey, {
+    bool cache = true,
+  }) {
     final cacheKey = '$privateKey|$publicKey';
     final cached = _conversationKeys[cacheKey];
     if (cached != null) return cached;
     final sharedSecret = Nip44.computeSharedSecret(privateKey, publicKey);
     final conversationKey = Nip44.deriveConversationKey(sharedSecret);
+    if (!cache) return conversationKey;
     if (_conversationKeys.length >= _conversationKeyCacheLimit) {
       _conversationKeys.clear();
     }
     _conversationKeys[cacheKey] = conversationKey;
     return conversationKey;
   }
+
+  /// Drops every cached conversation key derived from [privateKey]. Session
+  /// cleanup calls this so retired trade/chat key material does not outlive
+  /// its session inside the cache.
+  static void evictConversationKeysFor(String privateKey) {
+    _conversationKeys.removeWhere((key, _) => key.startsWith('$privateKey|'));
+  }
+
+  /// Drops the whole conversation-key cache (full session reset / tests).
+  static void clearConversationKeyCache() => _conversationKeys.clear();
+
+  @visibleForTesting
+  static int get conversationKeyCacheSize => _conversationKeys.length;
+
+  @visibleForTesting
+  static bool conversationKeyCacheContains(
+          String privateKey, String publicKey) =>
+      _conversationKeys.containsKey('$privateKey|$publicKey');
 
   static NostrKeyPairs computeSharedKey(String privateKey, String publicKey) {
     final sharedKey = Nip44.computeSharedSecret(privateKey, publicKey);
@@ -447,10 +473,12 @@ class NostrUtils {
     }
 
     try {
+      // event.pubkey is the sender's one-shot wrapper key; never cache it.
       final decryptedContent = await decryptNIP44(
         event.content!,
         privateKey,
         event.pubkey,
+        cacheConversationKey: false,
       );
 
       final rumorEvent = NostrEvent.deserialized(
@@ -599,17 +627,22 @@ class NostrUtils {
     return true;
   }
 
+  /// [cacheConversationKey] must be false when either side of the pair is a
+  /// one-shot key (NIP-59 ephemeral wrappers), so the derived key is not
+  /// retained in the static cache.
   static Future<String> encryptNIP44(
     String content,
     String privkey,
-    String pubkey,
-  ) async {
+    String pubkey, {
+    bool cacheConversationKey = true,
+  }) async {
     try {
       return await Nip44.encryptMessage(
         content,
         privkey,
         pubkey,
-        customConversationKey: conversationKeyFor(privkey, pubkey),
+        customConversationKey:
+            conversationKeyFor(privkey, pubkey, cache: cacheConversationKey),
       );
     } catch (e) {
       // Handle encryption error appropriately
@@ -617,17 +650,22 @@ class NostrUtils {
     }
   }
 
+  /// [cacheConversationKey] must be false when either side of the pair is a
+  /// one-shot key (NIP-59 ephemeral wrappers), so the derived key is not
+  /// retained in the static cache.
   static Future<String> decryptNIP44(
     String encryptedContent,
     String privkey,
-    String pubkey,
-  ) async {
+    String pubkey, {
+    bool cacheConversationKey = true,
+  }) async {
     try {
       return await Nip44.decryptMessage(
         encryptedContent,
         privkey,
         pubkey,
-        customConversationKey: conversationKeyFor(privkey, pubkey),
+        customConversationKey:
+            conversationKeyFor(privkey, pubkey, cache: cacheConversationKey),
       );
     } catch (e) {
       // Handle encryption error appropriately

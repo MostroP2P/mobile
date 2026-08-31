@@ -123,6 +123,8 @@ extension NostrEventExtensions on NostrEvent {
           content!,
           receiver.private,
           ephemeralPubkey,
+          // One-shot wrapper pubkey: keep it out of the conversation cache.
+          cacheConversationKey: false,
         );
 
         final sanitizedSeal = _sanitizeEventJson(decryptedSeal);
@@ -231,6 +233,8 @@ extension NostrEventExtensions on NostrEvent {
         sealJson,
         ephemeralKeyPair.private,
         receiverPubkey,
+        // Single-use ephemeral key: keep it out of the conversation cache.
+        cacheConversationKey: false,
       );
 
       // Create Gift Wrap with randomized timestamp (±2 days)
@@ -277,6 +281,8 @@ extension NostrEventExtensions on NostrEvent {
         content!,
         receiver.private,
         ephemeralPubkey,
+        // One-shot wrapper pubkey: keep it out of the conversation cache.
+        cacheConversationKey: false,
       );
 
       // Parse the inner event

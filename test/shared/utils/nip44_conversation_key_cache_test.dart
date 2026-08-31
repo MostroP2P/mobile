@@ -53,4 +53,62 @@ void main() {
     expect(await NostrUtils.decryptNIP44(c1, bobPriv, alicePub), 'uno');
     expect(await NostrUtils.decryptNIP44(c2, bobPriv, alicePub), 'dos');
   });
+
+  test('cache: false derives without retaining one-shot key material', () {
+    NostrUtils.clearConversationKeyCache();
+
+    final uncached =
+        NostrUtils.conversationKeyFor(alicePriv, bobPub, cache: false);
+    final later = NostrUtils.conversationKeyFor(alicePriv, bobPub);
+
+    // Equal derivation, but the first call must not have populated the cache.
+    expect(later, equals(uncached));
+    expect(identical(later, uncached), isFalse,
+        reason: 'a cache:false derivation must not be stored for reuse');
+  });
+
+  test('evictConversationKeysFor drops every entry for that private key', () {
+    NostrUtils.clearConversationKeyCache();
+
+    final aliceToBob = NostrUtils.conversationKeyFor(alicePriv, bobPub);
+    final aliceToSelf = NostrUtils.conversationKeyFor(alicePriv, alicePub);
+    final bobToAlice = NostrUtils.conversationKeyFor(bobPriv, alicePub);
+
+    NostrUtils.evictConversationKeysFor(alicePriv);
+
+    // Alice's entries were recomputed (new instances), Bob's survived.
+    expect(
+        identical(NostrUtils.conversationKeyFor(alicePriv, bobPub), aliceToBob),
+        isFalse);
+    expect(
+        identical(
+            NostrUtils.conversationKeyFor(alicePriv, alicePub), aliceToSelf),
+        isFalse);
+    expect(
+        identical(NostrUtils.conversationKeyFor(bobPriv, alicePub), bobToAlice),
+        isTrue);
+  });
+
+  test('NIP-59 wrapping leaves no ephemeral wrapper keys in the cache',
+      () async {
+    NostrUtils.clearConversationKeyCache();
+
+    final wrap = await NostrUtils.createNIP59Event(
+      'contenido de prueba',
+      bobPub,
+      alicePriv,
+    );
+    await NostrUtils.decryptNIP59Event(wrap, bobPriv);
+
+    // The seal encrypt uses a one-shot wrapper private key and the wrap
+    // decrypt uses its one-shot wrapper pubkey; neither may be cached.
+    expect(
+        NostrUtils.conversationKeyCacheContains(bobPriv, wrap.pubkey), isFalse,
+        reason: 'the ephemeral wrapper conversation must not be cached');
+
+    // Only the stable sender<->recipient conversations may remain: the rumor
+    // encrypt (alice side) and the rumor decrypt (bob side).
+    expect(NostrUtils.conversationKeyCacheSize, 2,
+        reason: 'only stable sender<->recipient entries may be cached');
+  });
 }
