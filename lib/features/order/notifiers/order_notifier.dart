@@ -100,6 +100,8 @@ class OrderNotifier extends AbstractMostroNotifier {
         }
       }
 
+      // A replay that lands on the same values notifies nobody:
+      // AbstractMostroNotifier.updateShouldNotify compares by value.
       state = currentState;
 
       logger.i(
