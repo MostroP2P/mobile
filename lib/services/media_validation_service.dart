@@ -1,3 +1,4 @@
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import 'package:mime/mime.dart';
@@ -59,8 +60,10 @@ class MediaValidationService {
   /// 3. Re-encodes to eliminate malicious metadata
   static Future<MediaValidationResult> validateAndSanitizeImage(
     Uint8List imageData,
-  ) async {
-    return _sanitizeImageHeavy(imageData);
+  ) {
+    // Pure-Dart decode + re-encode takes seconds for a phone photo; run it
+    // off the main isolate (bytes and the result transfer cheaply).
+    return Isolate.run(() => _sanitizeImageHeavy(imageData));
   }
   
   /// Light image sanitization for better performance
@@ -69,6 +72,12 @@ class MediaValidationService {
   /// 3. Strips metadata only (no heavy pixel validation)
   /// 4. Quick re-encode with minimal quality loss
   static Future<MediaValidationResult> validateAndSanitizeImageLight(
+    Uint8List imageData,
+  ) {
+    return Isolate.run(() => _sanitizeImageLightImpl(imageData));
+  }
+
+  static Future<MediaValidationResult> _sanitizeImageLightImpl(
     Uint8List imageData,
   ) async {
     logger.i('📸 Light image sanitization started: ${imageData.length} bytes');

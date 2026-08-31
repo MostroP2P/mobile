@@ -91,7 +91,7 @@ class EncryptedImageUploadService {
       );
       
       // 3. Encrypt with ChaCha20-Poly1305
-      final encryptionResult = EncryptionService.encryptChaCha20Poly1305(
+      final encryptionResult = await EncryptionService.encryptChaCha20Poly1305Async(
         key: sharedKey,
         plaintext: validationResult.validatedData,
       );
@@ -151,7 +151,7 @@ class EncryptedImageUploadService {
       logger.i('📥 Downloaded encrypted blob: ${encryptedBlob.length} bytes');
       
       // 2. Decrypt with ChaCha20-Poly1305
-      final decryptedImage = EncryptionService.decryptFromBlob(
+      final decryptedImage = await EncryptionService.decryptFromBlobAsync(
         key: sharedKey,
         blob: encryptedBlob,
       );
