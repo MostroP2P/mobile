@@ -31,5 +31,32 @@ void main() {
       expect(filter.authors, [mostroPubkey]);
       expect(filter.p, tradeKeys);
     });
+
+    // Without since/limit every (re)subscription replayed the node's full
+    // message history from every relay; kind 14 carries real timestamps, so
+    // a persisted cursor can bound the replay tightly.
+    test('v2 (nip44) carries the cursor since and a limit', () {
+      final since = DateTime.fromMillisecondsSinceEpoch(1700000000 * 1000);
+      final filter = buildOrdersFilter(
+        Transport.nip44,
+        tradeKeys,
+        mostroPubkey,
+        since: since,
+      );
+
+      expect(filter.since, since);
+      expect(filter.limit, isNotNull);
+    });
+
+    test('v1 (giftWrap) ignores since: its timestamps are randomized', () {
+      final filter = buildOrdersFilter(
+        Transport.giftWrap,
+        tradeKeys,
+        mostroPubkey,
+        since: DateTime.now(),
+      );
+
+      expect(filter.since, isNull);
+    });
   });
 }

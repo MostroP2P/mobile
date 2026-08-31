@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/services/chat_cursor_store.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
@@ -120,6 +121,14 @@ class MostroService {
   /// by every later replay, and the order sat at a stale status across
   /// restarts.
   Future<void> _markEventProcessed(NostrEvent event) {
+    // Advance the orders since cursor: a processed event never needs
+    // replaying. Events left unmarked (e.g. no session yet) stay behind the
+    // cursor's overlap window so a resubscription can retry them.
+    unawaited(
+      ref
+          .read(ordersCursorStoreProvider)
+          .advance(_settings.mostroPublicKey, event.createdAt!),
+    );
     return ref.read(eventStorageProvider).putItem(event.id!, {
       'id': event.id,
       'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,

@@ -295,6 +295,16 @@ class SubscriptionManager {
             .whereType<String>();
         await ref.read(chatCursorStoreProvider).warmUp(orderIds);
       }
+      if (type == SubscriptionType.orders) {
+        // Best-effort: a prefs/storage failure must not prevent the REQ.
+        try {
+          await ref
+              .read(ordersCursorStoreProvider)
+              .warmUp([ref.read(settingsProvider).mostroPublicKey]);
+        } catch (e) {
+          logger.w('Orders cursor warm-up unavailable: $e');
+        }
+      }
 
       final filter = _createFilterForType(type, sessions);
       if (filter == null) {
@@ -365,10 +375,23 @@ class SubscriptionManager {
         // and re-subscribe when the node info arrives after this subscription.
         final transport = _resolveOrdersTransport();
         _appliedOrdersTransport = transport;
+        final mostroPubkey = ref.read(settingsProvider).mostroPublicKey;
+        // Persisted cursor bounds the replay; fresh installs fall back to the
+        // default lookback (older history is served by the restore flow).
+        DateTime? cursorSince;
+        try {
+          cursorSince =
+              ref.read(ordersCursorStoreProvider).cachedSinceFor(mostroPubkey);
+        } catch (e) {
+          logger.w('Orders cursor unavailable, using default lookback: $e');
+        }
+        final ordersSince = cursorSince ??
+            DateTime.now().subtract(NostrEventExtensions.chatDefaultLookback);
         return buildOrdersFilter(
           transport,
           tradeKeys,
-          ref.read(settingsProvider).mostroPublicKey,
+          mostroPubkey,
+          since: ordersSince,
         );
       case SubscriptionType.chat:
         // Kind 14 chat envelope: filter by the K_sign authors derived from
@@ -670,19 +693,27 @@ class SubscriptionManager {
 NostrFilter buildOrdersFilter(
   Transport transport,
   List<String> tradeKeys,
-  String mostroPubkey,
-) {
+  String mostroPubkey, {
+  DateTime? since,
+}) {
   switch (transport) {
     case Transport.giftWrap:
+      // Legacy transport: gift wrap timestamps are randomized ±48 h, so a
+      // cursor since would silently drop messages. Left unbounded until the
+      // 1059 branch is removed.
       return NostrFilter(
         kinds: [1059],
         p: tradeKeys,
       );
     case Transport.nip44:
+      // kind 14 carries real timestamps: bound the replay with the persisted
+      // cursor (minus its overlap) and a limit, mirroring the chat filters.
       return NostrFilter(
         kinds: [14],
         authors: [mostroPubkey],
         p: tradeKeys,
+        since: since,
+        limit: NostrEventExtensions.chatDefaultLimit,
       );
   }
 }
