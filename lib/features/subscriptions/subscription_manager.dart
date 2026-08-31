@@ -71,6 +71,13 @@ class SubscriptionManager {
   /// forces the next update through.
   final Map<SubscriptionType, String> _appliedFilterKeys = {};
 
+  /// Per-type chain serializing subscription updates. The chat paths await a
+  /// cursor warm-up before recording their filter key, so without this two
+  /// identical bursty emissions both pass the identity check while the first
+  /// is still warming up, and each replays the CLOSE + REQ. Same pattern as
+  /// [ChatCursorStore.advance].
+  final Map<SubscriptionType, Future<void>> _updateQueue = {};
+
   SubscriptionManager(this.ref) {
     _initSessionListener();
     // Ensure resources are released with provider/container lifecycle
@@ -175,7 +182,22 @@ class SubscriptionManager {
   }
 
   Future<void> _updateSubscription(
+      SubscriptionType type, List<Session> sessions) {
+    final previous = _updateQueue[type] ?? Future.value();
+    final next = previous
+        .catchError((_) {})
+        .then((_) => _applySubscriptionUpdate(type, sessions));
+    _updateQueue[type] = next;
+    return next;
+  }
+
+  Future<void> _applySubscriptionUpdate(
       SubscriptionType type, List<Session> sessions) async {
+    // A queued update can run after [suspend]; the background service owns
+    // the filters then, and [resume] rebuilds everything from sessions.
+    if (_isSuspended) {
+      return;
+    }
     if (sessions.isEmpty) {
       logger.i('No sessions for $type subscription');
       unsubscribeByType(type);

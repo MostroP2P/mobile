@@ -4,11 +4,13 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
+import 'package:mostro_mobile/services/chat_cursor_store.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
@@ -119,6 +121,59 @@ void main() {
 
     verify(nostrService.subscribeToEvents(any)).called(greaterThan(0));
   });
+
+  test(
+      'identical chat emissions during a slow cursor warm-up issue a single '
+      'chat REQ', () async {
+    // The chat path awaits ChatCursorStore.warmUp before recording its
+    // filter key. Two identical bursty emissions used to both pass the
+    // identity check while the first was still warming up, each replaying
+    // the CLOSE + REQ.
+    container.dispose();
+    container = ProviderContainer(overrides: [
+      nostrServiceProvider.overrideWithValue(nostrService),
+      orderRepositoryProvider.overrideWithValue(orderRepository),
+      settingsProvider.overrideWith((ref) => _FixedSettingsNotifier()),
+      chatCursorStoreProvider.overrideWithValue(_SlowWarmUpCursorStore()),
+      sessionNotifierProvider.overrideWith((ref) {
+        sessions = _FakeSessionNotifier(ref);
+        return sessions;
+      }),
+    ]);
+    container.read(sessionNotifierProvider);
+    manager = container.read(subscriptionManagerProvider);
+
+    final peerPubkey = NostrKeyPairs(private: keyB).public;
+    Session chatSession() =>
+        session('order-a', keyA)..peer = Peer(publicKey: peerPubkey);
+
+    // Back-to-back emissions of the same session set, no flush in between —
+    // the second arrives while the first is still awaiting warmUp.
+    sessions.emit([chatSession()]);
+    sessions.emit([chatSession()]);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    final requests = verify(nostrService.subscribeToEvents(captureAny))
+        .captured
+        .cast<NostrRequest>();
+    final chatRequests = requests
+        .where((r) => r.filters.any((f) => (f.kinds ?? []).contains(14)))
+        .toList();
+    expect(chatRequests, hasLength(1));
+    verifyNever(nostrService.unsubscribe(any));
+  });
+}
+
+/// Chat cursor store whose warm-up stays pending across event-loop turns,
+/// widening the race window between the identity check and the REQ.
+class _SlowWarmUpCursorStore extends ChatCursorStore {
+  _SlowWarmUpCursorStore()
+      : super(MockSharedPreferencesAsync(),
+            keyPrefix: ChatCursorStore.peerKeyPrefix);
+
+  @override
+  Future<void> warmUp(Iterable<String> conversationIds) =>
+      Future<void>.delayed(const Duration(milliseconds: 5));
 }
 
 class _FixedSettingsNotifier extends SettingsNotifier {
