@@ -342,6 +342,26 @@ class NostrUtils {
     return wrapEvent;
   }
 
+  /// Conversation keys are constant per (our key, their key) pair, but every
+  /// encrypt/decrypt recomputed them: one EC scalar multiplication plus HKDF
+  /// per message. Bounded cache; key material lives as long as the session
+  /// keys it derives from already do.
+  static const int _conversationKeyCacheLimit = 512;
+  static final Map<String, Uint8List> _conversationKeys = {};
+
+  static Uint8List conversationKeyFor(String privateKey, String publicKey) {
+    final cacheKey = '$privateKey|$publicKey';
+    final cached = _conversationKeys[cacheKey];
+    if (cached != null) return cached;
+    final sharedSecret = Nip44.computeSharedSecret(privateKey, publicKey);
+    final conversationKey = Nip44.deriveConversationKey(sharedSecret);
+    if (_conversationKeys.length >= _conversationKeyCacheLimit) {
+      _conversationKeys.clear();
+    }
+    _conversationKeys[cacheKey] = conversationKey;
+    return conversationKey;
+  }
+
   static NostrKeyPairs computeSharedKey(String privateKey, String publicKey) {
     final sharedKey = Nip44.computeSharedSecret(privateKey, publicKey);
     final nkey = hex.encode(sharedKey);
@@ -585,7 +605,12 @@ class NostrUtils {
     String pubkey,
   ) async {
     try {
-      return await Nip44.encryptMessage(content, privkey, pubkey);
+      return await Nip44.encryptMessage(
+        content,
+        privkey,
+        pubkey,
+        customConversationKey: conversationKeyFor(privkey, pubkey),
+      );
     } catch (e) {
       // Handle encryption error appropriately
       throw Exception('Encryption failed: $e');
@@ -598,7 +623,12 @@ class NostrUtils {
     String pubkey,
   ) async {
     try {
-      return await Nip44.decryptMessage(encryptedContent, privkey, pubkey);
+      return await Nip44.decryptMessage(
+        encryptedContent,
+        privkey,
+        pubkey,
+        customConversationKey: conversationKeyFor(privkey, pubkey),
+      );
     } catch (e) {
       // Handle encryption error appropriately
       throw Exception('Decryption failed: $e');
