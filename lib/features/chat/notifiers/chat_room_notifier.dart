@@ -55,22 +55,56 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
   ChatKeys? _chatKeys;
   String? _chatKeysSource;
 
-  /// Unwrapped inner events by outer envelope id. An envelope is verified and
-  /// decrypted (~5 EC multiplications) exactly once per notifier; relay
-  /// re-deliveries and history reloads reuse the result.
-  final Map<String, NostrEvent> _unwrapCache = {};
+  /// Unwrapped inner events by outer envelope id, keyed on the *in-flight*
+  /// future so the reservation is made synchronously. An envelope is verified
+  /// and decrypted (~5 EC multiplications) exactly once per notifier: relay
+  /// re-deliveries, concurrent deliveries and history reloads reuse the
+  /// result.
+  final Map<String, Future<NostrEvent>> _unwrapCache = {};
   static const int _unwrapCacheLimit = 2000;
 
   /// Test hook: number of chatUnwrap executions performed by this notifier.
   @visibleForTesting
   int debugUnwrapCount = 0;
 
-  NostrEvent _cacheUnwrap(String outerId, NostrEvent inner) {
+  /// Start the single unwrap of [event], or join the one already running.
+  /// The reservation happens synchronously — before any await — so a second
+  /// relay copy arriving while the first is still being verified shares its
+  /// result instead of paying for another verification. A failed unwrap is
+  /// never cached: the reservation is dropped so a later valid copy of the
+  /// envelope is verified normally.
+  Future<NostrEvent> _unwrapOnce(
+    NostrEvent event,
+    ChatKeys chatKeys,
+    Session session,
+  ) {
+    final outerId = event.id!;
+    final pending = _unwrapCache[outerId];
+    if (pending != null) return pending;
     if (_unwrapCache.length >= _unwrapCacheLimit) {
       _unwrapCache.clear();
     }
-    _unwrapCache[outerId] = inner;
-    return inner;
+    debugUnwrapCount++;
+    // The map entry is written synchronously, before the first await inside
+    // chatUnwrap, so a second delivery arriving meanwhile joins this future.
+    final unwrap = _unwrapAndForgetOnFailure(event, chatKeys, session);
+    _unwrapCache[outerId] = unwrap;
+    return unwrap;
+  }
+
+  Future<NostrEvent> _unwrapAndForgetOnFailure(
+    NostrEvent event,
+    ChatKeys chatKeys,
+    Session session,
+  ) async {
+    try {
+      return await event.chatUnwrap(chatKeys, session.peerChatAllowedSigners);
+    } catch (_) {
+      // Never cache a rejection: a corrupted copy delivered first must not
+      // lock the envelope id out for the valid event that shares it.
+      _unwrapCache.remove(event.id!);
+      rethrow;
+    }
   }
 
   ChatRoomNotifier(
@@ -179,44 +213,38 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
         return;
       }
 
-      // Already on disk means a relay re-delivery, an own echo, or an event
-      // the background service stored while the app slept. The stored copy
-      // was verified before being persisted, so re-verifying and
-      // re-decrypting it (~5 EC multiplications) is pure waste: advance the
-      // cursor and reuse the cached unwrap if the state lacks it (history
-      // load covers the cold-start case, since initialize() runs before
-      // subscribe()).
-      final eventStore = ref.read(eventStorageProvider);
-      final alreadyStored = await eventStore.hasItem(event.id!);
-      final cachedUnwrap = _unwrapCache[event.id!];
-      if (alreadyStored && cachedUnwrap != null) {
-        // This notifier already verified and decrypted this envelope: a
-        // relay re-delivery only needs the cursor advanced and the cached
-        // inner event surfaced if state lost it. An envelope stored by the
-        // background isolate (not in this cache) still gets unwrapped below.
-        unawaited(
-          ref.read(chatCursorStoreProvider).advance(orderId, event.createdAt!),
-        );
-        if (!state.messages.any((m) => m.id == cachedUnwrap.id)) {
-          state = state.copy(messages: [...state.messages, cachedUnwrap]);
+      final outerId = event.id!;
+
+      // This notifier already verified and decrypted this envelope (a relay
+      // re-delivery, an own echo, or a copy racing an unwrap still in
+      // flight): reuse the verified inner event and surface it if state lost
+      // it. Nothing is written and the cursor is NOT advanced from here —
+      // this copy's signature has not been checked, and both the envelope id
+      // and the author key are public, so its created_at is attacker
+      // controlled. For legitimate traffic the advance would be a no-op
+      // anyway: a re-delivery carries the same id and therefore the same
+      // created_at, which the store already rejects as not newer.
+      final pending = _unwrapCache[outerId];
+      if (pending != null) {
+        final cached = await pending;
+        if (!state.messages.any((m) => m.id == cached.id)) {
+          state = state.copy(messages: [...state.messages, cached]);
         }
         return;
       }
 
       // Unwrap and authenticate BEFORE persisting: the signature is not part
       // of the event id, so storing an unverified copy would let a corrupted
-      // duplicate occupy the id and dedup away the valid one for good
-      debugUnwrapCount++;
-      final chat = _cacheUnwrap(
-        event.id!,
-        await event.chatUnwrap(
-          chatKeys,
-          session.peerChatAllowedSigners,
-        ),
-      );
+      // duplicate occupy the id and dedup away the valid one for good. An
+      // envelope the background service stored while the app slept is on disk
+      // but not in this cache, so it is verified here like any other.
+      final chat = await _unwrapOnce(event, chatKeys, session);
+
+      final eventStore = ref.read(eventStorageProvider);
+      final alreadyStored = await eventStore.hasItem(outerId);
 
       if (!alreadyStored) {
-        await eventStore.putItem(event.id!, event.peerChatRecord(orderId));
+        await eventStore.putItem(outerId, event.peerChatRecord(orderId));
       }
 
       // Advance the persisted since cursor only after the event is accepted
@@ -428,18 +456,15 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
           // by this notifier are reused instead of re-verified.
           final cachedUnwrap = _unwrapCache[storedEvent.id];
           if (cachedUnwrap != null) {
-            historicalMessages.add(cachedUnwrap);
+            historicalMessages.add(await cachedUnwrap);
             continue;
           }
           final NostrEvent unwrappedMessage;
           if (storedEvent.kind == 14) {
-            debugUnwrapCount++;
-            unwrappedMessage = _cacheUnwrap(
-              storedEvent.id!,
-              await storedEvent.chatUnwrap(
-                _getChatKeys(session),
-                session.peerChatAllowedSigners,
-              ),
+            unwrappedMessage = await _unwrapOnce(
+              storedEvent,
+              _getChatKeys(session),
+              session,
             );
           } else {
             if (session.sharedKey?.public != storedEvent.recipient) {

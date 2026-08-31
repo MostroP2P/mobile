@@ -89,12 +89,15 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
   final Ref ref;
 
   StreamSubscription<NostrEvent>? _subscription;
-
-  /// Outer envelope ids this notifier already verified and decrypted.
-
-  final Set<String> _unwrappedOuterIds = {};
   ProviderSubscription<dynamic>? _sessionListener;
   bool _isInitialized = false;
+
+  /// Outer envelope ids this notifier has verified and decrypted, or is
+  /// currently verifying. Reserved synchronously — before any await — so two
+  /// relays delivering the same envelope at once share one unwrap instead of
+  /// each paying for the ~5 EC multiplications.
+  final Set<String> _unwrappedOuterIds = {};
+  static const int _unwrappedOuterIdsLimit = 2000;
 
   ChatKeys? _chatKeys;
   String? _chatKeysSource;
@@ -217,25 +220,28 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       final chatKeys = _getChatKeys(session);
       if (event.pubkey != chatKeys.sign.public) return;
 
-      // Check for duplicate outer events (relay re-deliveries)
+      // Duplicate outer events (relay re-deliveries, own echoes, copies
+      // racing an unwrap still in flight) are dropped here: the first
+      // delivery verified the envelope and put its inner event in state,
+      // which dedups by inner id. Nothing is written and the cursor is NOT
+      // advanced from here — this copy's signature has not been checked, and
+      // both the envelope id and the author key are public, so its created_at
+      // is attacker controlled. For legitimate traffic the advance would be a
+      // no-op anyway: a re-delivery carries the same id and therefore the
+      // same created_at, which the store already rejects as not newer.
+      // The reservation is taken synchronously, before the first await.
       final wrapperEventId = event.id!;
-      // Already on disk means a relay re-delivery, an own echo, or an event
-      // the background service stored while the app slept. The stored copy
-      // was verified before being persisted; skip the redundant re-verify +
-      // re-decrypt (history load covers cold-start state).
+      if (_unwrappedOuterIds.contains(wrapperEventId)) return;
+      if (_unwrappedOuterIds.length >= _unwrappedOuterIdsLimit) {
+        _unwrappedOuterIds.clear();
+      }
+      _unwrappedOuterIds.add(wrapperEventId);
+
+      // Already on disk means an event the background service stored while
+      // the app slept, or an own echo. It is not in _unwrappedOuterIds, so it
+      // is still verified below; only the redundant write is skipped.
       final eventStore = ref.read(eventStorageProvider);
       final alreadyStored = await eventStore.hasItem(wrapperEventId);
-      if (alreadyStored && _unwrappedOuterIds.contains(wrapperEventId)) {
-        // Verified and decrypted by this notifier before: a relay
-        // re-delivery only needs the cursor advanced (state dedups by inner
-        // id). Envelopes stored by the background isolate still unwrap below.
-        unawaited(
-          ref
-              .read(disputeChatCursorStoreProvider)
-              .advance(disputeId, event.createdAt!),
-        );
-        return;
-      }
 
       // Unwrap and authenticate BEFORE persisting: the signature is not part
       // of the event id, so storing an unverified copy would let a corrupted
@@ -244,10 +250,6 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
         chatKeys,
         session.disputeChatAllowedSigners,
       );
-      if (_unwrappedOuterIds.length >= 2000) {
-        _unwrappedOuterIds.clear();
-      }
-      _unwrappedOuterIds.add(wrapperEventId);
 
       // Store the outer event (encrypted) to disk — same pattern as P2P chat
       if (!alreadyStored) {
@@ -291,6 +293,9 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       logger.i('Added dispute chat message for dispute: $disputeId '
           '(from ${isFromAdmin ? "admin" : "user"})');
     } catch (e, stackTrace) {
+      // Drop the reservation: a failed unwrap must never lock the envelope id
+      // out, or a later valid copy of it would be silently discarded.
+      if (event.id != null) _unwrappedOuterIds.remove(event.id);
       logger.e('Error processing dispute chat event: $e', stackTrace: stackTrace);
     }
   }

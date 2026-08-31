@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -65,6 +67,7 @@ void main() {
   late ProviderContainer container;
   late ChatRoomNotifier notifier;
   late ChatKeys chatKeys;
+  late ChatCursorStore cursorStore;
 
   final chatRoomProvider = StateNotifierProvider<ChatRoomNotifier, ChatRoom>(
     (ref) => ChatRoomNotifier(
@@ -89,13 +92,15 @@ void main() {
         await newDatabaseFactoryMemory().openDatabase('redundant_decrypt.db');
     eventStorage = EventStorage(db: db);
 
+    cursorStore = ChatCursorStore(
+      _FakeSharedPreferencesAsync(),
+      keyPrefix: 'chat_since_',
+    );
+
     container = ProviderContainer(overrides: [
       sessionProvider(orderId).overrideWith((ref) => session),
       eventStorageProvider.overrideWithValue(eventStorage),
-      chatCursorStoreProvider.overrideWithValue(
-        ChatCursorStore(_FakeSharedPreferencesAsync(),
-              keyPrefix: 'chat_since_'),
-      ),
+      chatCursorStoreProvider.overrideWithValue(cursorStore),
       chatRoomsNotifierProvider
           .overrideWith((ref) => _StubChatRoomsNotifier(ref)),
     ]);
@@ -138,6 +143,67 @@ void main() {
     expect(notifier.debugUnwrapCount, 1,
         reason: 'reloading history must not re-verify and re-decrypt '
             'envelopes already unwrapped in this notifier');
+    expect(container.read(chatRoomProvider).messages, hasLength(1));
+  });
+
+  test('an envelope stored by the background isolate is still verified',
+      () async {
+    final event = await envelope('from background');
+    // On disk, but this notifier never verified it.
+    await eventStorage.putItem(event.id!, event.peerChatRecord(orderId));
+
+    await notifier.handleChatEvent(event);
+
+    expect(notifier.debugUnwrapCount, 1,
+        reason: 'an envelope this notifier never verified must be unwrapped, '
+            'even though it is already on disk');
+    expect(container.read(chatRoomProvider).messages, hasLength(1));
+  });
+
+  test('the cursor does not advance from an unverified envelope', () async {
+    final real = await envelope('legit');
+    await notifier.handleChatEvent(real);
+    // The accepted event advances the cursor fire-and-forget; let it land.
+    await Future<void>.delayed(Duration.zero);
+    final before = await cursorStore.cursorFor(orderId);
+    expect(before, isNotNull, reason: 'the verified event advances the cursor');
+
+    // Hostile relay: real envelope id, correct claimed author (both are
+    // public), bogus signature and a created_at far in the future.
+    final forged = NostrEvent.deserialized('["EVENT","",${jsonEncode({
+          'id': real.id,
+          'pubkey': chatKeys.sign.public,
+          'created_at': DateTime.now()
+                  .add(const Duration(days: 3650))
+                  .millisecondsSinceEpoch ~/
+              1000,
+          'kind': 14,
+          'tags': <List<String>>[],
+          'content': 'undecryptable garbage',
+          'sig': '0' * 128,
+        })}]');
+
+    await notifier.handleChatEvent(forged);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(await cursorStore.cursorFor(orderId), before,
+        reason: 'a copy whose signature was never checked must not move the '
+            'since cursor: a forged created_at would push it to the local '
+            'clock and drop older messages after a reconnect');
+  });
+
+  test('concurrent deliveries of the same envelope share one unwrap',
+      () async {
+    final event = await envelope('hola');
+
+    await Future.wait([
+      notifier.handleChatEvent(event),
+      notifier.handleChatEvent(event),
+    ]);
+
+    expect(notifier.debugUnwrapCount, 1,
+        reason: 'the second delivery must join the in-flight unwrap instead '
+            'of starting its own');
     expect(container.read(chatRoomProvider).messages, hasLength(1));
   });
 }

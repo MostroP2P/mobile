@@ -22,6 +22,11 @@ class MostroService {
   Settings _settings;
   StreamSubscription<NostrEvent>? _ordersSubscription;
 
+  /// Event ids seen this run, reserved synchronously so two relay copies
+  /// arriving within the storage round-trip are not both decrypted.
+  final Set<String> _seenEventIds = {};
+  static const int _seenEventIdsLimit = 4096;
+
   MostroService(this.ref) : _settings = ref.read(settingsProvider);
 
   void init() {
@@ -105,27 +110,38 @@ class MostroService {
     return false;
   }
 
-  /// Ids seen this run, checked synchronously: two relay copies arriving
-  /// within the hasItem round-trip both passed the async check and were
-  /// decrypted twice.
-  final Set<String> _seenEventIds = {};
-  static const int _seenEventIdsLimit = 4096;
-
   Future<void> _onData(NostrEvent event) async {
+    final eventId = event.id!;
+
+    // Synchronous reservation: two relay copies arriving within the hasItem
+    // round-trip both passed the async check and were decrypted twice.
     if (_seenEventIds.length >= _seenEventIdsLimit) {
       _seenEventIds.clear();
     }
-    if (!_seenEventIds.add(event.id!)) return;
+    if (!_seenEventIds.add(eventId)) return;
 
     final eventStore = ref.read(eventStorageProvider);
 
-    if (await eventStore.hasItem(event.id!)) return;
+    try {
+      if (await eventStore.hasItem(eventId)) return;
 
-    // Reserve event ID immediately to prevent duplicate processing from multiple relays
-    await eventStore.putItem(event.id!, {
-      'id': event.id,
-      'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
-    });
+      // Reserve event ID immediately to prevent duplicate processing from multiple relays
+      await eventStore.putItem(eventId, {
+        'id': event.id,
+        'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
+      });
+    } catch (e, stackTrace) {
+      // The durable reservation failed. Release the in-memory one too, or a
+      // transient storage error would discard every later redelivery of this
+      // event for the rest of the run and lose the order update for good.
+      _seenEventIds.remove(eventId);
+      logger.e(
+        'Failed to reserve event $eventId in storage',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return;
+    }
 
     final sessions = ref.read(sessionNotifierProvider);
     final matchingSession = sessions.firstWhereOrNull(
