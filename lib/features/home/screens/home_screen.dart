@@ -19,8 +19,6 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filteredOrders = ref.watch(filteredOrdersProvider);
-
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       appBar: const MostroAppBar(),
@@ -52,50 +50,7 @@ class HomeScreen extends ConsumerWidget {
                         children: [
                           _buildTabs(context, ref),
                           _buildFilterButton(context, ref),
-                          Expanded(
-                            child: Container(
-                              color: AppTheme.dark1,
-                              child: filteredOrders.isEmpty
-                                  ? Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(
-                                            Icons.search_off,
-                                            color: Colors.white30,
-                                            size: 48,
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Text(
-                                            S.of(context)!.noOrdersAvailable,
-                                            style: const TextStyle(
-                                              color: Colors.white60,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          Text(
-                                            S.of(context)!.tryChangingFilters,
-                                            style: const TextStyle(
-                                              color: Colors.white38,
-                                              fontSize: 14,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  : ListView.builder(
-                                      itemCount: filteredOrders.length,
-                                      padding: const EdgeInsets.only(
-                                          bottom: 100, top: 6),
-                                      itemBuilder: (context, index) {
-                                        final order = filteredOrders[index];
-                                        return OrderListItem(order: order);
-                                      },
-                                    ),
-                            ),
-                          ),
+                          const Expanded(child: _OrderBookList()),
                         ],
                       ),
                     ),
@@ -363,6 +318,60 @@ class HomeScreen extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The only widget that watches the full filtered list. Scoping the watch
+/// here means a book emission rebuilds just the list — the tabs and the
+/// filter pill above it watch narrower slices (order type, filter state,
+/// order count) and stay put.
+class _OrderBookList extends ConsumerWidget {
+  const _OrderBookList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final filteredOrders = ref.watch(filteredOrdersProvider);
+
+    return Container(
+      color: AppTheme.dark1,
+      child: filteredOrders.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.search_off,
+                    color: Colors.white30,
+                    size: 48,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    S.of(context)!.noOrdersAvailable,
+                    style: const TextStyle(
+                      color: Colors.white60,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    S.of(context)!.tryChangingFilters,
+                    style: const TextStyle(
+                      color: Colors.white38,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              itemCount: filteredOrders.length,
+              padding: const EdgeInsets.only(bottom: 100, top: 6),
+              itemBuilder: (context, index) {
+                final order = filteredOrders[index];
+                return OrderListItem(order: order);
+              },
+            ),
     );
   }
 }
