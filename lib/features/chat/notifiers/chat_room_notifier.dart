@@ -226,11 +226,23 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       // created_at, which the store already rejects as not newer.
       final pending = _unwrapCache[outerId];
       if (pending != null) {
-        final cached = await pending;
-        if (!state.messages.any((m) => m.id == cached.id)) {
-          state = state.copy(messages: [...state.messages, cached]);
+        NostrEvent? cached;
+        try {
+          cached = await pending;
+        } catch (_) {
+          // The copy holding this id failed verification. Since the signature
+          // is not part of the id, that copy may be a forgery reusing a valid
+          // envelope's id, so this one falls through and is verified on its
+          // own instead of being suppressed by the forgery.
+          cached = null;
         }
-        return;
+        if (cached != null) {
+          final verified = cached;
+          if (!state.messages.any((m) => m.id == verified.id)) {
+            state = state.copy(messages: [...state.messages, verified]);
+          }
+          return;
+        }
       }
 
       // Unwrap and authenticate BEFORE persisting: the signature is not part
@@ -240,11 +252,20 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       // but not in this cache, so it is verified here like any other.
       final chat = await _unwrapOnce(event, chatKeys, session);
 
-      final eventStore = ref.read(eventStorageProvider);
-      final alreadyStored = await eventStore.hasItem(outerId);
+      try {
+        final eventStore = ref.read(eventStorageProvider);
+        final alreadyStored = await eventStore.hasItem(outerId);
 
-      if (!alreadyStored) {
-        await eventStore.putItem(outerId, event.peerChatRecord(orderId));
+        if (!alreadyStored) {
+          await eventStore.putItem(outerId, event.peerChatRecord(orderId));
+        }
+      } catch (_) {
+        // Persisting failed, so this envelope is not durably handled: drop
+        // the cached unwrap, or a later relay delivery would take the
+        // already-unwrapped shortcut above and never retry the write or the
+        // cursor advance, and the message would be gone after a restart.
+        _unwrapCache.remove(outerId);
+        rethrow;
       }
 
       // Advance the persisted since cursor only after the event is accepted

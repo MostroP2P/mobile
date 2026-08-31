@@ -33,6 +33,23 @@ class _StubChatRoomsNotifier extends ChatRoomsNotifier {
   Future<void> refreshChatList() async {}
 }
 
+class _FlakyEventStorage extends EventStorage {
+  _FlakyEventStorage({required super.db});
+
+  bool failNextPut = false;
+  int putCount = 0;
+
+  @override
+  Future<void> putItem(String id, Map<String, dynamic> item) async {
+    putCount++;
+    if (failNextPut) {
+      failNextPut = false;
+      throw Exception('disk full');
+    }
+    return super.putItem(id, item);
+  }
+}
+
 class _FakeSharedPreferencesAsync implements SharedPreferencesAsync {
   final Map<String, int> ints = {};
 
@@ -63,7 +80,7 @@ void main() {
   );
 
   late Session session;
-  late EventStorage eventStorage;
+  late _FlakyEventStorage eventStorage;
   late ProviderContainer container;
   late ChatRoomNotifier notifier;
   late ChatKeys chatKeys;
@@ -90,7 +107,7 @@ void main() {
 
     final db =
         await newDatabaseFactoryMemory().openDatabase('redundant_decrypt.db');
-    eventStorage = EventStorage(db: db);
+    eventStorage = _FlakyEventStorage(db: db);
 
     cursorStore = ChatCursorStore(
       _FakeSharedPreferencesAsync(),
@@ -204,6 +221,53 @@ void main() {
     expect(notifier.debugUnwrapCount, 1,
         reason: 'the second delivery must join the in-flight unwrap instead '
             'of starting its own');
+    expect(container.read(chatRoomProvider).messages, hasLength(1));
+  });
+
+  test('a valid copy is still processed when a forged one with the same id '
+      'is being verified', () async {
+    final real = await envelope('legit');
+
+    // Hostile relay wins the race: same envelope id (the signature is not
+    // part of it), correct claimed author, garbage payload.
+    final forged = NostrEvent.deserialized('["EVENT","",${jsonEncode({
+          'id': real.id,
+          'pubkey': chatKeys.sign.public,
+          'created_at': real.createdAt!.millisecondsSinceEpoch ~/ 1000,
+          'kind': 14,
+          'tags': <List<String>>[],
+          'content': 'undecryptable garbage',
+          'sig': '0' * 128,
+        })}]');
+
+    await Future.wait([
+      notifier.handleChatEvent(forged),
+      notifier.handleChatEvent(real),
+    ]);
+
+    expect(container.read(chatRoomProvider).messages, hasLength(1),
+        reason: 'a forgery reusing a valid envelope id must not suppress the '
+            'real message that arrives while it is being verified');
+    expect(container.read(chatRoomProvider).messages.single.content,
+        isNot('undecryptable garbage'));
+  });
+
+  test('a re-delivery retries persistence after a failed store', () async {
+    final event = await envelope('hola');
+
+    eventStorage.failNextPut = true;
+    await notifier.handleChatEvent(event);
+
+    expect(await eventStorage.hasItem(event.id!), isFalse,
+        reason: 'the write failed, so the envelope is not on disk');
+
+    // A later relay delivery of the same envelope must redo the write instead
+    // of taking the already-unwrapped shortcut.
+    await notifier.handleChatEvent(event);
+
+    expect(await eventStorage.hasItem(event.id!), isTrue,
+        reason: 'the envelope must be persisted by the retry, or it would be '
+            'gone after a restart');
     expect(container.read(chatRoomProvider).messages, hasLength(1));
   });
 }
