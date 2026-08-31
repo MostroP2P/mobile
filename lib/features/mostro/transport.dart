@@ -25,16 +25,20 @@ enum Transport { giftWrap, nip44 }
 ///   degraded state so a misconfigured node is not silently mis-paired.
 Transport resolveTransport(int? protocolVersion) {
   switch (protocolVersion) {
-    case 2:
-      return Transport.nip44;
     case 1:
-    case null:
+      // Legacy nodes only: the gift wrap transport is obsolete in the
+      // protocol and its code paths are scheduled for removal.
       return Transport.giftWrap;
+    case 2:
+    case null:
+      // v2 is the live transport. Defaulting to it when the node info has
+      // not arrived yet avoids a useless kind-1059 REQ at every cold start
+      // followed by a CLOSE + re-REQ once protocol_version resolves.
+      return Transport.nip44;
     default:
       logger.w(
-        'Unsupported protocol_version $protocolVersion; '
-        'degrading to v1 gift wrap',
+        'Unknown protocol_version $protocolVersion; assuming v2 (NIP-44)',
       );
-      return Transport.giftWrap;
+      return Transport.nip44;
   }
 }

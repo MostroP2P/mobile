@@ -11,13 +11,15 @@ void main() {
       expect(resolveTransport(1), Transport.giftWrap);
     });
 
-    test('null (tag absent / node info not yet fetched) → giftWrap', () {
-      expect(resolveTransport(null), Transport.giftWrap);
+    test('null (tag absent / node info not yet fetched) → nip44', () {
+      // Gift wrap is obsolete; defaulting to v2 avoids a useless kind-1059
+      // REQ + resubscribe at every cold start while the node info loads.
+      expect(resolveTransport(null), Transport.nip44);
     });
 
-    test('unsupported version → degrades to giftWrap', () {
-      expect(resolveTransport(3), Transport.giftWrap);
-      expect(resolveTransport(0), Transport.giftWrap);
+    test('unknown versions assume the live transport (nip44)', () {
+      expect(resolveTransport(3), Transport.nip44);
+      expect(resolveTransport(0), Transport.nip44);
     });
   });
 }
