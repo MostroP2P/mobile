@@ -219,7 +219,6 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
 
       // Check for duplicate outer events (relay re-deliveries)
       final wrapperEventId = event.id!;
-      if (wrapperEventId == null) return;
       // Already on disk means a relay re-delivery, an own echo, or an event
       // the background service stored while the app slept. The stored copy
       // was verified before being persisted; skip the redundant re-verify +
