@@ -24,6 +24,8 @@ import '../../mocks.mocks.dart';
 /// times per protocol step. Since the orders filter carries no `since`, each
 /// re-issue replayed the full gift-wrap history. The manager now skips the
 /// resubscribe when the filter identity (keys, transport, node) is unchanged.
+const _mostroPubkey = 'mostro-pubkey';
+
 void main() {
   late MockNostrService nostrService;
   late MockOpenOrdersRepository orderRepository;
@@ -196,8 +198,12 @@ void main() {
     // Deterministic on slow CI machines: wait for the first chat REQ to be
     // issued instead of assuming a fixed delay is enough, then allow a settle
     // window in which a duplicated REQ would land.
-    bool isChatRequest(NostrRequest r) =>
-        r.filters.any((f) => (f.kinds ?? []).contains(14));
+    // The orders REQ is kind 14 too since the transport defaults to v2, so
+    // match on the author instead of the kind alone: chat filters are keyed
+    // on the peer-derived K_sign pubkeys, never on the node's pubkey.
+    bool isChatRequest(NostrRequest r) => r.filters.any((f) =>
+        (f.kinds ?? []).contains(14) &&
+        !(f.authors ?? const []).contains(_mostroPubkey));
     final deadline = DateTime.now().add(const Duration(seconds: 5));
     while (!issuedRequests.any(isChatRequest) &&
         DateTime.now().isBefore(deadline)) {
@@ -228,7 +234,7 @@ class _FixedSettingsNotifier extends SettingsNotifier {
     state = Settings(
       relays: const [],
       fullPrivacyMode: false,
-      mostroPublicKey: 'mostro-pubkey',
+      mostroPublicKey: _mostroPubkey,
     );
   }
 }
