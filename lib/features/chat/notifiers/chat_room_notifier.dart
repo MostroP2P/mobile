@@ -55,6 +55,24 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
   ChatKeys? _chatKeys;
   String? _chatKeysSource;
 
+  /// Unwrapped inner events by outer envelope id. An envelope is verified and
+  /// decrypted (~5 EC multiplications) exactly once per notifier; relay
+  /// re-deliveries and history reloads reuse the result.
+  final Map<String, NostrEvent> _unwrapCache = {};
+  static const int _unwrapCacheLimit = 2000;
+
+  /// Test hook: number of chatUnwrap executions performed by this notifier.
+  @visibleForTesting
+  int debugUnwrapCount = 0;
+
+  NostrEvent _cacheUnwrap(String outerId, NostrEvent inner) {
+    if (_unwrapCache.length >= _unwrapCacheLimit) {
+      _unwrapCache.clear();
+    }
+    _unwrapCache[outerId] = inner;
+    return inner;
+  }
+
   ChatRoomNotifier(
     super.state,
     this.orderId,
@@ -162,17 +180,39 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
       }
 
       // Already on disk means a relay re-delivery, an own echo, or an event
-      // the background service stored while the app slept. Keep processing:
-      // state is keyed by inner id, so only the write is redundant.
+      // the background service stored while the app slept. The stored copy
+      // was verified before being persisted, so re-verifying and
+      // re-decrypting it (~5 EC multiplications) is pure waste: advance the
+      // cursor and reuse the cached unwrap if the state lacks it (history
+      // load covers the cold-start case, since initialize() runs before
+      // subscribe()).
       final eventStore = ref.read(eventStorageProvider);
       final alreadyStored = await eventStore.hasItem(event.id!);
+      final cachedUnwrap = _unwrapCache[event.id!];
+      if (alreadyStored && cachedUnwrap != null) {
+        // This notifier already verified and decrypted this envelope: a
+        // relay re-delivery only needs the cursor advanced and the cached
+        // inner event surfaced if state lost it. An envelope stored by the
+        // background isolate (not in this cache) still gets unwrapped below.
+        unawaited(
+          ref.read(chatCursorStoreProvider).advance(orderId, event.createdAt!),
+        );
+        if (!state.messages.any((m) => m.id == cachedUnwrap.id)) {
+          state = state.copy(messages: [...state.messages, cachedUnwrap]);
+        }
+        return;
+      }
 
       // Unwrap and authenticate BEFORE persisting: the signature is not part
       // of the event id, so storing an unverified copy would let a corrupted
       // duplicate occupy the id and dedup away the valid one for good
-      final chat = await event.chatUnwrap(
-        chatKeys,
-        session.peerChatAllowedSigners,
+      debugUnwrapCount++;
+      final chat = _cacheUnwrap(
+        event.id!,
+        await event.chatUnwrap(
+          chatKeys,
+          session.peerChatAllowedSigners,
+        ),
       );
 
       if (!alreadyStored) {
@@ -384,12 +424,22 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
           });
 
           // Decrypt and unwrap: kind 14 envelope, or legacy gift wrap
-          // stored before the kind-14 migration
+          // stored before the kind-14 migration. Envelopes already unwrapped
+          // by this notifier are reused instead of re-verified.
+          final cachedUnwrap = _unwrapCache[storedEvent.id];
+          if (cachedUnwrap != null) {
+            historicalMessages.add(cachedUnwrap);
+            continue;
+          }
           final NostrEvent unwrappedMessage;
           if (storedEvent.kind == 14) {
-            unwrappedMessage = await storedEvent.chatUnwrap(
-              _getChatKeys(session),
-              session.peerChatAllowedSigners,
+            debugUnwrapCount++;
+            unwrappedMessage = _cacheUnwrap(
+              storedEvent.id!,
+              await storedEvent.chatUnwrap(
+                _getChatKeys(session),
+                session.peerChatAllowedSigners,
+              ),
             );
           } else {
             if (session.sharedKey?.public != storedEvent.recipient) {

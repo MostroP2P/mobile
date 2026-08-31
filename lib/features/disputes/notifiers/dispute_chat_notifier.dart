@@ -89,6 +89,10 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
   final Ref ref;
 
   StreamSubscription<NostrEvent>? _subscription;
+
+  /// Outer envelope ids this notifier already verified and decrypted.
+
+  final Set<String> _unwrappedOuterIds = {};
   ProviderSubscription<dynamic>? _sessionListener;
   bool _isInitialized = false;
 
@@ -214,13 +218,25 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       if (event.pubkey != chatKeys.sign.public) return;
 
       // Check for duplicate outer events (relay re-deliveries)
-      final wrapperEventId = event.id;
+      final wrapperEventId = event.id!;
       if (wrapperEventId == null) return;
       // Already on disk means a relay re-delivery, an own echo, or an event
-      // the background service stored while the app slept. Keep processing:
-      // state is keyed by inner id, so only the write is redundant.
+      // the background service stored while the app slept. The stored copy
+      // was verified before being persisted; skip the redundant re-verify +
+      // re-decrypt (history load covers cold-start state).
       final eventStore = ref.read(eventStorageProvider);
       final alreadyStored = await eventStore.hasItem(wrapperEventId);
+      if (alreadyStored && _unwrappedOuterIds.contains(wrapperEventId)) {
+        // Verified and decrypted by this notifier before: a relay
+        // re-delivery only needs the cursor advanced (state dedups by inner
+        // id). Envelopes stored by the background isolate still unwrap below.
+        unawaited(
+          ref
+              .read(disputeChatCursorStoreProvider)
+              .advance(disputeId, event.createdAt!),
+        );
+        return;
+      }
 
       // Unwrap and authenticate BEFORE persisting: the signature is not part
       // of the event id, so storing an unverified copy would let a corrupted
@@ -229,6 +245,10 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
         chatKeys,
         session.disputeChatAllowedSigners,
       );
+      if (_unwrappedOuterIds.length >= 2000) {
+        _unwrappedOuterIds.clear();
+      }
+      _unwrappedOuterIds.add(wrapperEventId);
 
       // Store the outer event (encrypted) to disk — same pattern as P2P chat
       if (!alreadyStored) {

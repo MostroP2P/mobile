@@ -105,7 +105,18 @@ class MostroService {
     return false;
   }
 
+  /// Ids seen this run, checked synchronously: two relay copies arriving
+  /// within the hasItem round-trip both passed the async check and were
+  /// decrypted twice.
+  final Set<String> _seenEventIds = {};
+  static const int _seenEventIdsLimit = 4096;
+
   Future<void> _onData(NostrEvent event) async {
+    if (_seenEventIds.length >= _seenEventIdsLimit) {
+      _seenEventIds.clear();
+    }
+    if (!_seenEventIds.add(event.id!)) return;
+
     final eventStore = ref.read(eventStorageProvider);
 
     if (await eventStore.hasItem(event.id!)) return;
