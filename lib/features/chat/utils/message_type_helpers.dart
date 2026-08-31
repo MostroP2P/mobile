@@ -45,7 +45,7 @@ class MessageTypeUtils {
   static MessageContentType _classify(NostrEvent message) {
     try {
       final content = message.content;
-      if (content == null || !content.startsWith('{')) {
+      if (content == null || !content.trimLeft().startsWith('{')) {
         return MessageContentType.text;
       }
       final jsonContent = jsonDecode(content) as Map<String, dynamic>;

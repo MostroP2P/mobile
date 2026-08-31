@@ -35,6 +35,17 @@ void main() {
         MessageContentType.encryptedFile,
       );
       expect(
+        MessageTypeUtils.getMessageType(event('wi',
+            content: '  \n{"type":"image_encrypted","url":"x"}',
+            createdAt: 1)),
+        MessageContentType.encryptedImage,
+      );
+      expect(
+        MessageTypeUtils.getMessageType(event('wf',
+            content: '\t{"type":"file_encrypted","url":"x"}', createdAt: 1)),
+        MessageContentType.encryptedFile,
+      );
+      expect(
         MessageTypeUtils.getMessageType(
             event('j', content: '{"type":"other"}', createdAt: 1)),
         MessageContentType.text,
