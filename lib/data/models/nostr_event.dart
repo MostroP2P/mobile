@@ -1,4 +1,7 @@
+import 'package:nip44/nip44.dart';
+import 'dart:isolate';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:math';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/range_amount.dart';
@@ -477,14 +480,45 @@ extension NostrEventExtensions on NostrEvent {
       throw Exception('Encrypted payload exceeds the accepted size');
     }
 
-    // 6. Outer id and signature
-    _verifyEventIntegrity(this, 'outer');
-
-    // 7. Decrypt (NIP-44 self-decryption under K_conv)
-    final decrypted = await NostrUtils.decryptNIP44(
-      content!,
+    // 6-11. Heavy part (two Schnorr verifications + NIP-44 decrypt, ~5 EC
+    // multiplications) runs off the main isolate. The cached conversation
+    // key is resolved here so the worker skips ECDH + HKDF; the outer event,
+    // key material and thrown errors transfer across the boundary.
+    final conversationKey = NostrUtils.conversationKeyFor(
       chatKeys.conv.private,
       chatKeys.conv.public,
+    );
+    final outer = this;
+    final convPriv = chatKeys.conv.private;
+    final convPub = chatKeys.conv.public;
+    return Isolate.run(
+      () => _chatUnwrapHeavy(
+        outer,
+        convPriv,
+        convPub,
+        conversationKey,
+        allowedSigners,
+      ),
+    );
+  }
+
+  /// Steps 6-11 of [chatUnwrap], executed inside Isolate.run.
+  static Future<NostrEvent> _chatUnwrapHeavy(
+    NostrEvent outer,
+    String convPriv,
+    String convPub,
+    Uint8List conversationKey,
+    List<String> allowedSigners,
+  ) async {
+    // 6. Outer id and signature
+    _verifyEventIntegrity(outer, 'outer');
+
+    // 7. Decrypt (NIP-44 self-decryption under K_conv)
+    final decrypted = await Nip44.decryptMessage(
+      outer.content!,
+      convPriv,
+      convPub,
+      customConversationKey: conversationKey,
     );
 
     final dynamic decoded;
@@ -522,7 +556,7 @@ extension NostrEventExtensions on NostrEvent {
 
     // 11. Relative timestamp bound (stale re-wrap defense)
     final skew = (inner.createdAt!.millisecondsSinceEpoch ~/ 1000 -
-            createdAt!.millisecondsSinceEpoch ~/ 1000)
+            outer.createdAt!.millisecondsSinceEpoch ~/ 1000)
         .abs();
     if (skew > chatMaxClockSkewSecs) {
       throw Exception('Inner and outer timestamps disagree');
