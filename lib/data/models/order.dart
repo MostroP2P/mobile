@@ -268,4 +268,48 @@ class Order implements Payload {
       createdAt: createdAt,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Order &&
+        other.id == id &&
+        other.kind == kind &&
+        other.status == status &&
+        other.amount == amount &&
+        other.fiatCode == fiatCode &&
+        other.minAmount == minAmount &&
+        other.maxAmount == maxAmount &&
+        other.fiatAmount == fiatAmount &&
+        other.paymentMethod == paymentMethod &&
+        other.premium == premium &&
+        other.masterBuyerPubkey == masterBuyerPubkey &&
+        other.masterSellerPubkey == masterSellerPubkey &&
+        other.buyerTradePubkey == buyerTradePubkey &&
+        other.sellerTradePubkey == sellerTradePubkey &&
+        other.buyerInvoice == buyerInvoice &&
+        other.createdAt == createdAt &&
+        other.expiresAt == expiresAt;
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+        id,
+        kind,
+        status,
+        amount,
+        fiatCode,
+        minAmount,
+        maxAmount,
+        fiatAmount,
+        paymentMethod,
+        premium,
+        masterBuyerPubkey,
+        masterSellerPubkey,
+        buyerTradePubkey,
+        sellerTradePubkey,
+        buyerInvoice,
+        createdAt,
+        expiresAt,
+      ]);
 }
