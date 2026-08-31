@@ -23,17 +23,25 @@ class RelayHealthMonitor {
   Timer? _timer;
   bool _recovering = false;
 
+  /// Exponential backoff between recovery attempts while an outage persists:
+  /// each attempt is a full CLOSE+REQ fan-out, and re-running it on every
+  /// 6-second tick against relays that stay down is a resubscription storm.
+  static const Duration initialBackoff = Config.relayDiscoveryTimeout;
+  static const Duration maxBackoff = Duration(minutes: 5);
+  Duration _backoff = initialBackoff;
+  DateTime? _nextAttemptAt;
+
   RelayHealthMonitor(this.ref) {
     _timer = Timer.periodic(Config.relayDiscoveryTimeout, (_) => _check());
     ref.onDispose(() => _timer?.cancel());
   }
 
   /// Runs a single health check synchronously. Exposed for tests so the
-  /// periodic timer does not need to be awaited.
+  /// periodic timer does not need to be awaited; [now] injects the clock.
   @visibleForTesting
-  Future<void> checkNow() => _check();
+  Future<void> checkNow({DateTime? now}) => _check(now: now);
 
-  Future<void> _check() async {
+  Future<void> _check({DateTime? now}) async {
     if (_recovering) return;
 
     final nostrService = ref.read(nostrServiceProvider);
@@ -46,7 +54,18 @@ class RelayHealthMonitor {
     final operatingRelays = ref.read(settingsProvider).relays.toSet();
     final hasLiveOperatingRelay =
         nostrService.connectedRelays.any(operatingRelays.contains);
-    if (hasLiveOperatingRelay) return;
+    if (hasLiveOperatingRelay) {
+      // Healthy: arm the next outage for an immediate first attempt.
+      _backoff = initialBackoff;
+      _nextAttemptAt = null;
+      return;
+    }
+
+    final tick = now ?? DateTime.now();
+    if (_nextAttemptAt != null && tick.isBefore(_nextAttemptAt!)) return;
+    _nextAttemptAt = tick.add(_backoff);
+    final doubled = _backoff * 2;
+    _backoff = doubled > maxBackoff ? maxBackoff : doubled;
 
     _recovering = true;
     try {

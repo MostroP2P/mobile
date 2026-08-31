@@ -155,7 +155,10 @@ class NostrService {
       await _nostr.services.relays.init(
         relaysUrl: effectiveSettings.relays,
         connectionTimeout: Config.relayConnectionTimeout,
-        shouldReconnectToRelayOnNotice: true,
+        // NOTICE frames are informational (rate limits, policy hints);
+        // reconnecting on them cycled the socket without re-sending REQs and
+        // handed the recovery cost to the health monitor.
+        shouldReconnectToRelayOnNotice: false,
         retryOnClose: true,
         retryOnError: true,
         onRelayListening: (relayUrl, receivedData, channel) {
