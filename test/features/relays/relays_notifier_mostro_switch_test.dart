@@ -57,9 +57,9 @@ void main() {
     await tester.pump(const Duration(seconds: 30));
   }
 
-  testWidgets('a Mostro pubkey change clears the previous instance relays',
-      (tester) async {
-    // Arrange: the current instance published a relay list.
+  /// Puts one relay published by the currently configured instance into the
+  /// notifier's state.
+  Future<void> seedCurrentInstanceRelay(WidgetTester tester) async {
     container.read(relaysProvider);
     await tester.pump();
     relayListController.add(RelayListEvent(
@@ -75,6 +75,12 @@ void main() {
       hasLength(1),
       reason: 'precondition: the old instance relay is in the list',
     );
+  }
+
+  testWidgets('a Mostro pubkey change clears the previous instance relays',
+      (tester) async {
+    // Arrange: the current instance published a relay list.
+    await seedCurrentInstanceRelay(tester);
 
     // Act: switch node, exactly as MostroNodesNotifier.selectNode does.
     await container
@@ -92,6 +98,35 @@ void main() {
           'leak the previous Mostro instance across the switch',
     );
     verify(nostrService.ensureBootstrapConnectivity()).called(1);
+
+    await tearDownContainer(tester);
+  });
+
+  testWidgets('clearing the Mostro pubkey also tears the old instance down',
+      (tester) async {
+    // Arrange
+    await seedCurrentInstanceRelay(tester);
+
+    // The constructor's deferred sync already unsubscribed once; only the
+    // calls caused by clearing the pubkey are of interest here.
+    clearInteractions(sharedManager);
+
+    // Act: drop the configured instance entirely.
+    await container.read(settingsProvider.notifier).updateMostroInstance('');
+    await tester.pump();
+
+    // Assert: syncWithMostroInstance() bails out on an empty pubkey before it
+    // reaches its own unsubscribe/prune, so this transition has to be torn
+    // down explicitly — otherwise the relays and the kind 10002 REQ of an
+    // instance the app is no longer configured for stay alive.
+    expect(
+      container.read(relaysProvider).where(
+            (r) => r.url == 'wss://relay.old-mostro.test',
+          ),
+      isEmpty,
+      reason: 'no instance is configured, so no instance relay may remain',
+    );
+    verify(sharedManager.unsubscribeFromMostroRelayList()).called(1);
 
     await tearDownContainer(tester);
   });

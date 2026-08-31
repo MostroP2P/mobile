@@ -247,31 +247,48 @@ class NwcNotifier extends StateNotifier<NwcState> {
     );
   }
 
+  /// Whether [client] is still the notifier's live client.
+  ///
+  /// `NwcClient.disconnect()` cancels the request subscription but never
+  /// completes the pending `Completer`, so a `get_balance` issued by a client
+  /// that `_cleanup()` has already replaced stays in flight until its own
+  /// `requestTimeout` (30 s) fires. Without this check that stale timeout
+  /// would mark the *current* client unhealthy and kick off a reconnect it
+  /// does not need.
+  bool _isLiveClient(NwcClient client) => mounted && identical(client, _client);
+
   /// Refreshes the balance and, from the same round trip, the connection
   /// health. A timeout means the wallet relay stopped answering, which starts
   /// the reconnect.
   Future<void> _refreshBalanceAndHealth() async {
-    if (_client == null || !_client!.isConnected) {
+    final client = _client;
+    if (client == null || !client.isConnected) {
       _handleConnectionDrop();
       return;
     }
 
     try {
-      final balance = await _client!.getBalance();
-      if (!mounted) return;
+      final balance = await client.getBalance();
+      if (!_isLiveClient(client)) return;
       state = state.copyWith(
         balanceMsats: balance.balance,
         lastSuccessfulContact: DateTime.now().millisecondsSinceEpoch,
         connectionHealthy: true,
       );
     } on NwcTimeoutException {
+      if (!_isLiveClient(client)) {
+        logger.d('NWC: Ignoring timeout from a superseded wallet connection');
+        return;
+      }
       logger.w('NWC: Balance/health refresh timed out');
-      if (!mounted) return;
       state = state.copyWith(connectionHealthy: false);
       _handleConnectionDrop();
     } catch (e) {
+      if (!_isLiveClient(client)) {
+        logger.d('NWC: Ignoring failure from a superseded wallet connection');
+        return;
+      }
       logger.w('NWC: Balance/health refresh failed: $e');
-      if (!mounted) return;
       state = state.copyWith(connectionHealthy: false);
     }
   }

@@ -656,7 +656,15 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         settingsProvider.select((s) => s.mostroPublicKey),
         (previous, next) {
           if (previous == next) return;
-          if (previous != null && previous.isNotEmpty && next.isNotEmpty) {
+          if (next.isEmpty) {
+            // The instance was cleared. This still has to tear the previous
+            // instance down: syncWithMostroInstance() returns early on an
+            // empty pubkey, before it unsubscribes or prunes, so routing this
+            // to the "initial load" branch would strand the old relays and
+            // their kind 10002 REQ with no instance behind them.
+            logger.i('Mostro pubkey cleared: $previous -> (none)');
+            _cleanAllRelaysAndResync();
+          } else if (previous != null && previous.isNotEmpty) {
             logger.i('Detected REAL Mostro pubkey change: $previous -> $next');
             // Full reset: clear all relays and perform a fresh sync
             _cleanAllRelaysAndResync();
@@ -676,6 +684,11 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   Future<void> _cleanAllRelaysAndResync() async {
     try {
       logger.i('Cleaning all relays and performing fresh sync...');
+
+      // Drop the previous instance's kind 10002 REQ here rather than relying
+      // on syncWithMostroInstance(), which never runs it when the new pubkey
+      // is empty. Idempotent, so the resync path re-running it is harmless.
+      _subscriptionManager.unsubscribeFromMostroRelayList();
 
       // Clear the whole list. Bootstrap relays (NostrService level) keep
       // connectivity while the new instance's relay list is discovered.
