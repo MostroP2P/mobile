@@ -2,17 +2,22 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
+import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/features/chat/chat_room_provider.dart';
+import 'package:mostro_mobile/features/chat/notifiers/chat_room_notifier.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_tab_provider.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_error_screen.dart';
 import 'package:mostro_mobile/features/chat/widgets/chat_tabs.dart';
 import 'package:mostro_mobile/features/chat/widgets/empty_state_view.dart';
 import 'package:mostro_mobile/features/chat/widgets/info_buttons.dart';
+import 'package:mostro_mobile/features/chat/widgets/message_bubble.dart';
 import 'package:mostro_mobile/features/chat/widgets/peer_header.dart';
 import 'package:mostro_mobile/features/chat/widgets/trade_information_tab.dart';
 import 'package:mostro_mobile/features/chat/widgets/user_information_tab.dart';
@@ -45,6 +50,16 @@ Order order({Status status = Status.active}) => Order(
       paymentMethod: 'Wire transfer',
       premium: 3,
       createdAt: 1700000000,
+    );
+
+NostrEvent message(DateTime createdAt) => NostrEvent(
+      id: 'message-1',
+      kind: 14,
+      content: 'hola',
+      sig: '',
+      pubkey: _peerPubkey,
+      createdAt: createdAt,
+      tags: const [],
     );
 
 Future<void> pump(
@@ -258,6 +273,49 @@ void main() {
 
       expect(find.byType(TradeInformationTab), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('MessageBubble', () {
+    testWidgets('updates its time formatter when the locale changes',
+        (tester) async {
+      final createdAt = DateTime(2026, 1, 1, 13, 5);
+      final bubble = MessageBubble(
+        message: message(createdAt),
+        peerPubkey: _peerPubkey,
+        orderId: 'order-1',
+      );
+
+      Future<void> pumpWithLocale(Locale locale) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              chatRoomsProvider.overrideWith(
+                (ref, orderId) => ChatRoomNotifier(
+                  ChatRoom(orderId: orderId, messages: []),
+                  orderId,
+                  ref,
+                ),
+              ),
+            ],
+            child: MaterialApp(
+              locale: locale,
+              localizationsDelegates: S.localizationsDelegates,
+              supportedLocales: S.supportedLocales,
+              home: Scaffold(body: bubble),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await pumpWithLocale(const Locale('en'));
+      expect(find.text(DateFormat('h:mm a', 'en').format(createdAt)),
+          findsOneWidget);
+
+      await pumpWithLocale(const Locale('es'));
+      expect(find.text(DateFormat('h:mm a', 'es').format(createdAt)),
+          findsOneWidget);
     });
   });
 }
