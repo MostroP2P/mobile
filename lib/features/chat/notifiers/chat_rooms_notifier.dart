@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
+import 'package:mostro_mobile/data/models/session.dart';
 
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -52,19 +53,7 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
     final now = DateTime.now();
 
     try {
-      final chats = sessions
-          .where(
-        (s) =>
-            s.orderId != null &&
-            (s.peer != null ||
-                s.startTime.isAfter(now.subtract(const Duration(hours: 1)))),
-      )
-          .map((s) {
-        final chat = ref.read(chatRoomsProvider(s.orderId!));
-        return chat;
-      })
-          .where((chat) => chat.messages.isNotEmpty)
-          .toList();
+      final chats = _chatsForSessions(sessions, now);
 
       state = chats;
       logger.i("Loaded ${chats.length} chats with messages");
@@ -83,20 +72,7 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
     final now = DateTime.now();
 
     try {
-      final chats = sessions
-          .where(
-        (s) =>
-            s.orderId != null &&
-            (s.peer != null ||
-                s.startTime.isAfter(now.subtract(const Duration(hours: 1)))),
-      )
-          .map((s) {
-        // Force a fresh read of the chat state
-        final chat = ref.read(chatRoomsProvider(s.orderId!));
-        return chat;
-      })
-          .where((chat) => chat.messages.isNotEmpty)
-          .toList();
+      final chats = _chatsForSessions(sessions, now);
 
       // Skip the emission when nothing visible changed: this runs after
       // every incoming chat event and a fresh list rebuilds the whole
@@ -120,6 +96,50 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
     } catch (e) {
       logger.e("Error refreshing chats: $e");
     }
+  }
+
+  /// Builds the visible chat rooms for [sessions], at most one row per
+  /// conversation.
+  ///
+  /// Two rows can otherwise describe a single conversation:
+  ///
+  /// - two sessions sharing an orderId resolve to the very same
+  ///   [chatRoomsProvider], rendering the identical room twice;
+  /// - two sessions sharing a trade key *and* a peer derive the identical
+  ///   ECDH shared key, so both accept the very same chat envelopes and each
+  ///   stores them under its own orderId. `KeyManager.getNextKeyIndex` used
+  ///   to hand out an already-reserved index, which produced exactly this.
+  ///
+  /// The key collision is fixed at the source, but sessions created before
+  /// the fix are still on disk, so collapse them here too and keep the newest.
+  List<ChatRoom> _chatsForSessions(List<Session> sessions, DateTime now) {
+    final cutoff = now.subtract(const Duration(hours: 1));
+    final ordered = [...sessions]
+      ..sort((a, b) => b.startTime.compareTo(a.startTime));
+    final seenOrderIds = <String>{};
+    final seenConversations = <String>{};
+    final chats = <ChatRoom>[];
+    for (final session in ordered) {
+      final orderId = session.orderId;
+      if (orderId == null) continue;
+      if (session.peer == null && !session.startTime.isAfter(cutoff)) continue;
+      if (!seenOrderIds.add(orderId)) continue;
+      // Identifies the conversation itself: the chat envelope keys are derived
+      // from this shared secret, so an equal value means literally the same
+      // messages on both rows.
+      final conversationId = session.sharedKey?.public;
+      if (conversationId != null && !seenConversations.add(conversationId)) {
+        logger.w(
+          'Collapsing chat for order $orderId: it shares a conversation key '
+          'with another session (colliding trade keys).',
+        );
+        continue;
+      }
+      final chat = ref.read(chatRoomsProvider(orderId));
+      if (chat.messages.isEmpty) continue;
+      chats.add(chat);
+    }
+    return chats;
   }
 
   void _refreshAllSubscriptions() {
