@@ -124,6 +124,13 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
       if (orderId == null) continue;
       if (session.peer == null && !session.startTime.isAfter(cutoff)) continue;
       if (!seenOrderIds.add(orderId)) continue;
+      // Resolve the room before claiming anything. Envelopes are stored once
+      // globally, under whichever orderId handled them first, and history is
+      // reloaded by that orderId — so after a restart only one of two
+      // colliding rooms holds the conversation. Claiming for an empty room
+      // would drop the one that has the messages and hide the chat entirely.
+      final chat = ref.read(chatRoomsProvider(orderId));
+      if (chat.messages.isEmpty) continue;
       // Identifies the conversation itself: the chat envelope keys are derived
       // from this shared secret, so an equal value means literally the same
       // messages on both rows.
@@ -135,8 +142,6 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
         );
         continue;
       }
-      final chat = ref.read(chatRoomsProvider(orderId));
-      if (chat.messages.isEmpty) continue;
       chats.add(chat);
     }
     return chats;
