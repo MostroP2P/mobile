@@ -144,9 +144,11 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
     final cutoff = DateTime.now()
         .subtract(Duration(hours: _expirationHours));
-    final expiredSessions = await _storage.getAllSessions();
+    // Iterate the in-memory sessions: getAllSessions() re-decoded every row,
+    // re-running trade-key derivation per session every 30 minutes.
+    final candidates = _sessions.values.toList();
 
-    for (final session in expiredSessions) {
+    for (final session in candidates) {
       if (session.startTime.isBefore(cutoff)) {
         if (await _isActiveSession(session)) {
           logger.i('Skipping cleanup for active session ${session.orderId}');
