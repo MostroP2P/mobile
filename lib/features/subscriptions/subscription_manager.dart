@@ -47,6 +47,23 @@ class SubscriptionManager {
   Stream<NostrEvent> get disputeChat => _disputeChatController.stream;
   Stream<RelayListEvent> get relayList => _relayListController.stream;
 
+  /// Session-derived subscription types. [SubscriptionType.relayList] is
+  /// driven by the configured Mostro instance rather than by sessions, so the
+  /// session-driven paths must leave it alone — tearing it down there stops
+  /// relay discovery for the rest of the app's life.
+  static Iterable<SubscriptionType> get _sessionSubscriptionTypes =>
+      SubscriptionType.values.where((t) => t != SubscriptionType.relayList);
+
+  /// Last Mostro pubkey asked for on the relay-list stream. [subscribeAll]
+  /// rebuilds every other subscription from sessions, but the relay list has
+  /// no session to rebuild it from, so it has to be remembered here.
+  String? _relayListPubkey;
+
+  /// True between [suspend] and [resume]: the app is backgrounded and the
+  /// background service owns the filters. Work scheduled before the switch
+  /// (a relay sync retry, say) must not re-open a REQ behind its back.
+  bool _isSuspended = false;
+
   SubscriptionManager(this.ref) {
     _initSessionListener();
     // Ensure resources are released with provider/container lifecycle
@@ -139,13 +156,13 @@ class SubscriptionManager {
       return;
     }
 
-    for (final type in SubscriptionType.values) {
+    for (final type in _sessionSubscriptionTypes) {
       unawaited(_updateSubscription(type, sessions));
     }
   }
 
   void _clearAllSubscriptions() {
-    for (final type in SubscriptionType.values) {
+    for (final type in _sessionSubscriptionTypes) {
       unsubscribeByType(type);
     }
   }
@@ -375,6 +392,32 @@ class SubscriptionManager {
     unsubscribeAll();
     final currentSessions = ref.read(sessionNotifierProvider);
     _updateAllSubscriptions(currentSessions);
+    _restoreRelayListSubscription();
+  }
+
+  /// Brings the app's subscriptions down for backgrounding. Separate from
+  /// [unsubscribeAll] so that pending callbacks cannot re-open a REQ while the
+  /// background service owns the filters.
+  void suspend() {
+    _isSuspended = true;
+    unsubscribeAll();
+  }
+
+  /// Brings the app's subscriptions back up on foreground, relay list included.
+  void resume() {
+    _isSuspended = false;
+    subscribeAll();
+  }
+
+  /// Re-opens the relay-list subscription after a teardown that cannot rebuild
+  /// it from sessions. No-op when nothing ever asked for one, while suspended,
+  /// or when one is already open.
+  void _restoreRelayListSubscription() {
+    final mostroPubkey = _relayListPubkey;
+    if (mostroPubkey == null || _isSuspended) return;
+    if (_subscriptions.containsKey(SubscriptionType.relayList)) return;
+    logger.i('Restoring relay list subscription for Mostro: $mostroPubkey');
+    subscribeToMostroRelayList(mostroPubkey);
   }
 
   void unsubscribeAll() {
@@ -386,6 +429,14 @@ class SubscriptionManager {
   /// Subscribes to kind 10002 relay list events from a specific Mostro instance.
   /// This is used to automatically sync relays with the configured Mostro instance.
   void subscribeToMostroRelayList(String mostroPubkey) {
+    // Remembered even while suspended, so [resume] can re-open it.
+    _relayListPubkey = mostroPubkey;
+    if (_isSuspended) {
+      logger.i(
+          'App is backgrounded; deferring relay list subscription for Mostro: $mostroPubkey');
+      return;
+    }
+
     try {
       final filter = NostrFilter(
         kinds: [10002],
@@ -444,6 +495,7 @@ class SubscriptionManager {
 
   /// Unsubscribes from Mostro relay list events
   void unsubscribeFromMostroRelayList() {
+    _relayListPubkey = null;
     unsubscribeByType(SubscriptionType.relayList);
     logger.i('Unsubscribed from Mostro relay list');
   }

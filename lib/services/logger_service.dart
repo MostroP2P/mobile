@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
@@ -37,22 +38,29 @@ void initIsolateLogReceiver() {
 
 SendPort? get isolateLogSenderPort => _isolateLogSender;
 
+// Precompiled once: cleanMessage runs for every stored log line and used to
+// build 14 RegExp objects per call.
+final List<(RegExp, String)> _sanitizers = [
+  (RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), ''),
+  (RegExp(r'\[\d+m'), ''),
+  (RegExp(r'\[38;5;\d+m'), ''),
+  (RegExp(r'\[39m'), ''),
+  (RegExp(r'\[2m'), ''),
+  (RegExp(r'\[22m'), ''),
+  (RegExp(r'[┌┐└┘├┤─│┬┴┼╭╮╰╯╔╗╚╝╠╣═║╦╩╬━┃┄├]'), ''),
+  (RegExp(r'[\u{1F300}-\u{1F9FF}]', unicode: true), ''),
+  (RegExp(r'nsec[0-9a-z]+'), '[PRIVATE_KEY]'),
+  (RegExp(r'"privateKey"\s*:\s*"[^"]*"'), '"privateKey":"[REDACTED]"'),
+  (RegExp(r'"mnemonic"\s*:\s*"[^"]*"'), '"mnemonic":"[REDACTED]"'),
+  (RegExp(r'[^A-Za-z0-9\s.:,!?\-_/\[\]]'), ' '),
+  (RegExp(r'\s+'), ' '),
+];
+
 String cleanMessage(String message) {
   var cleaned = message;
-  cleaned = cleaned
-      .replaceAll(RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), '')
-      .replaceAll(RegExp(r'\[\d+m'), '')
-      .replaceAll(RegExp(r'\[38;5;\d+m'), '')
-      .replaceAll(RegExp(r'\[39m'), '')
-      .replaceAll(RegExp(r'\[2m'), '')
-      .replaceAll(RegExp(r'\[22m'), '')
-      .replaceAll(RegExp(r'[┌┐└┘├┤─│┬┴┼╭╮╰╯╔╗╚╝╠╣═║╦╩╬━┃┄├]'), '')
-      .replaceAll(RegExp(r'[\u{1F300}-\u{1F9FF}]', unicode: true), '')
-      .replaceAll(RegExp(r'nsec[0-9a-z]+'), '[PRIVATE_KEY]')
-      .replaceAll(RegExp(r'"privateKey"\s*:\s*"[^"]*"'), '"privateKey":"[REDACTED]"')
-      .replaceAll(RegExp(r'"mnemonic"\s*:\s*"[^"]*"'), '"mnemonic":"[REDACTED]"')
-      .replaceAll(RegExp(r'[^A-Za-z0-9\s.:,!?\-_/\[\]]'), ' ')
-      .replaceAll(RegExp(r'\s+'), ' ');
+  for (final (pattern, replacement) in _sanitizers) {
+    cleaned = cleaned.replaceAll(pattern, replacement);
+  }
   return cleaned.trim();
 }
 
@@ -149,14 +157,29 @@ class MemoryLogOutput extends LogOutput with ChangeNotifier {
   List<LogEntry> getAllLogs() => List.unmodifiable(_buffer);
 
   void clear() {
+    _notifyTimer?.cancel();
+    _notifyTimer = null;
     _buffer.clear();
     notifyListeners();
+  }
+
+  /// Listener notifications are coalesced: one per [notifyInterval] instead
+  /// of one per line. LogsNotifier copies the whole buffer on every
+  /// notification, so per-line notifications made each log line O(buffer).
+  static const Duration notifyInterval = Duration(milliseconds: 250);
+  Timer? _notifyTimer;
+
+  void _scheduleNotify() {
+    _notifyTimer ??= Timer(notifyInterval, () {
+      _notifyTimer = null;
+      notifyListeners();
+    });
   }
 
   void addEntry(LogEntry entry) {
     _buffer.add(entry);
     _maintainBufferSize();
-    notifyListeners();
+    _scheduleNotify();
   }
 
   void _maintainBufferSize() {
@@ -254,35 +277,67 @@ class SimplePrinter extends LogPrinter {
   }
 }
 
-class _ProductionOptimizedFilter extends LogFilter {
+/// Gate for every log call. In non-verbose (release) builds nothing is
+/// processed unless the user enabled in-app logging, and even then the
+/// configured [level] is honoured — the previous filter ignored it, so
+/// enabling logging turned every `logger.d` on a hot path into stack-trace
+/// capture plus sanitising work.
+class MostroLogFilter extends LogFilter {
+  MostroLogFilter({bool? verbose}) : verbose = verbose ?? Config.verboseLogging;
+
+  final bool verbose;
+
   @override
   bool shouldLog(LogEvent event) {
-    if (Config.isDebug) {
-      return true;
-    }
-
-    return MemoryLogOutput.isLoggingEnabled;
+    if (!verbose && !MemoryLogOutput.isLoggingEnabled) return false;
+    final minLevel = level ?? Level.trace;
+    return event.level.index >= minLevel.index;
   }
 }
 
-Logger? _cachedLogger;
-
-Logger get logger {
-  _cachedLogger ??= Logger(
-    printer: PrettyPrinter(
+/// The pretty console printer captures and formats a stack trace per call; it
+/// is pure cost when there is no console attached, so non-verbose builds use
+/// a printer that emits nothing (the in-memory sink reads `event.origin`).
+LogPrinter buildLogPrinter({bool? verbose}) {
+  if (verbose ?? Config.verboseLogging) {
+    return PrettyPrinter(
       methodCount: 2,
       errorMethodCount: 8,
       lineLength: 120,
       colors: true,
       printEmojis: true,
       dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-    ),
+    );
+  }
+  return _NoopPrinter();
+}
+
+/// Emits a single constant sentinel line instead of formatting anything.
+///
+/// It cannot return an empty list: `Logger.log` only forwards to the
+/// configured `LogOutput` when the printer produced at least one line
+/// (`logger/src/logger.dart`, `if (output.isNotEmpty)`), so an empty result
+/// would starve [MemoryLogOutput] and leave the in-app Logs screen empty in
+/// release builds. The line itself is never read — [MemoryLogOutput] rebuilds
+/// the entry from `event.origin`, and no console output is attached in
+/// non-verbose builds — so a `const` list keeps the no-formatting, no-stack-
+/// capture, zero-allocation behaviour.
+class _NoopPrinter extends LogPrinter {
+  @override
+  List<String> log(LogEvent event) => const [''];
+}
+
+Logger? _cachedLogger;
+
+Logger get logger {
+  _cachedLogger ??= Logger(
+    printer: buildLogPrinter(),
     output: _MultiOutput(
       MemoryLogOutput.instance,
-      Config.isDebug ? ConsoleOutput() : null,
+      Config.verboseLogging ? ConsoleOutput() : null,
     ),
-    level: Config.isDebug ? Level.debug : Level.warning,
-    filter: _ProductionOptimizedFilter(),
+    level: Config.verboseLogging ? Level.debug : Level.warning,
+    filter: MostroLogFilter(),
   );
   return _cachedLogger!;
 }

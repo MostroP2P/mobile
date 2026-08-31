@@ -13,7 +13,7 @@ import 'package:mostro_mobile/shared/utils/order_sync_helpers.dart';
 
 class OrderNotifier extends AbstractMostroNotifier {
   late final MostroService mostroService;
-  ProviderSubscription<AsyncValue<List<NostrEvent>>>? _publicEventsSubscription;
+  ProviderSubscription<NostrEvent?>? _publicEventsSubscription;
   bool _isSyncing = false; // Only for sync() method
   bool _hydrated = false; // A sync() has read the history successfully
   bool _resyncRequested = false; // A sync() was asked for while one was running
@@ -296,12 +296,13 @@ class OrderNotifier extends AbstractMostroNotifier {
 
   /// Subscribe to public events (38383) to detect automatic order cancellation
   void _subscribeToPublicEvents() {
+    // Listen to this order's own public event: listening to the whole book
+    // made every notifier run this callback for every incoming public event.
     _publicEventsSubscription = ref.listen(
-      orderEventsProvider,
-      (_, next) async {
+      eventProvider(orderId),
+      (_, publicEvent) async {
         try {
           // Only detect automatic cancellation for pending orders
-          final publicEvent = ref.read(eventProvider(orderId));
           final currentSession = ref.read(sessionProvider(orderId));
           
           if (publicEvent?.status == Status.canceled && 

@@ -67,8 +67,39 @@ class NostrUtils {
     return _instance.services.keys.derivePublicKey(privateKey: privateKey);
   }
 
+  /// Deep validation (constructs an EC key pair, one scalar multiplication).
+  /// Use only at real input boundaries (auth/key import); hot paths guard
+  /// session-derived keys with the cheaper [isCanonicalPrivateKey] instead.
   static bool isValidPrivateKey(String privateKey) {
     return _instance.services.keys.isValidPrivateKey(privateKey);
+  }
+
+  static final RegExp _hexKey = RegExp(r'^[0-9a-fA-F]{64}$');
+
+  /// Order of the secp256k1 group. A private key is the scalar `d` with
+  /// `0 < d < n`; outside that range there is no key.
+  static final BigInt _secp256k1Order = BigInt.parse(
+    'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141',
+    radix: 16,
+  );
+
+  /// Cheap guard for keys the app derived itself: checks the hex encoding
+  /// *and* that the scalar is in range, without deriving a public key.
+  ///
+  /// The encoding alone is not enough. `bip340.getPublicKey` performs no range
+  /// check, so an out-of-range scalar reaches the curve arithmetic and fails
+  /// there — an all-zero key surfaces as `_TypeError: Null check operator used
+  /// on a null value` from the point at infinity, instead of the
+  /// `ArgumentError` these entry points promise.
+  ///
+  /// The range test is also stricter than [isValidPrivateKey], which only
+  /// rejects scalars congruent to zero (it accepts `n + 1` and above, since
+  /// `G * d` still yields a valid point), and it costs ~4 us against the
+  /// ~5.8 ms of the scalar multiplication that guard performs per call.
+  static bool isCanonicalPrivateKey(String privateKey) {
+    if (!_hexKey.hasMatch(privateKey)) return false;
+    final scalar = BigInt.parse(privateKey, radix: 16);
+    return scalar > BigInt.zero && scalar < _secp256k1Order;
   }
 
   // Signing and verification
@@ -348,7 +379,7 @@ class NostrUtils {
     if (recipientPubKey.length != 64) {
       throw ArgumentError('Invalid recipient public key');
     }
-    if (!isValidPrivateKey(senderPrivateKey)) {
+    if (!isCanonicalPrivateKey(senderPrivateKey)) {
       throw ArgumentError('Invalid sender private key');
     }
 
@@ -391,7 +422,7 @@ class NostrUtils {
     if (event.content == null || event.content!.isEmpty) {
       throw ArgumentError('Event content is empty');
     }
-    if (!isValidPrivateKey(privateKey)) {
+    if (!isCanonicalPrivateKey(privateKey)) {
       throw ArgumentError('Invalid private key');
     }
 
@@ -467,7 +498,7 @@ class NostrUtils {
     if (event.content == null || event.content!.isEmpty) {
       throw ArgumentError('Event content is empty');
     }
-    if (!isValidPrivateKey(privateKey)) {
+    if (!isCanonicalPrivateKey(privateKey)) {
       throw ArgumentError('Invalid private key');
     }
     if (event.pubkey != expectedAuthor) {

@@ -8,6 +8,7 @@ import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/features/settings/settings_notifier.dart';
 import 'package:mostro_mobile/features/settings/settings_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'relay.dart';
@@ -30,7 +31,12 @@ class RelayValidationResult {
 class RelaysNotifier extends StateNotifier<List<Relay>> {
   final SettingsNotifier settings;
   final Ref ref;
-  SubscriptionManager? _subscriptionManager;
+  /// The app-wide manager owned by [subscriptionManagerProvider]. This
+  /// notifier only borrows its relay-list stream; it must never build its
+  /// own instance (that duplicated every orders/chat/dispute REQ on every
+  /// relay) nor dispose the shared one.
+  SubscriptionManager get _subscriptionManager =>
+      ref.read(subscriptionManagerProvider);
   StreamSubscription<RelayListEvent>? _relayListSubscription;
   Timer? _retryTimer;
   
@@ -385,10 +391,8 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   /// Initialize Mostro relay synchronization
   void _initMostroRelaySync() {
     try {
-      _subscriptionManager = SubscriptionManager(ref);
-      
       // Subscribe to relay list events
-      _relayListSubscription = _subscriptionManager!.relayList.listen(
+      _relayListSubscription = _subscriptionManager.relayList.listen(
         (relayListEvent) {
           _handleMostroRelayListUpdate(relayListEvent);
         },
@@ -418,7 +422,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       logger.i('Syncing relays with Mostro instance: $mostroPubkey');
       
       // Cancel any existing relay list subscription before creating new one
-      _subscriptionManager?.unsubscribeFromMostroRelayList();
+      _subscriptionManager.unsubscribeFromMostroRelayList();
       
       // Clean existing Mostro relays from state to prevent contamination
       await _cleanMostroRelaysFromState();
@@ -428,7 +432,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
         await _waitForNostrService();
         
         // Subscribe to the new Mostro instance
-        _subscriptionManager?.subscribeToMostroRelayList(mostroPubkey);
+        _subscriptionManager.subscribeToMostroRelayList(mostroPubkey);
         logger.i('Successfully subscribed to relay list events for Mostro: $mostroPubkey');
         
         // Schedule a retry in case the subscription doesn't work immediately
@@ -454,7 +458,7 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
       try {
         if (settings.state.mostroPublicKey == mostroPubkey) {
           logger.i('Retrying relay sync for Mostro: $mostroPubkey');
-          _subscriptionManager?.subscribeToMostroRelayList(mostroPubkey);
+          _subscriptionManager.subscribeToMostroRelayList(mostroPubkey);
         }
       } catch (e) {
         logger.w('Retry sync failed: $e');
@@ -847,7 +851,8 @@ class RelaysNotifier extends StateNotifier<List<Relay>> {
   @override
   void dispose() {
     _relayListSubscription?.cancel();
-    _subscriptionManager?.dispose();
+    // The SubscriptionManager is shared and owned by its provider, and the
+    // 5 s settings poll this branch removed no longer exists.
     _retryTimer?.cancel();  // Cancel retry timer to prevent leak
     super.dispose();
   }

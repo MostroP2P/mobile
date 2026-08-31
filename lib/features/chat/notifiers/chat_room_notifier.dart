@@ -333,12 +333,6 @@ class ChatRoomNotifier extends StateNotifier<ChatRoom> with MediaCacheMixin {
 
       final eventStore = ref.read(eventStorageProvider);
 
-      // First, let's see how many total chat events we have
-      final allChatEvents = await eventStore.find(
-        filter: eventStore.eq('type', 'chat'),
-      );
-      logger.i('Total chat events in storage: ${allChatEvents.length}');
-
       // Find all chat events for this specific order
       var chatEvents = await eventStore.find(
         filter: Filter.and([

@@ -18,12 +18,16 @@ class SettingsNotifier extends StateNotifier<Settings> {
   FCMService? _fcmService;
 
   /// Set push notification services for integration
-  void setPushServices(PushNotificationService? pushService, FCMService? fcmService) {
+  void setPushServices(
+      PushNotificationService? pushService, FCMService? fcmService) {
     _pushService = pushService;
     _fcmService = fcmService;
   }
 
   SettingsNotifier(this._prefs, {this.ref}) : super(_defaultSettings());
+
+  @override
+  bool updateShouldNotify(Settings old, Settings current) => old != current;
 
   static Settings _defaultSettings() {
     return Settings(
@@ -62,23 +66,23 @@ class SettingsNotifier extends StateNotifier<Settings> {
 
   Future<void> updateMostroInstance(String newValue) async {
     final oldPubkey = state.mostroPublicKey;
-    
+
     if (oldPubkey != newValue) {
       logger.i('Mostro change detected: $oldPubkey → $newValue');
-      
+
       // COMPLETE RESET: Clear blacklist and user relays when changing Mostro
       state = state.copyWith(
         mostroPublicKey: newValue,
         blacklistedRelays: const [], // Clear blacklist
-        userRelays: const [],         // Clear user relays
+        userRelays: const [], // Clear user relays
       );
-      
+
       logger.i('Reset blacklist and user relays for new Mostro instance');
     } else {
       // Only update pubkey if it's the same (without reset)
       state = state.copyWith(mostroPublicKey: newValue);
     }
-    
+
     await _saveToPrefs();
   }
 
@@ -140,7 +144,8 @@ class SettingsNotifier extends StateNotifier<Settings> {
   }
 
   /// Get all blacklisted relay URLs
-  List<String> get blacklistedRelays => List<String>.from(state.blacklistedRelays);
+  List<String> get blacklistedRelays =>
+      List<String>.from(state.blacklistedRelays);
 
   /// Clear all blacklisted relays (reset to allow all auto-sync)
   Future<void> clearBlacklist() async {
@@ -152,7 +157,8 @@ class SettingsNotifier extends StateNotifier<Settings> {
   }
 
   /// Update user relays list (user-added relays with metadata)
-  Future<void> updateUserRelays(List<Map<String, dynamic>> newUserRelays) async {
+  Future<void> updateUserRelays(
+      List<Map<String, dynamic>> newUserRelays) async {
     state = state.copyWith(userRelays: newUserRelays);
     await _saveToPrefs();
     logger.i('Updated user relays: ${newUserRelays.length} relays');
