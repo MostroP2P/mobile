@@ -182,16 +182,23 @@ class MessageBubble extends ConsumerWidget {
     );
   }
 
-  // Hoisted: DateFormat parses its pattern on construction, and one was
-  // built per bubble per build.
-  static final DateFormat _format24h = DateFormat('HH:mm');
-  static final DateFormat _format12h = DateFormat('h:mm a');
+  // DateFormat parses its pattern on construction. Cache one per locale so
+  // rebuilding after an in-app language change does not reuse the formatter
+  // created for the previous locale.
+  static final Map<Locale, DateFormat> _format24hByLocale = {};
+  static final Map<Locale, DateFormat> _format12hByLocale = {};
 
   String _formatTime(BuildContext context) {
     if (message.createdAt == null) return '';
     final use24h = MediaQuery.alwaysUse24HourFormatOf(context);
-    return (use24h ? _format24h : _format12h)
-        .format(message.createdAt!.toLocal());
+    final locale = Localizations.localeOf(context);
+    final formatters = use24h ? _format24hByLocale : _format12hByLocale;
+    final pattern = use24h ? 'HH:mm' : 'h:mm a';
+    final formatter = formatters.putIfAbsent(
+      locale,
+      () => DateFormat(pattern, locale.toString()),
+    );
+    return formatter.format(message.createdAt!.toLocal());
   }
 
   Widget _buildTimestamp(BuildContext context) {
