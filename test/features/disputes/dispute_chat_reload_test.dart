@@ -179,7 +179,13 @@ void main() {
     // Act: what LifecycleManager now does on foreground resume
     container.invalidate(disputeChatNotifierProvider);
     container.read(disputeChatNotifierProvider(disputeId).notifier);
-    await pumpEventQueue(times: 100);
+    // History unwrapping now runs through Isolate.run: wait on the observable
+    // condition (bounded) instead of a microtask-queue pump count.
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    while (container.read(disputeChatNotifierProvider(disputeId)).messages.length < 3 &&
+        DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
 
     // Assert: the messages persisted by the background service are visible
     final messages =

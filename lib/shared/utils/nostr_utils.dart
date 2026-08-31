@@ -1,3 +1,4 @@
+import 'dart:isolate';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
@@ -560,19 +561,26 @@ class NostrUtils {
         'Unexpected author: expected $expectedAuthor, got ${event.pubkey}',
       );
     }
-    if (!_isValidEventSignature(event)) {
-      throw ArgumentError('Invalid kind-14 event signature');
-    }
-
-    try {
-      return await decryptNIP44(
-        event.content!,
-        privateKey,
-        event.pubkey,
-      );
-    } catch (e) {
-      throw Exception('Failed to decrypt NIP-44 direct event: $e');
-    }
+    // Resolve the cached conversation key on the caller isolate, then run
+    // the heavy part (Schnorr verify + ChaCha20 decrypt, ~15-90 ms of pure
+    // Dart) off the main isolate. Strings/bytes transfer cheaply and thrown
+    // errors propagate.
+    final conversationKey = conversationKeyFor(privateKey, event.pubkey);
+    return Isolate.run(() async {
+      if (!_isValidEventSignature(event)) {
+        throw ArgumentError('Invalid kind-14 event signature');
+      }
+      try {
+        return await Nip44.decryptMessage(
+          event.content!,
+          privateKey,
+          event.pubkey,
+          customConversationKey: conversationKey,
+        );
+      } catch (e) {
+        throw Exception('Failed to decrypt NIP-44 direct event: $e');
+      }
+    });
   }
 
   /// Verifies a Nostr event's id and Schnorr signature (NIP-01): recomputes the
