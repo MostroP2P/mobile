@@ -31,6 +31,7 @@ void main() {
   late _FakeSessionNotifier sessions;
   late SubscriptionManager manager;
   late StreamController<int> relayGenerations;
+  late List<NostrRequest> issuedRequests;
   var relayGeneration = 0;
   var nextSubscriptionId = 0;
 
@@ -57,9 +58,11 @@ void main() {
     nostrService = MockNostrService();
     orderRepository = MockOpenOrdersRepository();
     nextSubscriptionId = 0;
+    issuedRequests = <NostrRequest>[];
     when(nostrService.subscribeToEvents(any)).thenAnswer((invocation) {
       final request = invocation.positionalArguments.first as NostrRequest;
       request.subscriptionId ??= 'sub-${nextSubscriptionId++}';
+      issuedRequests.add(request);
       return const Stream<NostrEvent>.empty();
     });
     when(nostrService.unsubscribe(any)).thenAnswer((_) async {});
@@ -189,14 +192,20 @@ void main() {
     // the second arrives while the first is still awaiting warmUp.
     sessions.emit([chatSession()]);
     sessions.emit([chatSession()]);
-    await Future<void>.delayed(const Duration(milliseconds: 20));
 
-    final requests = verify(nostrService.subscribeToEvents(captureAny))
-        .captured
-        .cast<NostrRequest>();
-    final chatRequests = requests
-        .where((r) => r.filters.any((f) => (f.kinds ?? []).contains(14)))
-        .toList();
+    // Deterministic on slow CI machines: wait for the first chat REQ to be
+    // issued instead of assuming a fixed delay is enough, then allow a settle
+    // window in which a duplicated REQ would land.
+    bool isChatRequest(NostrRequest r) =>
+        r.filters.any((f) => (f.kinds ?? []).contains(14));
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    while (!issuedRequests.any(isChatRequest) &&
+        DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    final chatRequests = issuedRequests.where(isChatRequest).toList();
     expect(chatRequests, hasLength(1));
     verifyNever(nostrService.unsubscribe(any));
   });
