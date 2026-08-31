@@ -30,6 +30,8 @@ void main() {
   late ProviderContainer container;
   late _FakeSessionNotifier sessions;
   late SubscriptionManager manager;
+  late StreamController<int> relayGenerations;
+  var relayGeneration = 0;
   var nextSubscriptionId = 0;
 
   Session session(String orderId, String tradeKeyPrivate) {
@@ -61,6 +63,11 @@ void main() {
       return const Stream<NostrEvent>.empty();
     });
     when(nostrService.unsubscribe(any)).thenAnswer((_) async {});
+    relayGenerations = StreamController<int>.broadcast();
+    relayGeneration = 0;
+    when(nostrService.relayGenerationStream)
+        .thenAnswer((_) => relayGenerations.stream);
+    when(nostrService.relayGeneration).thenAnswer((_) => relayGeneration);
     when(orderRepository.mostroInstanceStream)
         .thenAnswer((_) => const Stream<NostrEvent>.empty());
     when(orderRepository.mostroInstance).thenReturn(null);
@@ -79,6 +86,7 @@ void main() {
   tearDown(() {
     manager.unsubscribeAll();
     container.dispose();
+    relayGenerations.close();
   });
 
   Future<void> flush() => Future<void>.delayed(Duration.zero);
@@ -120,6 +128,36 @@ void main() {
     await flush();
 
     verify(nostrService.subscribeToEvents(any)).called(greaterThan(0));
+  });
+
+  test('a relay coming alive re-issues the REQs for unchanged sessions',
+      () async {
+    // dart_nostr sends a REQ only to the sockets registered at subscription
+    // time: a reconnected socket or a relay added by the 10002 sync comes up
+    // subscription-less. The generation bump must force a re-issue even
+    // though the session set (and thus the filter content) is unchanged.
+    await buildWithSession();
+
+    relayGeneration = 1;
+    relayGenerations.add(1);
+    await Future<void>.delayed(SubscriptionManager.relayResubscribeDebounce +
+        const Duration(milliseconds: 200));
+
+    verify(nostrService.subscribeToEvents(any)).called(1);
+  });
+
+  test('relay come-alive bursts coalesce into a single re-issue', () async {
+    await buildWithSession();
+
+    relayGeneration = 1;
+    relayGenerations.add(1);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    relayGeneration = 2;
+    relayGenerations.add(2);
+    await Future<void>.delayed(SubscriptionManager.relayResubscribeDebounce +
+        const Duration(milliseconds: 200));
+
+    verify(nostrService.subscribeToEvents(any)).called(1);
   });
 
   test(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/foundation.dart';
@@ -22,6 +24,16 @@ class NostrService {
   /// the relay connection callbacks; used to detect "no live relay" situations.
   final Set<String> _connectedRelays = {};
 
+  /// Bumped every time a relay transitions to alive: first data after the
+  /// initial connect, after a silent socket reconnect (retryOnClose), or from
+  /// a relay added later by the kind 10002 sync. dart_nostr sends a REQ only
+  /// to the sockets registered at subscription time and never replays it on
+  /// reconnect, so each bump means some relay may be missing the app's open
+  /// subscriptions until they are re-issued.
+  int _relayGeneration = 0;
+  final StreamController<int> _relayGenerationController =
+      StreamController<int>.broadcast();
+
   NostrService();
 
   /// Safe getter for settings with fallback
@@ -34,6 +46,25 @@ class NostrService {
 
   /// Number of relays currently considered alive.
   int get liveRelayCount => _connectedRelays.length;
+
+  /// Monotonic counter of relay come-alive transitions. Part of the
+  /// subscription filter identity so a REQ is re-issued when the relay layer
+  /// changed even though the filter content did not.
+  int get relayGeneration => _relayGeneration;
+
+  /// Emits after every [relayGeneration] bump.
+  Stream<int> get relayGenerationStream => _relayGenerationController.stream;
+
+  /// Records data from [relayUrl] and bumps the generation on the transition
+  /// from unknown/disconnected to alive.
+  void _markRelayAlive(String relayUrl) {
+    if (_connectedRelays.add(relayUrl)) {
+      _relayGeneration++;
+      if (!_relayGenerationController.isClosed) {
+        _relayGenerationController.add(_relayGeneration);
+      }
+    }
+  }
 
   /// Relays to connect to: the configured relays, or the defensive bootstrap
   /// relays as a fail-safe when none are configured (cold start before any kind
@@ -69,7 +100,7 @@ class NostrService {
         retryOnError: true,
         onRelayListening: (relayUrl, receivedData, channel) {
           // Any data from a relay proves it is alive.
-          _connectedRelays.add(relayUrl);
+          _markRelayAlive(relayUrl);
           if (receivedData is NostrEvent) {
             logger.d('Event from $relayUrl: ${receivedData.id}');
           } else if (receivedData is NostrNotice) {
