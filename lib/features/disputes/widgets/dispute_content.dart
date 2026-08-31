@@ -26,9 +26,6 @@ class _DisputeContentState extends ConsumerState<DisputeContent> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch the read status to trigger rebuilds when dispute is marked as read
-    ref.watch(disputeReadStatusProvider(widget.dispute.disputeId));
-    
     // Get the last message for in-progress disputes
     String descriptionText = widget.dispute.getLocalizedDescription(context);
     
@@ -54,12 +51,15 @@ class _DisputeContentState extends ConsumerState<DisputeContent> {
             Expanded(
               child: DisputeHeader(dispute: widget.dispute),
             ),
-            // Unread indicator for in-progress disputes
+            // Unread indicator for in-progress disputes. valueOrNull keeps
+            // the previous value while the provider recomputes, so the dot
+            // does not blink off for a frame on every chat emission.
             if (normalizedStatus == 'in-progress' &&
-                ref
-                    .watch(
-                        disputeHasUnreadProvider(widget.dispute.disputeId))
-                    .maybeWhen(data: (unread) => unread, orElse: () => false))
+                (ref
+                        .watch(
+                            disputeHasUnreadProvider(widget.dispute.disputeId))
+                        .valueOrNull ??
+                    false))
               Container(
                 width: 8,
                 height: 8,

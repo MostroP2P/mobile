@@ -142,13 +142,15 @@ class _ChatListItemState extends ConsumerState<ChatListItem> {
                               ),
                             ),
                             // Unread indicator positioned below the date
+                            // valueOrNull keeps the previous value while the
+                            // provider recomputes, so the dot does not blink
+                            // off for a frame on every room emission.
                             if (!_isMarkedAsRead &&
-                                ref
-                                    .watch(chatHasUnreadProvider(
-                                        widget.orderId))
-                                    .maybeWhen(
-                                        data: (unread) => unread,
-                                        orElse: () => false))
+                                (ref
+                                        .watch(chatHasUnreadProvider(
+                                            widget.orderId))
+                                        .valueOrNull ??
+                                    false))
                               const Padding(
                                 padding: EdgeInsets.only(top: 4),
                                 child: SizedBox(
