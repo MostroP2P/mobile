@@ -347,11 +347,17 @@ class NostrUtils {
   /// Conversation keys are constant per (our key, their key) pair, but every
   /// encrypt/decrypt recomputed them: one EC scalar multiplication plus HKDF
   /// per message. Bounded cache; entries are evicted when their session is
-  /// cleaned up ([evictConversationKeysFor]) and one-shot NIP-59 wrapper
-  /// conversations are never stored (`cache: false`).
+  /// cleaned up ([evictConversationKeysFor]), the whole map is dropped on
+  /// account wipe (`SessionNotifier.reset()` calls
+  /// [clearConversationKeyCache] — the map is static, so no provider
+  /// invalidation reaches it), and one-shot NIP-59 wrapper conversations are
+  /// never stored (`cache: false`).
   static const int _conversationKeyCacheLimit = 512;
   static final Map<String, Uint8List> _conversationKeys = {};
 
+  /// Returns a defensive copy on cache hits and stores its own copy on
+  /// misses: a caller mutating the returned bytes must never corrupt the
+  /// cached key process-wide.
   static Uint8List conversationKeyFor(
     String privateKey,
     String publicKey, {
@@ -359,14 +365,14 @@ class NostrUtils {
   }) {
     final cacheKey = '$privateKey|$publicKey';
     final cached = _conversationKeys[cacheKey];
-    if (cached != null) return cached;
+    if (cached != null) return Uint8List.fromList(cached);
     final sharedSecret = Nip44.computeSharedSecret(privateKey, publicKey);
     final conversationKey = Nip44.deriveConversationKey(sharedSecret);
     if (!cache) return conversationKey;
     if (_conversationKeys.length >= _conversationKeyCacheLimit) {
       _conversationKeys.clear();
     }
-    _conversationKeys[cacheKey] = conversationKey;
+    _conversationKeys[cacheKey] = Uint8List.fromList(conversationKey);
     return conversationKey;
   }
 
