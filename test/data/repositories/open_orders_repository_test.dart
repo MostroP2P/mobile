@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dart_nostr/nostr/model/event/event.dart';
+import 'package:dart_nostr/nostr/model/request/request.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
@@ -107,6 +108,59 @@ void main() {
     // Assert: the older event must not overwrite the newer state
     final kept = await repo.getOrderById('a');
     expect(kept!.status.toString(), contains('canceled'));
+  });
+
+  test('reloadData resumes from the last received event, not 48h back',
+      () async {
+    final recent =
+        DateTime.now().subtract(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+            1000;
+    relay.add(order('a', createdAt: recent));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    repo.reloadData();
+
+    final captured =
+        verify(nostr.subscribeToEvents(captureAny)).captured.cast<NostrRequest>();
+    final since = captured.last.filters.first.since!;
+    // Narrow window: anchored at the last accepted event minus a small
+    // overlap, far later than the 48h cold-start lookback.
+    expect(
+      since.isAfter(DateTime.now().subtract(const Duration(hours: 47))),
+      isTrue,
+      reason: 'the in-memory cache retains older orders; only the missed '
+          'window needs replaying',
+    );
+    expect(
+      since.isBefore(
+          DateTime.fromMillisecondsSinceEpoch(recent * 1000 + 1000)),
+      isTrue,
+      reason: 'the window must start at or before the last event',
+    );
+  });
+
+  test('a node switch resets the resume window to the cold-start lookback',
+      () async {
+    final recent =
+        DateTime.now().subtract(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+            1000;
+    relay.add(order('a', createdAt: recent));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+
+    repo.updateSettings(Settings(
+      relays: const ['wss://relay.a'],
+      fullPrivacyMode: false,
+      mostroPublicKey: 'other-node',
+    ));
+
+    final captured =
+        verify(nostr.subscribeToEvents(captureAny)).captured.cast<NostrRequest>();
+    final since = captured.last.filters.first.since!;
+    expect(
+      since.isBefore(DateTime.now().subtract(const Duration(hours: 47))),
+      isTrue,
+      reason: 'the cache was cleared, so the full lookback applies again',
+    );
   });
 
   test('keeps the newer copy when it arrives second', () async {

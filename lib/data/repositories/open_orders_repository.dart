@@ -44,6 +44,14 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   static const Duration emitDebounce = Duration(milliseconds: 50);
   Timer? _emitTimer;
 
+  /// Timestamp of the newest accepted event. While the in-memory cache
+  /// survives, a resubscription only needs the window after this point:
+  /// kind 38383 is addressable, so any change to an order carries a newer
+  /// created_at, and unchanged orders are already cached. Reset (null) when
+  /// the cache is cleared so the cold-start lookback applies again.
+  DateTime? _lastEventAt;
+  static const Duration _resumeOverlap = Duration(minutes: 10);
+
   static const _initRetryInterval = Duration(milliseconds: 200);
   static const _maxInitRetries = 150; // ~30s before giving up
 
@@ -104,8 +112,12 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       return;
     }
 
-    final filterTime =
+    final coldStart =
         DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
+    final resume = _lastEventAt?.subtract(_resumeOverlap);
+    // Narrow resume window while the cache is warm; full lookback otherwise.
+    final filterTime =
+        (resume != null && resume.isAfter(coldStart)) ? resume : coldStart;
 
     final filter = NostrFilter(
       kinds: [orderEventKind, infoEventKind],
@@ -118,6 +130,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     );
 
     _subscription = _nostrService.subscribeToEvents(request).listen((event) {
+      _recordEventTime(event);
       if (event.type == 'order') {
         final orderId = event.orderId!;
         // Drop duplicate/stale relay copies: kind 38383 is addressable, only
@@ -192,6 +205,16 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     return candidateId.compareTo(knownId) < 0;
   }
 
+  void _recordEventTime(NostrEvent event) {
+    final at = event.createdAt;
+    if (at == null) return;
+    final now = DateTime.now();
+    final clamped = at.isAfter(now) ? now : at;
+    if (_lastEventAt == null || clamped.isAfter(_lastEventAt!)) {
+      _lastEventAt = clamped;
+    }
+  }
+
   void _emitEvents() {
     _emitTimer?.cancel();
     _emitTimer = null;
@@ -262,6 +285,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       logger.i('Mostro instance changed, updating...');
       _settings = settings.copyWith();
       _events.clear();
+      _lastEventAt = null;
       // Drop the previous node's info so stale data is not reported for the new
       // instance until its kind 38385 is received again.
       _mostroInstance = null;
@@ -281,6 +305,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   void clearCache() {
     logger.i('Clearing order cache and reloading');
     _events.clear();
+    _lastEventAt = null;
     _subscribeToOrders(); // Resubscribe to reload orders from relays
   }
 }
