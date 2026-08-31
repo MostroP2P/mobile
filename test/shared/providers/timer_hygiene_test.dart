@@ -17,6 +17,23 @@ void main() {
     );
   });
 
+  test('countdownTimeProvider is torn down when the last screen stops watching',
+      () async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    final sub = container.listen(countdownTimeProvider, (_, __) {});
+    expect(container.exists(countdownTimeProvider), isTrue,
+        reason: 'precondition: a watching screen keeps the ticker alive');
+
+    // Leaving the screen: the stream — and with it the 1 s Timer.periodic
+    // its onCancel/onDispose hooks clean up — must not outlive the listener.
+    sub.close();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(container.exists(countdownTimeProvider), isFalse);
+  });
+
   test('timeProvider (30 s ticker) stays keep-alive for the list screens',
       () {
     // Documented status quo: the coarse ticker is shared by Home/Trades rows
