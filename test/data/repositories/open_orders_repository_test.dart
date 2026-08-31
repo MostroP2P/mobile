@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/repositories/open_orders_repository.dart';
+import 'package:mostro_mobile/features/mostro/mostro_instance.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 
 import '../../mocks.mocks.dart';
@@ -22,9 +23,9 @@ void main() {
   late OpenOrdersRepository repo;
 
   NostrEvent order(String id,
-      {required int createdAt, String status = 'pending'}) {
+      {required int createdAt, String status = 'pending', String? eventId}) {
     return NostrEvent(
-      id: 'event-$id-$createdAt',
+      id: eventId ?? 'event-$id-$createdAt',
       kind: 38383,
       content: '',
       sig: '',
@@ -34,6 +35,22 @@ void main() {
         ['d', id],
         ['z', 'order'],
         ['s', status],
+      ],
+    );
+  }
+
+  NostrEvent info({required int createdAt, required int pow}) {
+    return NostrEvent(
+      id: 'info-$createdAt-$pow',
+      kind: 38385,
+      content: '',
+      sig: '',
+      pubkey: mostroPubkey,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(createdAt * 1000),
+      tags: [
+        ['d', 'mostro'],
+        ['z', 'info'],
+        ['pow', '$pow'],
       ],
     );
   }
@@ -102,5 +119,62 @@ void main() {
 
     final kept = await repo.getOrderById('a');
     expect(kept!.status.toString(), contains('canceled'));
+  });
+
+  test('breaks created_at ties by the lower event id, whichever arrives first',
+      () async {
+    // Two replacements published in the same second: NIP-01 keeps the
+    // lexicographically lower id, so both relay orderings must converge.
+    relay
+      ..add(order('a', createdAt: 100, status: 'pending', eventId: 'bbb'))
+      ..add(order('a', createdAt: 100, status: 'canceled', eventId: 'aaa'));
+    await Future<void>.delayed(
+      OpenOrdersRepository.emitDebounce + const Duration(milliseconds: 20),
+    );
+
+    final kept = await repo.getOrderById('a');
+    expect(kept!.id, 'aaa');
+    expect(kept.status.toString(), contains('canceled'));
+  });
+
+  test('keeps the lower event id when the higher one arrives second', () async {
+    relay
+      ..add(order('a', createdAt: 100, status: 'canceled', eventId: 'aaa'))
+      ..add(order('a', createdAt: 100, status: 'pending', eventId: 'bbb'));
+    await Future<void>.delayed(
+      OpenOrdersRepository.emitDebounce + const Duration(milliseconds: 20),
+    );
+
+    final kept = await repo.getOrderById('a');
+    expect(kept!.id, 'aaa');
+    expect(kept.status.toString(), contains('canceled'));
+  });
+
+  test('a stale relay copy cannot roll back the mostro instance info',
+      () async {
+    // Kind 38385 carries pow/protocol_version/order limits, so an older copy
+    // replayed by a lagging relay must not overwrite the newer one.
+    relay
+      ..add(info(createdAt: 200, pow: 8))
+      ..add(info(createdAt: 100, pow: 0));
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    expect(repo.mostroInstance!.pow, 8);
+  });
+
+  test('emits the mostro instance only once per distinct info event', () async {
+    final seen = <NostrEvent>[];
+    final sub = repo.mostroInstanceStream.listen(seen.add);
+    addTearDown(sub.cancel);
+
+    final duplicate = info(createdAt: 200, pow: 8);
+    relay
+      ..add(duplicate)
+      ..add(duplicate)
+      ..add(info(createdAt: 300, pow: 4));
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    expect(seen, hasLength(2));
+    expect(seen.last.pow, 4);
   });
 }
