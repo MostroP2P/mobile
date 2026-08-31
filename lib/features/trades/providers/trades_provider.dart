@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
-import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -25,64 +24,65 @@ bool matchesStatusFilter(Status status, Status filter) {
 }
 
 // New provider that properly handles synthetic status filtering by checking OrderState
+/// The session list re-emits on every save (several per protocol step);
+/// only the set of order ids matters here. A sorted joined key gives the
+/// select() a value with string equality, so unchanged ids don't recompute.
+final _sessionOrderIdsKeyProvider = Provider<String>((ref) {
+  return ref.watch(sessionNotifierProvider.select((sessions) {
+    final ids = sessions
+        .map((s) => s.orderId)
+        .whereType<String>()
+        .toList()
+      ..sort();
+    return ids.join('\n');
+  }));
+});
+
 final filteredTradesWithOrderStateProvider =
     Provider<AsyncValue<List<NostrEvent>>>((ref) {
   final allOrdersAsync = ref.watch(orderEventsProvider);
-  final sessions = ref.watch(sessionNotifierProvider);
+  final idsKey = ref.watch(_sessionOrderIdsKeyProvider);
   final selectedStatusFilter = ref.watch(statusFilterProvider);
 
   return allOrdersAsync.when(
     data: (allOrders) {
-      final orderIds = sessions.map((s) => s.orderId).toSet();
-      logger
-          .d('Got ${allOrders.length} orders and ${orderIds.length} sessions');
+      final orderIds =
+          idsKey.isEmpty ? const <String>{} : idsKey.split('\n').toSet();
 
-      // Make a copy to avoid modifying the original list
-      final sortedOrders = List<NostrEvent>.from(allOrders);
-      sortedOrders
-          .sort((o1, o2) => o1.expirationDate.compareTo(o2.expirationDate));
+      // Pick only the user's orders (O(book)) and sort just those (O(n log n)
+      // over the sessions instead of the whole book, with the expiration tag
+      // parsed once per order instead of per comparison).
+      final mine = <(DateTime, NostrEvent)>[
+        for (final order in allOrders)
+          if (orderIds.contains(order.orderId))
+            (order.expirationDate, order),
+      ]..sort((a, b) => b.$1.compareTo(a.$1));
 
-      var filtered =
-          sortedOrders.reversed.where((o) => orderIds.contains(o.orderId));
+      var filtered = mine.map((entry) => entry.$2);
 
-      // Watch all OrderNotifier providers for reactive updates
-      final Map<String, OrderState> orderStates = {};
-      for (final order in filtered) {
-        if (order.orderId != null) {
-          try {
-            // Watch (not read) each OrderNotifier to make it reactive
-            final orderState = ref.watch(orderNotifierProvider(order.orderId!));
-            orderStates[order.orderId!] = orderState;
-          } catch (e) {
-            logger.w('Could not watch OrderState for ${order.orderId}: $e');
-            // Skip this order if we can't get its state
-          }
-        }
-      }
-
-      // Apply status filter if one is selected - use the watched OrderStates
+      // Order states are only needed when a status filter is active; watching
+      // them unconditionally instantiated a notifier per session and re-ran
+      // this provider on every state assignment.
       if (selectedStatusFilter != null) {
         filtered = filtered.where((order) {
-          if (order.orderId == null) return false;
-
-          final orderState = orderStates[order.orderId!];
-          if (orderState != null) {
-            return matchesStatusFilter(orderState.status, selectedStatusFilter);
-          } else {
-            // Fallback to raw status comparison if OrderState not available
-            return matchesStatusFilter(order.status, selectedStatusFilter);
+          final orderId = order.orderId;
+          if (orderId == null) return false;
+          Status status;
+          try {
+            status = ref.watch(
+              orderNotifierProvider(orderId).select((s) => s.status),
+            );
+          } catch (e) {
+            logger.w('Could not watch OrderState for $orderId: $e');
+            status = order.status;
           }
+          return matchesStatusFilter(status, selectedStatusFilter);
         });
       }
 
-      final result = filtered.toList();
-      logger.d('Filtered to ${result.length} trades');
-      return AsyncValue.data(result);
+      return AsyncValue.data(filtered.toList());
     },
-    loading: () {
-      logger.d('Orders loading');
-      return const AsyncValue.loading();
-    },
+    loading: () => const AsyncValue.loading(),
     error: (error, stackTrace) {
       logger.e('Error filtering trades: $error');
       return AsyncValue.error(error, stackTrace);

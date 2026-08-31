@@ -83,6 +83,9 @@ class _ChatListItemState extends ConsumerState<ChatListItem> {
         final navigator = GoRouter.of(context);
         await ChatReadStatusService.markChatAsRead(widget.orderId);
         if (mounted) {
+          ref.invalidate(chatHasUnreadProvider(widget.orderId));
+        }
+        if (mounted) {
           navigator.push('/chat_room/${widget.orderId}');
         }
       },
@@ -139,30 +142,27 @@ class _ChatListItemState extends ConsumerState<ChatListItem> {
                               ),
                             ),
                             // Unread indicator positioned below the date
-                            if (!_isMarkedAsRead)
-                              FutureBuilder<bool>(
-                                future: ChatReadStatusService.hasUnreadMessages(
-                                  widget.orderId,
-                                  chatRoom.messages,
-                                  currentUserPubkey,
-                                ),
-                                builder: (context, snapshot) {
-                                  final hasUnread = snapshot.data ?? false;
-                                  if (!hasUnread) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        shape: BoxShape.circle,
-                                      ),
+                            // valueOrNull keeps the previous value while the
+                            // provider recomputes, so the dot does not blink
+                            // off for a frame on every room emission.
+                            if (!_isMarkedAsRead &&
+                                (ref
+                                        .watch(chatHasUnreadProvider(
+                                            widget.orderId))
+                                        .valueOrNull ??
+                                    false))
+                              const Padding(
+                                padding: EdgeInsets.only(top: 4),
+                                child: SizedBox(
+                                  width: 8,
+                                  height: 8,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
                                     ),
-                                  );
-                                },
+                                  ),
+                                ),
                               ),
                           ],
                         ),

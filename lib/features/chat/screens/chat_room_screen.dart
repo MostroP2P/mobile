@@ -56,7 +56,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     if (isKeyboardVisible && !_wasKeyboardVisible) {
       Future.delayed(const Duration(milliseconds: 100), () {
@@ -111,7 +111,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     final order = orderState.order;
 
     // Check if keyboard is visible
-    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+    final isKeyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,

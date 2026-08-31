@@ -42,14 +42,13 @@ class Session {
     String? adminPubkey,
   }) {
     _peer = peer;
-    if (peer != null) {
-      _sharedKey = NostrUtils.computeSharedKey(
-        tradeKey.private,
-        peer.publicKey,
-      );
-    }
     if (adminPubkey != null) {
-      setAdminPeer(adminPubkey);
+      if (adminPubkey.isEmpty || adminPubkey.length != 64) {
+        throw ArgumentError(
+          'Invalid admin pubkey: expected 64-char hex, got ${adminPubkey.length} chars',
+        );
+      }
+      _adminPubkey = adminPubkey;
     }
   }
 
@@ -199,10 +198,28 @@ class Session {
     }
   }
 
-  NostrKeyPairs? get sharedKey => _sharedKey;
+  /// Lazy: ECDH costs an EC multiplication and used to run in the
+  /// constructor for every decoded session at startup and on each cleanup.
+  NostrKeyPairs? get sharedKey {
+    if (_sharedKey == null && _peer != null) {
+      _sharedKey = NostrUtils.computeSharedKey(
+        tradeKey.private,
+        _peer!.publicKey,
+      );
+    }
+    return _sharedKey;
+  }
 
   String? get adminPubkey => _adminPubkey;
-  NostrKeyPairs? get adminSharedKey => _adminSharedKey;
+  NostrKeyPairs? get adminSharedKey {
+    if (_adminSharedKey == null && _adminPubkey != null) {
+      _adminSharedKey = NostrUtils.computeSharedKey(
+        tradeKey.private,
+        _adminPubkey!,
+      );
+    }
+    return _adminSharedKey;
+  }
 
   /// Inner event signers accepted in the dispute chat conversation.
   /// adminPubkey is always set when adminSharedKey is (see setAdminPeer).
@@ -226,10 +243,7 @@ class Session {
       );
     }
     _adminPubkey = adminPubkey;
-    _adminSharedKey = NostrUtils.computeSharedKey(
-      tradeKey.private,
-      adminPubkey,
-    );
+    _adminSharedKey = null; // recomputed lazily on next access
   }
 
   Peer? get peer => _peer;
@@ -241,9 +255,6 @@ class Session {
       return;
     }
     _peer = newPeer;
-    _sharedKey = NostrUtils.computeSharedKey(
-      tradeKey.private,
-      newPeer.publicKey,
-    );
+    _sharedKey = null; // recomputed lazily on next access
   }
 }
