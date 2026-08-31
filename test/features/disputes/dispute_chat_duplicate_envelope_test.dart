@@ -174,7 +174,17 @@ void main() {
 
     nostrService.controller.add(forged);
     nostrService.controller.add(real);
-    await pumpEventQueue(times: 200);
+    // Unwrapping runs through Isolate.run: wait on the observable condition
+    // (bounded) instead of a microtask pump count, which cannot see cross-
+    // isolate port replies.
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    while (container
+            .read(disputeChatNotifierProvider(disputeId))
+            .messages
+            .isEmpty &&
+        DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
 
     final messages =
         container.read(disputeChatNotifierProvider(disputeId)).messages;
