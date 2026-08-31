@@ -36,6 +36,7 @@ import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 import 'package:mostro_mobile/shared/providers/navigation_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/notifications_history_repository_provider.dart';
+import 'package:mostro_mobile/features/mostro/transport.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_lifecycle_lock_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -219,25 +220,39 @@ class RestoreService {
       throw Exception('Temp trade key not initialized');
     }
 
-    // Listen on both transports. The node info (kind 38385) that advertises
-    // protocol_version may not have loaded yet when restore starts, so we
-    // subscribe to v1 gift wrap (kind 1059) and v2 NIP-44 direct (kind 14)
-    // simultaneously rather than resolving a single transport — the node
-    // answers on whichever it speaks. (limit 0: only new events, no history.)
+    // Resolve the node's transport and open a single filter for it.
+    // _waitForNodeConnectivity() has already polled for the kind-38385 info
+    // event by this point, so protocol_version is normally known here.
+    // (limit 0: only new events, no history.)
     final mostroPubkey = ref.read(settingsProvider).mostroPublicKey;
-    final v1Filter = NostrFilter(
-      kinds: [1059],
-      p: [_tempTradeKey!.public],
-      limit: 0,
-    );
+    final advertisedVersion =
+        ref.read(orderRepositoryProvider).mostroInstance?.protocolVersion;
+
     final v2Filter = NostrFilter(
       kinds: [14],
       authors: [mostroPubkey],
       p: [_tempTradeKey!.public],
       limit: 0,
     );
+    // No `authors` pin: NIP-59 signs the outer gift wrap with a per-event
+    // ephemeral key, so the node's pubkey never appears there. The sender is
+    // verified after decryption instead (decodeRestoreMessage).
+    final v1Filter = NostrFilter(
+      kinds: [1059],
+      p: [_tempTradeKey!.public],
+      limit: 0,
+    );
 
-    final request = NostrRequest(filters: [v1Filter, v2Filter]);
+    // Only when the info event never arrived do we fall back to listening on
+    // both transports, since the node then answers on whichever it speaks.
+    final filters = advertisedVersion == null
+        ? [v1Filter, v2Filter]
+        : switch (resolveTransport(advertisedVersion)) {
+            Transport.nip44 => [v2Filter],
+            Transport.giftWrap => [v1Filter],
+          };
+
+    final request = NostrRequest(filters: filters);
     final stream = ref.read(nostrServiceProvider).subscribeToEvents(request);
 
     final subscription = stream.listen(
@@ -272,7 +287,8 @@ class RestoreService {
     );
 
     // Respect full privacy mode: if enabled, don't pass master key, wrap will be done just with trade key
-    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+    final mostroInstance =
+        await ref.read(orderRepositoryProvider).awaitMostroInstance();
     final mostroPow = mostroInstance?.pow ?? 0;
     if (mostroInstance == null) {
       logger.w(
@@ -369,7 +385,8 @@ class RestoreService {
     );
 
     // Respect full privacy mode: if enabled, don't pass master key, wrap will be done just with trade key
-    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+    final mostroInstance =
+        await ref.read(orderRepositoryProvider).awaitMostroInstance();
     final mostroPow = mostroInstance?.pow ?? 0;
     if (mostroInstance == null) {
       logger.w(
@@ -450,7 +467,8 @@ class RestoreService {
     );
 
     // Respect full privacy mode: if enabled, don't pass master key, wrap will be done just with trade key
-    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+    final mostroInstance =
+        await ref.read(orderRepositoryProvider).awaitMostroInstance();
     final mostroPow = mostroInstance?.pow ?? 0;
     if (mostroInstance == null) {
       logger.w(
@@ -1075,10 +1093,10 @@ class RestoreService {
       _masterKey = keyManager.masterKeyPair;
       _tempTradeKey = await keyManager.deriveTradeKeyFromIndex(1);
 
-      // Wait for the node info event (kind 38385) before sending: at app init
-      // mostroInstance is still null, which makes wrapForTransport default to v1
-      // gift wrap. On a protocol v2 node the request would then go out as kind
-      // 1059 and never be answered, leaving the local key index stale.
+      // Wait for the node info event (kind 38385) before sending: it carries
+      // the PoW difficulty and the protocol_version that selects the outbound
+      // transport, and it also lets _createTempSubscription() open a single
+      // filter instead of listening on both transports.
       await _waitForNodeConnectivity(ref.read(settingsProvider).mostroPublicKey);
 
       _tempSubscription = await _createTempSubscription();

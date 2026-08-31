@@ -47,7 +47,8 @@ class DisputeRepository {
       // (v1 gift wrap kind 1059 / v2 NIP-44 direct kind 14), with PoW from the
       // Mostro instance. In reputation mode the master key and key index bind
       // the identity proof; full privacy omits both.
-      final mostroInstance = _ref.read(orderRepositoryProvider).mostroInstance;
+      final mostroInstance =
+          await _ref.read(orderRepositoryProvider).awaitMostroInstance();
       if (mostroInstance == null) {
         logger.w(
           'Mostro instance info unavailable, sending dispute with PoW 0 — '

@@ -39,9 +39,13 @@ class MostroInstance {
   final int maxOrdersPerResponse;
 
   /// Wire transport advertised via the `protocol_version` tag (§2 of the
-  /// transport v2 migration). Defaults to `1` (NIP-59 gift wrap) when the tag
-  /// is absent or unparseable, matching the legacy-daemon behaviour.
-  final int protocolVersion;
+  /// transport v2 migration), or `null` when the node does not advertise it.
+  ///
+  /// Kept nullable so "not advertised" stays distinguishable from an explicit
+  /// version: that is the distinction [resolveTransport] negotiates on, and
+  /// collapsing it to `1` here would also make the About screen report v1 for
+  /// a node the app is actually speaking v2 to.
+  final int? protocolVersion;
 
   /// Bond policy state. See [BondPolicy] for the three-state semantics.
   final BondPolicy bondPolicy;
@@ -78,7 +82,7 @@ class MostroInstance {
     this.lndNodeUri,
     this.fiatCurrenciesAccepted,
     this.maxOrdersPerResponse, {
-    this.protocolVersion = 1,
+    this.protocolVersion,
     this.bondPolicy = BondPolicy.unsupported,
     this.bondApplyTo,
     this.bondSlashOnWaitingTimeout,
@@ -111,7 +115,7 @@ class MostroInstance {
       event.lndNodeUri,
       event.fiatCurrenciesAccepted,
       event.maxOrdersPerResponse,
-      protocolVersion: event.protocolVersion ?? 1,
+      protocolVersion: event.protocolVersion,
       bondPolicy: event.bondPolicy,
       bondApplyTo: event.bondApplyTo,
       bondSlashOnWaitingTimeout: event.bondSlashOnWaitingTimeout,
@@ -179,10 +183,10 @@ extension MostroInstanceExtensions on NostrEvent {
 
   /// Parses the wire transport version from the `protocol_version` tag (§2).
   ///
-  /// Returns `null` when the tag is absent or unparseable. Callers treat
-  /// `null` as legacy v1 (NIP-59 gift wrap); the nullable form is preserved so
-  /// the transport resolver can distinguish "not advertised" from an explicit
-  /// version when deciding whether to log a version-skew downgrade.
+  /// Returns `null` when the tag is absent or unparseable. [resolveTransport]
+  /// treats `null` as v2 (NIP-44), the live transport; the nullable form is
+  /// preserved so it can distinguish "not advertised" from an explicit
+  /// `protocol_version=1`, the one value that still selects gift wrap.
   int? get protocolVersion {
     final raw = _getOptionalTagValue('protocol_version');
     return raw == null ? null : int.tryParse(raw);

@@ -138,6 +138,9 @@ void main() {
     // Stub orderRepositoryProvider so publishOrder can read PoW difficulty
     final mockOrderRepo = MockOpenOrdersRepository();
     when(mockOrderRepo.mostroInstance).thenReturn(null);
+    when(mockOrderRepo.awaitMostroInstance(timeout: anyNamed('timeout')))
+        .thenAnswer((_) async => null);
+    when(mockOrderRepo.awaitMostroInstance()).thenAnswer((_) async => null);
     when(mockRef.read(orderRepositoryProvider)).thenReturn(mockOrderRepo);
 
     // Create mockSubscriptionManager with the stubbed mockRef

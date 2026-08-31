@@ -16,13 +16,19 @@ enum Transport { giftWrap, nip44 }
 /// `protocol_version` (§2, §4.1).
 ///
 /// - `2` → [Transport.nip44] (v2).
-/// - `1` → [Transport.giftWrap] (v1, explicitly advertised).
-/// - `null` → [Transport.giftWrap]. The tag is absent or the node info has not
-///   been fetched yet; during the migration window this is the common legacy
-///   case, so it resolves to v1 without noise.
-/// - any other value → [Transport.giftWrap], logged at `warn`. We do not speak
-///   that protocol, so we degrade to v1 (version-skew guard) and surface the
-///   degraded state so a misconfigured node is not silently mis-paired.
+/// - `1` → [Transport.giftWrap] (v1, explicitly advertised). This is the only
+///   input that selects the legacy gift wrap path.
+/// - `null` → [Transport.nip44]. The tag is absent or the node info has not
+///   been fetched yet. Advertising `protocol_version` is mandatory and gift
+///   wrap is obsolete in the protocol, so "unknown" has exactly one sensible
+///   answer: the live transport. Defaulting to v1 here used to cost a
+///   kind-1059 REQ on every relay at every cold start, CLOSEd and re-REQd as
+///   kind 14 the moment the info event landed.
+/// - any other value → [Transport.nip44], logged at `warn`. The old rule
+///   degraded to v1 as a version-skew guard; that guard was worth its cost
+///   only while v1 was the live transport. A node advertising a version we do
+///   not know (3, say) is far likelier to speak v2 than the obsolete v1, so
+///   the safer guess is v2 — the `warn` still surfaces the skew.
 Transport resolveTransport(int? protocolVersion) {
   switch (protocolVersion) {
     case 1:
