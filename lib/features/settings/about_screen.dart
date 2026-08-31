@@ -338,7 +338,7 @@ class AboutScreen extends ConsumerWidget {
             _buildInfoRowWithDialog(
               context,
               S.of(context)!.protocolVersion,
-              instance.protocolVersion.toString(),
+              instance.protocolVersion?.toString() ?? '—',
               S.of(context)!.protocolVersionExplanation,
             ),
             const SizedBox(height: 16),

@@ -393,8 +393,12 @@ class MostroService {
   Future<void> publishOrder(MostroMessage order) async {
     final session = await _getSession(order);
 
-    // Read PoW difficulty from the connected Mostro instance (kind 38385)
-    final mostroInstance = ref.read(orderRepositoryProvider).mostroInstance;
+    // Read PoW difficulty and protocol version from the connected Mostro
+    // instance (kind 38385), waiting for it if the info event has not landed
+    // yet: an outbound envelope sent on the transport the node does not speak
+    // is dropped silently and never retried.
+    final mostroInstance =
+        await ref.read(orderRepositoryProvider).awaitMostroInstance();
     final difficulty = mostroInstance?.pow ?? 0;
     if (mostroInstance == null) {
       logger.w(
@@ -404,7 +408,8 @@ class MostroService {
     }
 
     // Route through the transport advertised by the connected node (§5 Phase
-    // B). v1 nodes (default) keep the gift-wrap path byte-for-byte.
+    // B). Nodes that advertise protocol_version 1 keep the gift-wrap path
+    // byte-for-byte.
     final event = await order.wrapForTransport(
       protocolVersion: mostroInstance?.protocolVersion,
       tradeKey: session.tradeKey,

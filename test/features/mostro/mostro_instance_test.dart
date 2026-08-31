@@ -326,10 +326,10 @@ void main() {
       );
     }
 
-    test('tag absent → getter null, model defaults to v1', () {
+    test('tag absent → getter null, model keeps null (not advertised)', () {
       final event = buildEvent(const []);
       expect(event.protocolVersion, isNull);
-      expect(MostroInstance.fromEvent(event).protocolVersion, 1);
+      expect(MostroInstance.fromEvent(event).protocolVersion, isNull);
     });
 
     test('protocol_version="2" → v2', () {
@@ -348,12 +348,12 @@ void main() {
       expect(MostroInstance.fromEvent(event).protocolVersion, 1);
     });
 
-    test('unparseable value → getter null, model defaults to v1', () {
+    test('unparseable value → getter null, model keeps null', () {
       final event = buildEvent(const [
         ['protocol_version', 'abc'],
       ]);
       expect(event.protocolVersion, isNull);
-      expect(MostroInstance.fromEvent(event).protocolVersion, 1);
+      expect(MostroInstance.fromEvent(event).protocolVersion, isNull);
     });
   });
 }

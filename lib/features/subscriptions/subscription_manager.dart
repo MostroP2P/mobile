@@ -98,8 +98,10 @@ class SubscriptionManager {
   /// switch to the v2 (kind 14) transport once the node advertises
   /// `protocol_version=2`. The info event arrives asynchronously after the
   /// initial subscription, so without this the orders filter would stay pinned
-  /// to the transport resolved at subscription time (typically v1 at cold
-  /// start). Re-subscribes only when the resolved transport actually changes.
+  /// to the transport resolved at subscription time (v2 by default, see
+  /// [resolveTransport]) and would never fall back for a node that actually
+  /// advertises `protocol_version=1`. Re-subscribes only when the resolved
+  /// transport actually changes.
   void _initMostroInstanceListener() {
     try {
       _mostroInstanceListener =
@@ -124,15 +126,17 @@ class SubscriptionManager {
   }
 
   /// Resolves the transport for the orders subscription from the connected
-  /// node's advertised `protocol_version` (§2, §4.1). Defaults to v1 gift wrap
-  /// when the node info is not yet available or unreadable.
+  /// node's advertised `protocol_version` (§2, §4.1). Defaults to v2 NIP-44
+  /// when the node info is not yet available or unreadable, matching
+  /// [resolveTransport]: gift wrap is obsolete, so falling back to it would
+  /// pin the session to a kind-1059 REQ the node never answers.
   Transport _resolveOrdersTransport() {
     try {
       final infoEvent = ref.read(orderRepositoryProvider).mostroInstance;
       return resolveTransport(infoEvent?.protocolVersion);
     } catch (e) {
-      logger.w('Failed to resolve orders transport, defaulting to v1: $e');
-      return Transport.giftWrap;
+      logger.w('Failed to resolve orders transport, defaulting to v2: $e');
+      return Transport.nip44;
     }
   }
 

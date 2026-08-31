@@ -12,6 +12,12 @@ const orderEventKind = 38383;
 const infoEventKind = 38385;
 const orderFilterDurationHours = 48;
 
+/// How long a send path waits for the node's kind-38385 info event before
+/// falling back to defaults. The info event normally arrives with the initial
+/// order subscription; this only bounds a cold start against a slow relay and
+/// stays well under the 10s orphan-session cleanup timer.
+const mostroInstanceWaitTimeout = Duration(seconds: 3);
+
 class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   final NostrService _nostrService;
   NostrEvent? _mostroInstance;
@@ -45,6 +51,36 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
 
   Stream<NostrEvent> get mostroInstanceStream =>
       _mostroInstanceController.stream;
+
+  /// Returns the node's kind-38385 info event, waiting up to [timeout] for it
+  /// if it has not arrived yet.
+  ///
+  /// The info event carries both the PoW difficulty and the `protocol_version`
+  /// that selects the outbound transport, so a send issued before it lands
+  /// would have to guess both. Guessing the transport wrong is unrecoverable:
+  /// the node ignores the envelope it does not speak and nothing retries the
+  /// action. Send paths await this instead; a timeout still falls back to the
+  /// caller's defaults (PoW 0, [resolveTransport]'s v2 default) so an
+  /// unreachable node degrades rather than blocks the UI.
+  Future<NostrEvent?> awaitMostroInstance({
+    Duration timeout = mostroInstanceWaitTimeout,
+  }) async {
+    final cached = _mostroInstance;
+    if (cached != null) return cached;
+    if (_mostroInstanceController.isClosed) return null;
+    try {
+      return await _mostroInstanceController.stream.first.timeout(timeout);
+    } on TimeoutException {
+      logger.w(
+        'Mostro instance info did not arrive within '
+        '${timeout.inSeconds}s; proceeding with defaults',
+      );
+      return null;
+    } catch (e) {
+      logger.w('Failed while waiting for Mostro instance info: $e');
+      return null;
+    }
+  }
 
   OpenOrdersRepository(this._nostrService, this._settings) {
     // Subscribe to orders and initialize data
