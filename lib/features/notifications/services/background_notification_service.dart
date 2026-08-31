@@ -1,3 +1,4 @@
+import 'package:mostro_mobile/features/notifications/services/background_session_cache.dart';
 import 'dart:convert';
 import 'dart:math';
 
@@ -168,7 +169,7 @@ Future<void> showLocalNotification(NostrEvent event) async {
     final mostroMessage = await _decryptAndProcessEvent(event);
     if (mostroMessage == null) return;
 
-    final sessions = await _loadSessionsFromDatabase();
+    final sessions = await backgroundSessionCache.sessions(_loadSessionsFromDatabase);
     final matchingSession = sessions.cast<Session?>().firstWhere(
       (session) => session?.orderId == mostroMessage.id,
       orElse: () => null,
@@ -252,7 +253,7 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
       return null;
     }
 
-    final sessions = await _loadSessionsFromDatabase();
+    final sessions = await backgroundSessionCache.sessions(_loadSessionsFromDatabase);
 
     // Chat (kind 14 envelope): the outer author is the K_sign key derived
     // from the conversation's shared key, so match by author, not recipient.
@@ -262,7 +263,7 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
       for (final session in sessions) {
         final adminShared = session.adminSharedKey;
         if (adminShared == null) continue;
-        final chatKeys = ChatKeys.fromSharedKey(adminShared);
+        final chatKeys = backgroundSessionCache.chatKeysFor(adminShared);
         if (event.pubkey == chatKeys.sign.public) {
           return _processAdminDm(event, session, chatKeys);
         }
@@ -270,7 +271,7 @@ Future<MostroMessage?> _decryptAndProcessEvent(NostrEvent event) async {
       for (final session in sessions) {
         final shared = session.sharedKey;
         if (shared == null) continue;
-        final chatKeys = ChatKeys.fromSharedKey(shared);
+        final chatKeys = backgroundSessionCache.chatKeysFor(shared);
         if (event.pubkey == chatKeys.sign.public) {
           return _processPeerChat(event, session, chatKeys);
         }
@@ -343,7 +344,8 @@ Future<MostroMessage?> _handleTradeKeyEvent(NostrEvent event, Session session) a
   // decrypts straight to the tuple. Both converge on jsonDecode below.
   final String? content;
   if (event.kind == 14) {
-    final mostroPubkey = await _loadMostroPubkey();
+    final mostroPubkey =
+        await backgroundSessionCache.mostroPubkey(_loadMostroPubkey);
     if (mostroPubkey == null) {
       logger.w('No Mostro pubkey available, cannot decrypt kind-14 event');
       return null;
@@ -451,6 +453,8 @@ Future<void> _maybeUpdateSessionWithPeer(
     await keyManager.init();
     final sessionStorage = SessionStorage(keyManager, db: db);
     await sessionStorage.putSession(session);
+    // Local write: the cached session list is stale now.
+    backgroundSessionCache.invalidate();
 
     logger.i('Background persisted peer for order ${session.orderId}');
 
@@ -459,7 +463,7 @@ Future<void> _maybeUpdateSessionWithPeer(
     final shared = session.sharedKey;
     if (shared != null) {
       bg.addChatSubscriptionFromBackground?.call(
-        ChatKeys.fromSharedKey(shared).sign.public,
+        backgroundSessionCache.chatKeysFor(shared).sign.public,
         session.orderId,
       );
     }
@@ -538,6 +542,9 @@ Future<String?> _loadMostroPubkey() async {
     return null;
   }
 }
+
+/// Isolate-wide cache: reads go through it, local writes invalidate it.
+final BackgroundSessionCache backgroundSessionCache = BackgroundSessionCache();
 
 Future<List<Session>> _loadSessionsFromDatabase() async {
   try {
