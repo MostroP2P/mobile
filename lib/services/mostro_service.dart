@@ -105,22 +105,50 @@ class MostroService {
     return false;
   }
 
-  Future<void> _onData(NostrEvent event) async {
-    final eventStore = ref.read(eventStorageProvider);
+  /// Event ids currently inside [_onData], so copies of the same event racing
+  /// in from several relays don't get processed twice while the durable
+  /// marker below is not yet written.
+  final Set<String> _inFlightEventIds = <String>{};
 
-    if (await eventStore.hasItem(event.id!)) return;
-
-    // Reserve event ID immediately to prevent duplicate processing from multiple relays
-    await eventStore.putItem(event.id!, {
+  /// Durably marks [event] as fully handled. Written only AFTER processing
+  /// completes (or the event is conclusively not for this consumer): the
+  /// background service suppresses its push notification for any id present
+  /// in this store, and a reservation written *before* processing poisoned
+  /// the event forever when the first attempt failed mid-way (session not
+  /// loaded yet, decrypt error, process death between the reservation and the
+  /// message write) — the daemon's message then never notified, was skipped
+  /// by every later replay, and the order sat at a stale status across
+  /// restarts.
+  Future<void> _markEventProcessed(NostrEvent event) {
+    return ref.read(eventStorageProvider).putItem(event.id!, {
       'id': event.id,
       'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
     });
+  }
+
+  Future<void> _onData(NostrEvent event) async {
+    final eventId = event.id!;
+    if (!_inFlightEventIds.add(eventId)) return;
+    try {
+      await _processEvent(event);
+    } finally {
+      _inFlightEventIds.remove(eventId);
+    }
+  }
+
+  Future<void> _processEvent(NostrEvent event) async {
+    final eventStore = ref.read(eventStorageProvider);
+
+    if (await eventStore.hasItem(event.id!)) return;
 
     final sessions = ref.read(sessionNotifierProvider);
     final matchingSession = sessions.firstWhereOrNull(
       (s) => s.tradeKey.public == event.recipient,
     );
     if (matchingSession == null) {
+      // Deliberately NOT marked processed: the session may simply not exist
+      // yet (startup ordering, a child order being linked), and a later
+      // replay must be able to retry this event.
       logger.w('No matching session found for recipient: ${event.recipient}');
       return;
     }
@@ -151,6 +179,7 @@ class MostroService {
       // Ensure result is a non-empty List before accessing elements
       if (result is! List || result.isEmpty) {
         logger.w('Received empty or invalid payload, skipping');
+        await _markEventProcessed(event);
         return;
       }
 
@@ -158,12 +187,14 @@ class MostroService {
       // via its own adminSharedKey subscription
       if (NostrUtils.isDmPayload(result[0])) {
         logger.i('Skipping dispute chat message (handled by DisputeChatNotifier)');
+        await _markEventProcessed(event);
         return;
       }
 
       // Skip restore-specific payloads that arrive as historical events due to temporary subscription
       if (result[0] is Map &&
           _isRestorePayload(result[0] as Map<String, dynamic>)) {
+        await _markEventProcessed(event);
         return;
       }
 
@@ -183,7 +214,16 @@ class MostroService {
       );
 
       await _maybeLinkChildOrder(msg, matchingSession);
+
+      // Only now is the event durably done: a crash anywhere above leaves it
+      // unmarked, so the next replay retries it (addMessage is idempotent —
+      // same key, same message).
+      await _markEventProcessed(event);
     } catch (e) {
+      // Not marked processed: a later replay gets another chance at a
+      // transient failure. A permanently undecryptable event costs one
+      // decrypt attempt per replay, which the dedup above bounds to one
+      // relay copy at a time.
       logger.e('Error processing event', error: e);
     }
   }

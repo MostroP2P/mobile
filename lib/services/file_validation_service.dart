@@ -1,3 +1,4 @@
+import 'dart:isolate';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:mime/mime.dart';
@@ -226,7 +227,7 @@ class FileValidationService {
       }
       
       // Basic macro detection for DOC files using byte pattern search
-      if (_containsMacroPatterns(fileData)) {
+      if (await Isolate.run(() => _containsMacroPatterns(fileData))) {
         throw FileValidationException('Document contains macros which are not allowed for security reasons');
       }
     } 
@@ -242,7 +243,7 @@ class FileValidationService {
       }
       
       // Basic macro detection - look for vbaProject.bin in the ZIP structure
-      if (_containsMacroPatterns(fileData)) {
+      if (await Isolate.run(() => _containsMacroPatterns(fileData))) {
         throw FileValidationException('Document contains macros which are not allowed for security reasons');
       }
     }

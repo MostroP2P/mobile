@@ -64,12 +64,34 @@ class SubscriptionManager {
   /// (a relay sync retry, say) must not re-open a REQ behind its back.
   bool _isSuspended = false;
 
+  /// Identity of the filter each session subscription was built from
+  /// (sorted keys + transport + node). When a session-list emission produces
+  /// the same identity, the CLOSE + REQ (and its full history replay) is
+  /// skipped. Cleared in [unsubscribeByType] so an explicit teardown always
+  /// forces the next update through.
+  final Map<SubscriptionType, String> _appliedFilterKeys = {};
+
+  /// Per-type chain serializing subscription updates. The chat paths await a
+  /// cursor warm-up before recording their filter key, so without this two
+  /// identical bursty emissions both pass the identity check while the first
+  /// is still warming up, and each replays the CLOSE + REQ. Same pattern as
+  /// [ChatCursorStore.advance].
+  final Map<SubscriptionType, Future<void>> _updateQueue = {};
+
+  /// Debounce for relay-driven resubscribes: startup and network recovery
+  /// bring several relays alive in a burst; one re-issue covers them all.
+  static const relayResubscribeDebounce = Duration(seconds: 1);
+
+  StreamSubscription<int>? _relayGenerationListener;
+  Timer? _relayResubscribeTimer;
+
   SubscriptionManager(this.ref) {
     _initSessionListener();
     // Ensure resources are released with provider/container lifecycle
     ref.onDispose(dispose);
     _initializeExistingSessions();
     _initMostroInstanceListener();
+    _initRelayGenerationListener();
   }
 
   /// Watches the connected node's info event so the orders subscription can
@@ -115,6 +137,60 @@ class SubscriptionManager {
     } catch (e) {
       logger.w('Failed to resolve orders transport, defaulting to v2: $e');
       return Transport.nip44;
+    }
+  }
+
+  /// Re-issues every open REQ when a relay comes (back) alive. dart_nostr
+  /// sends a REQ once, to the sockets registered at that moment: a socket
+  /// that silently reconnects (mobile radio sleep, network change) or a relay
+  /// added afterwards by the kind 10002 sync carries no subscriptions until
+  /// something replays them. Before the filter-identity skip, the periodic
+  /// session-cleanup emission re-issued the REQs as a side effect; this
+  /// listener makes that guarantee explicit. The relay generation is part of
+  /// [_filterIdentity], so the forced update passes the skip check.
+  void _initRelayGenerationListener() {
+    try {
+      _relayGenerationListener =
+          ref.read(nostrServiceProvider).relayGenerationStream.listen(
+        (_) {
+          if (_isSuspended) return;
+          _relayResubscribeTimer?.cancel();
+          _relayResubscribeTimer =
+              Timer(relayResubscribeDebounce, _resubscribeForRelayGeneration);
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          logger.e('Error in relay generation listener',
+              error: error, stackTrace: stackTrace);
+        },
+      );
+    } catch (e, stackTrace) {
+      logger.e('Failed to init relay generation listener',
+          error: e, stackTrace: stackTrace);
+    }
+  }
+
+  void _resubscribeForRelayGeneration() {
+    if (_isSuspended) return;
+    final sessions = ref.read(sessionNotifierProvider);
+    if (sessions.isNotEmpty) {
+      logger.i('Relay generation changed, re-issuing session subscriptions');
+      _updateAllSubscriptions(sessions);
+    }
+    // The relay-list REQ is not session-derived; replace it in place so the
+    // newly alive socket receives it too.
+    final mostroPubkey = _relayListPubkey;
+    if (mostroPubkey != null) {
+      subscribeToMostroRelayList(mostroPubkey);
+    }
+  }
+
+  /// Best-effort read of the relay generation for the filter identity. Falls
+  /// back to 0 so an unavailable NostrService never blocks a subscription.
+  int _relayGeneration() {
+    try {
+      return ref.read(nostrServiceProvider).relayGeneration;
+    } catch (_) {
+      return 0;
     }
   }
 
@@ -172,7 +248,22 @@ class SubscriptionManager {
   }
 
   Future<void> _updateSubscription(
+      SubscriptionType type, List<Session> sessions) {
+    final previous = _updateQueue[type] ?? Future.value();
+    final next = previous
+        .catchError((_) {})
+        .then((_) => _applySubscriptionUpdate(type, sessions));
+    _updateQueue[type] = next;
+    return next;
+  }
+
+  Future<void> _applySubscriptionUpdate(
       SubscriptionType type, List<Session> sessions) async {
+    // A queued update can run after [suspend]; the background service owns
+    // the filters then, and [resume] rebuilds everything from sessions.
+    if (_isSuspended) {
+      return;
+    }
     if (sessions.isEmpty) {
       logger.i('No sessions for $type subscription');
       unsubscribeByType(type);
@@ -180,6 +271,13 @@ class SubscriptionManager {
     }
 
     try {
+      final filterKey = _filterIdentity(type, sessions);
+      if (filterKey != null &&
+          _appliedFilterKeys[type] == filterKey &&
+          _subscriptions.containsKey(type)) {
+        return;
+      }
+
       // Pre-warm persisted cursors so the chat filters — built
       // synchronously and later persisted for the background service —
       // see durable state even on a cold start
@@ -208,12 +306,49 @@ class SubscriptionManager {
         type: type,
         filter: filter,
       );
+      if (filterKey != null) {
+        _appliedFilterKeys[type] = filterKey;
+      }
 
       logger
           .i('Subscription created for $type with ${sessions.length} sessions');
     } catch (e, stackTrace) {
       logger.e('Failed to create $type subscription',
           error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Stable identity of the inputs a session filter is derived from. Uses
+  /// the shared-key publics directly (not the derived K_sign) so no EC math
+  /// runs on the skip path. Cursor `since` values are deliberately excluded:
+  /// while a subscription stays open its cursor only moves forward. The relay
+  /// generation is included because "filter unchanged" does not imply "REQ
+  /// still delivered": a reconnected or newly added relay has no
+  /// subscriptions until the REQ is re-issued to it.
+  String? _filterIdentity(SubscriptionType type, List<Session> sessions) {
+    final generation = _relayGeneration();
+    switch (type) {
+      case SubscriptionType.orders:
+        final keys = sessions.map((s) => s.tradeKey.public).toList()..sort();
+        final transport = _resolveOrdersTransport();
+        final node = ref.read(settingsProvider).mostroPublicKey;
+        return 'orders|g$generation|$transport|$node|${keys.join(',')}';
+      case SubscriptionType.chat:
+        final keys = sessions
+            .where((s) => s.sharedKey != null)
+            .map((s) => s.sharedKey!.public)
+            .toList()
+          ..sort();
+        return keys.isEmpty ? null : 'chat|g$generation|${keys.join(',')}';
+      case SubscriptionType.disputeChat:
+        final keys = sessions
+            .where((s) => s.adminSharedKey != null)
+            .map((s) => s.adminSharedKey!.public)
+            .toList()
+          ..sort();
+        return keys.isEmpty ? null : 'dispute|g$generation|${keys.join(',')}';
+      case SubscriptionType.relayList:
+        return null;
     }
   }
 
@@ -372,6 +507,7 @@ class SubscriptionManager {
   }
 
   void unsubscribeByType(SubscriptionType type) {
+    _appliedFilterKeys.remove(type);
     final subscription = _subscriptions[type];
     if (subscription != null) {
       subscription.cancel();
@@ -404,6 +540,10 @@ class SubscriptionManager {
   /// background service owns the filters.
   void suspend() {
     _isSuspended = true;
+    // A pending relay-driven resubscribe must not fire while the background
+    // service owns the filters; resume() rebuilds everything anyway.
+    _relayResubscribeTimer?.cancel();
+    _relayResubscribeTimer = null;
     unsubscribeAll();
   }
 
@@ -507,6 +647,8 @@ class SubscriptionManager {
   void dispose() {
     _sessionListener.close();
     _mostroInstanceListener?.cancel();
+    _relayGenerationListener?.cancel();
+    _relayResubscribeTimer?.cancel();
     unsubscribeAll();
     _ordersController.close();
     _chatController.close();

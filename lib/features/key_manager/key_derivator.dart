@@ -31,14 +31,34 @@ class KeyDerivator {
     return root.toBase58();
   }
 
+  // Derivation is deterministic: cache the parsed root (base58check is paid
+  // once per master key) and the derived child hex per (root, index). Session
+  // decode used to re-run the full path per session, per startup and per
+  // 30-minute cleanup.
+  final Map<String, bip32.BIP32> _rootCache = {};
+  final Map<String, String> _childCache = {};
+  static const int _childCacheLimit = 4096;
+
   String derivePrivateKey(String extendedPrivateKey, int index) {
-    final root = bip32.BIP32.fromBase58(extendedPrivateKey);
+    final cacheKey = '$extendedPrivateKey/$index';
+    final cached = _childCache[cacheKey];
+    if (cached != null) return cached;
+
+    final root = _rootCache.putIfAbsent(
+      extendedPrivateKey,
+      () => bip32.BIP32.fromBase58(extendedPrivateKey),
+    );
     final child = root.derivePath('$derivationPath/$index');
     if (child.privateKey == null) {
       throw Exception(
           "Derived child key has no private key. Possibly a neutered node?");
     }
-    return hex.encode(child.privateKey!);
+    final derived = hex.encode(child.privateKey!);
+    if (_childCache.length >= _childCacheLimit) {
+      _childCache.clear();
+    }
+    _childCache[cacheKey] = derived;
+    return derived;
   }
 
   String privateToPublicKey(String privateKeyHex) {

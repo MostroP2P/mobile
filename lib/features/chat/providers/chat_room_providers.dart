@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/services/chat_read_status_service.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
 import 'package:mostro_mobile/features/chat/notifiers/chat_rooms_notifier.dart';
@@ -70,3 +71,20 @@ int _getSessionStartTime(Ref ref, ChatRoom chatRoom, int fallbackTime) {
   }
   return fallbackTime;
 }
+
+/// Whether the chat for [orderId] has peer messages newer than the read
+/// cursor. Replaces a per-row FutureBuilder whose future (a prefs read) was
+/// recreated on every rebuild; this recomputes only when the room changes.
+/// Invalidate it after `ChatReadStatusService.markChatAsRead`.
+final chatHasUnreadProvider =
+    FutureProvider.family<bool, String>((ref, orderId) async {
+  final session = ref.watch(sessionProvider(orderId));
+  if (session == null) return false;
+  final room = ref.watch(chatRoomsProvider(orderId));
+  if (room.messages.isEmpty) return false;
+  return ChatReadStatusService.hasUnreadMessages(
+    orderId,
+    room.messages,
+    session.tradeKey.public,
+  );
+});

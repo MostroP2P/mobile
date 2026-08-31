@@ -1,4 +1,3 @@
-import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:flutter/material.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/models/chat_room.dart';
@@ -99,13 +98,9 @@ class _ChatMessagesListState extends State<ChatMessagesList> {
 
   @override
   Widget build(BuildContext context) {
-    // Sort messages chronologically (oldest first) for proper chat display
-    final sortedMessages = List<NostrEvent>.from(widget.chatRoom.messages);
-    sortedMessages.sort((a, b) {
-      final aTime = a.createdAt is int ? a.createdAt as int : 0;
-      final bTime = b.createdAt is int ? b.createdAt as int : 0;
-      return aTime.compareTo(bTime); // Oldest first
-    });
+    // ChatRoom's constructor keeps messages sorted oldest-first; re-sorting
+    // a copy here ran on every build (including each keyboard frame).
+    final sortedMessages = widget.chatRoom.messages;
 
     return Container(
       color: AppTheme.backgroundDark,

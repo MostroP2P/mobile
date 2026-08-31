@@ -1,4 +1,5 @@
 import 'package:dart_nostr/dart_nostr.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mostro_mobile/features/key_manager/key_derivator.dart';
 import 'package:mostro_mobile/features/key_manager/key_storage.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_errors.dart';
@@ -10,6 +11,21 @@ class KeyManager {
   NostrKeyPairs? masterKeyPair;
   String? _masterKeyHex;
   int? tradeKeyIndex;
+
+  /// Memoized trade keys: derivation per index is deterministic and costs
+  /// base58 + CKD + an EC multiplication each time. Cleared whenever the
+  /// master key changes.
+  final Map<int, NostrKeyPairs> _tradeKeyCache = {};
+
+  /// Test hook: prime the in-memory master key without touching secure
+  /// storage. Clears the trade-key memo like a real master-key change.
+  @visibleForTesting
+  void debugSetMasterKey(String extendedPrivateKey) {
+    _masterKeyHex = extendedPrivateKey;
+    _tradeKeyCache.clear();
+    masterKeyPair =
+        NostrKeyPairs(private: _derivator.derivePrivateKey(extendedPrivateKey, 0));
+  }
 
   KeyManager(this._storage, this._derivator);
 
@@ -40,6 +56,8 @@ class KeyManager {
     await _storage.clear();
     await _storage.storeMnemonic(mnemonic);
     await _storage.storeMasterKey(masterKeyHex);
+    _masterKeyHex = masterKeyHex;
+    _tradeKeyCache.clear();
     await setCurrentKeyIndex(1);
     masterKeyPair = await _getMasterKey();
     tradeKeyIndex = await getCurrentKeyIndex();
@@ -66,7 +84,7 @@ class KeyManager {
   }
 
   Future<NostrKeyPairs> deriveTradeKey() async {
-    final masterKeyHex = await _storage.readMasterKey();
+    final masterKeyHex = _masterKeyHex ??= await _storage.readMasterKey();
     if (masterKeyHex == null) {
       throw MasterKeyNotFoundException('No master key found in secure storage');
     }
@@ -82,14 +100,17 @@ class KeyManager {
   }
 
   NostrKeyPairs deriveTradeKeyPair(int index) {
-    final tradePrivateHex = _derivator.derivePrivateKey(_masterKeyHex!, index);
-
-    return NostrKeyPairs(private: tradePrivateHex);
+    return _tradeKeyCache.putIfAbsent(
+      index,
+      () => NostrKeyPairs(
+        private: _derivator.derivePrivateKey(_masterKeyHex!, index),
+      ),
+    );
   }
 
   /// Derive a trade key for a specific index
   Future<NostrKeyPairs> deriveTradeKeyFromIndex(int index) async {
-    final masterKeyHex = await _storage.readMasterKey();
+    final masterKeyHex = _masterKeyHex ??= await _storage.readMasterKey();
     if (masterKeyHex == null) {
       throw MasterKeyNotFoundException(
         'No master key found in secure storage',

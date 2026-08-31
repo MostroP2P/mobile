@@ -83,9 +83,6 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
     final now = DateTime.now();
 
     try {
-      // Add a small delay to ensure state has been updated
-      await Future.delayed(const Duration(milliseconds: 100));
-
       final chats = sessions
           .where(
         (s) =>
@@ -101,8 +98,24 @@ class ChatRoomsNotifier extends StateNotifier<List<ChatRoom>> {
           .where((chat) => chat.messages.isNotEmpty)
           .toList();
 
-      // Force update the state to trigger UI refresh
-      state = [...chats];
+      // Skip the emission when nothing visible changed: this runs after
+      // every incoming chat event and a fresh list rebuilds the whole
+      // chat-rooms screen.
+      final unchanged = state.length == chats.length &&
+          () {
+            for (var i = 0; i < chats.length; i++) {
+              if (state[i].orderId != chats[i].orderId ||
+                  state[i].messages.length != chats[i].messages.length ||
+                  (state[i].messages.isNotEmpty &&
+                      state[i].messages.last.id != chats[i].messages.last.id)) {
+                return false;
+              }
+            }
+            return true;
+          }();
+      if (!unchanged) {
+        state = [...chats];
+      }
       logger.d("Refreshed ${chats.length} chats with messages");
     } catch (e) {
       logger.e("Error refreshing chats: $e");

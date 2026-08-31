@@ -94,9 +94,6 @@ class NwcNotifier extends StateNotifier<NwcState> {
   /// Timer for periodic balance refresh.
   Timer? _balanceRefreshTimer;
 
-  /// Timer for connection health checks.
-  Timer? _healthCheckTimer;
-
   /// Number of consecutive reconnect attempts.
   int _reconnectAttempts = 0;
 
@@ -187,11 +184,8 @@ class NwcNotifier extends StateNotifier<NwcState> {
       // Subscribe to wallet notifications
       _subscribeToNotifications();
 
-      // Start periodic balance refresh (every 60 seconds)
+      // Start the periodic balance-and-health tick (every 60 seconds)
       _startBalanceRefresh();
-
-      // Start connection health checks (every 30 seconds)
-      _startHealthChecks();
 
       logger.i('NWC: Connected to wallet "${info?.alias ?? "unknown"}"');
     } on NwcInvalidUriException catch (e) {
@@ -242,45 +236,59 @@ class NwcNotifier extends StateNotifier<NwcState> {
     );
   }
 
-  /// Starts periodic balance refresh.
+  /// Starts the periodic balance-and-health tick. A single get_balance per
+  /// minute both refreshes the balance and proves the connection is alive;
+  /// the previous separate 30 s health check tripled the relay round trips.
   void _startBalanceRefresh() {
     _balanceRefreshTimer?.cancel();
     _balanceRefreshTimer = Timer.periodic(
       const Duration(seconds: 60),
-      (_) => refreshBalance(),
+      (_) => _refreshBalanceAndHealth(),
     );
   }
 
-  /// Starts periodic connection health checks.
-  void _startHealthChecks() {
-    _healthCheckTimer?.cancel();
-    _healthCheckTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => _checkHealth(),
-    );
-  }
+  /// Whether [client] is still the notifier's live client.
+  ///
+  /// `NwcClient.disconnect()` cancels the request subscription but never
+  /// completes the pending `Completer`, so a `get_balance` issued by a client
+  /// that `_cleanup()` has already replaced stays in flight until its own
+  /// `requestTimeout` (30 s) fires. Without this check that stale timeout
+  /// would mark the *current* client unhealthy and kick off a reconnect it
+  /// does not need.
+  bool _isLiveClient(NwcClient client) => mounted && identical(client, _client);
 
-  /// Checks connection health by attempting a get_balance call.
-  Future<void> _checkHealth() async {
-    if (_client == null || !_client!.isConnected) {
+  /// Refreshes the balance and, from the same round trip, the connection
+  /// health. A timeout means the wallet relay stopped answering, which starts
+  /// the reconnect.
+  Future<void> _refreshBalanceAndHealth() async {
+    final client = _client;
+    if (client == null || !client.isConnected) {
       _handleConnectionDrop();
       return;
     }
 
     try {
-      await _client!.getBalance();
-      if (!state.connectionHealthy) {
-        state = state.copyWith(
-          connectionHealthy: true,
-          lastSuccessfulContact: DateTime.now().millisecondsSinceEpoch,
-        );
-      }
+      final balance = await client.getBalance();
+      if (!_isLiveClient(client)) return;
+      state = state.copyWith(
+        balanceMsats: balance.balance,
+        lastSuccessfulContact: DateTime.now().millisecondsSinceEpoch,
+        connectionHealthy: true,
+      );
     } on NwcTimeoutException {
-      logger.w('NWC: Health check timed out');
+      if (!_isLiveClient(client)) {
+        logger.d('NWC: Ignoring timeout from a superseded wallet connection');
+        return;
+      }
+      logger.w('NWC: Balance/health refresh timed out');
       state = state.copyWith(connectionHealthy: false);
       _handleConnectionDrop();
     } catch (e) {
-      logger.w('NWC: Health check failed: $e');
+      if (!_isLiveClient(client)) {
+        logger.d('NWC: Ignoring failure from a superseded wallet connection');
+        return;
+      }
+      logger.w('NWC: Balance/health refresh failed: $e');
       state = state.copyWith(connectionHealthy: false);
     }
   }
@@ -350,8 +358,6 @@ class NwcNotifier extends StateNotifier<NwcState> {
     _notificationSub = null;
     _balanceRefreshTimer?.cancel();
     _balanceRefreshTimer = null;
-    _healthCheckTimer?.cancel();
-    _healthCheckTimer = null;
     _client?.disconnect();
     _client = null;
   }
@@ -476,21 +482,13 @@ class NwcNotifier extends StateNotifier<NwcState> {
     }
   }
 
-  /// Refreshes the wallet balance.
-  Future<void> refreshBalance() async {
-    if (_client == null || !_client!.isConnected) return;
-
-    try {
-      final balance = await _client!.getBalance();
-      state = state.copyWith(
-        balanceMsats: balance.balance,
-        lastSuccessfulContact: DateTime.now().millisecondsSinceEpoch,
-        connectionHealthy: true,
-      );
-    } catch (e) {
-      logger.w('NWC: Failed to refresh balance: $e');
-    }
-  }
+  /// Refreshes the wallet balance on demand (wallet UI refresh button).
+  ///
+  /// Shares the periodic tick's implementation: the same get_balance already
+  /// carries the health signal, so a manual refresh that times out marks the
+  /// connection unhealthy and starts the reconnect instead of reporting a
+  /// healthy wallet with a stale balance.
+  Future<void> refreshBalance() => _refreshBalanceAndHealth();
 
   /// Refreshes wallet info (alias, supported methods, etc.).
   Future<void> refreshInfo() async {

@@ -10,6 +10,7 @@ import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/shared/providers/time_provider.dart';
+import 'package:mostro_mobile/shared/widgets/star_rating_row.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -21,7 +22,6 @@ class OrderListItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(timeProvider);
     final currencyData = ref.watch(currencyCodesProvider).asData?.value;
 
     // Determine if this is a fixed order (has specific sats amount and is not zero)
@@ -97,20 +97,7 @@ class OrderListItem extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: AppTheme.backgroundCard,
                         borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                            spreadRadius: -1,
-                          ),
-                          BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            blurRadius: 1,
-                            offset: const Offset(0, -1),
-                            spreadRadius: 0,
-                          ),
-                        ],
+                        boxShadow: _labelShadow,
                       ),
                       child: Text(
                         orderLabel,
@@ -122,16 +109,9 @@ class OrderListItem extends ConsumerWidget {
                       ),
                     ),
 
-                    // Timestamp
-                    Text(
-                      order.timeAgoWithLocale(
-                              Localizations.localeOf(context).languageCode) ??
-                          S.of(context)!.hoursAgo('9'),
-                      style: const TextStyle(
-                        color: Colors.white60,
-                        fontSize: 14,
-                      ),
-                    ),
+                    // Timestamp (watches the 30 s ticker on its own, so the
+                    // tick refreshes this text instead of the whole card)
+                    _TimeAgoText(order: order),
                   ],
                 ),
               ),
@@ -234,20 +214,7 @@ class OrderListItem extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: AppTheme.backgroundCard,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.7),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                      spreadRadius: -2,
-                    ),
-                    BoxShadow(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      blurRadius: 1,
-                      offset: const Offset(0, -1),
-                      spreadRadius: 0,
-                    ),
-                  ],
+                  boxShadow: _innerShadow,
                 ),
                 child: Row(
                   children: [
@@ -281,20 +248,7 @@ class OrderListItem extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: AppTheme.backgroundCard,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.7),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                      spreadRadius: -2,
-                    ),
-                    BoxShadow(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      blurRadius: 1,
-                      offset: const Offset(0, -1),
-                      spreadRadius: 0,
-                    ),
-                  ],
+                  boxShadow: _innerShadow,
                 ),
                 child: _buildRatingRow(context, order),
               ),
@@ -307,11 +261,11 @@ class OrderListItem extends ConsumerWidget {
   }
 
   Widget _buildRatingRow(BuildContext context, NostrEvent order) {
-    final rating = order.rating?.totalRating ?? 0.0;
-
-    final int reviews = order.rating?.totalReviews ?? 0;
-
-    final int daysOld = order.rating?.days ?? 0;
+    // Parse the rating tag once: the getter deserializes JSON per access.
+    final orderRating = order.rating;
+    final rating = orderRating?.totalRating ?? 0.0;
+    final int reviews = orderRating?.totalReviews ?? 0;
+    final int daysOld = orderRating?.days ?? 0;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -327,27 +281,8 @@ class OrderListItem extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 4),
-            SizedBox(
-              height: 20,
-              child: ListView.builder(
-                  shrinkWrap: true,
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 5,
-                  itemBuilder: (context, index) {
-                    const Color starColor = Colors.amber;
-
-                    if (index < rating.floor()) {
-                      return const Icon(Icons.star, color: starColor, size: 14);
-                    } else if (index == rating.floor() &&
-                        rating - rating.floor() >= 0.5) {
-                      return const Icon(Icons.star_half,
-                          color: starColor, size: 14);
-                    } else {
-                      return Icon(Icons.star_border,
-                          color: starColor, size: 14);
-                    }
-                  }),
-            ),
+            const SizedBox(width: 0),
+            StarRatingRow(rating: rating),
           ],
         ),
         Row(
@@ -404,6 +339,59 @@ class OrderListItem extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+// Shadow lists hoisted: they were re-allocated per card per build.
+final List<BoxShadow> _labelShadow = List.unmodifiable([
+  BoxShadow(
+    color: Colors.black.withValues(alpha: 0.6),
+    blurRadius: 4,
+    offset: const Offset(0, 2),
+    spreadRadius: -1,
+  ),
+  BoxShadow(
+    color: Colors.white.withValues(alpha: 0.08),
+    blurRadius: 1,
+    offset: const Offset(0, -1),
+    spreadRadius: 0,
+  ),
+]);
+
+final List<BoxShadow> _innerShadow = List.unmodifiable([
+  BoxShadow(
+    color: Colors.black.withValues(alpha: 0.7),
+    blurRadius: 6,
+    offset: const Offset(0, 3),
+    spreadRadius: -2,
+  ),
+  BoxShadow(
+    color: Colors.white.withValues(alpha: 0.08),
+    blurRadius: 1,
+    offset: const Offset(0, -1),
+    spreadRadius: 0,
+  ),
+]);
+
+/// Relative timestamp that owns the 30 s ticker dependency, so the periodic
+/// tick rebuilds this text only instead of every visible card.
+class _TimeAgoText extends ConsumerWidget {
+  const _TimeAgoText({required this.order});
+
+  final NostrEvent order;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(timeProvider);
+    return Text(
+      order.timeAgoWithLocale(
+              Localizations.localeOf(context).languageCode) ??
+          S.of(context)!.hoursAgo('9'),
+      style: const TextStyle(
+        color: Colors.white60,
+        fontSize: 14,
+      ),
     );
   }
 }

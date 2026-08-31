@@ -47,7 +47,7 @@ class MessageBubble extends ConsumerWidget {
             Flexible(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                  maxWidth: MediaQuery.sizeOf(context).width * 0.75,
                   minWidth: 0,
                 ),
                 child: Container(
@@ -95,7 +95,7 @@ class MessageBubble extends ConsumerWidget {
             Flexible(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                  maxWidth: MediaQuery.sizeOf(context).width * 0.75,
                   minWidth: 0,
                 ),
                 child: Container(
@@ -141,7 +141,7 @@ class MessageBubble extends ConsumerWidget {
           Flexible(
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75, // Max 75% of screen width
+                maxWidth: MediaQuery.sizeOf(context).width * 0.75, // Max 75% of screen width
                 minWidth: 0,
               ),
               child: GestureDetector(
@@ -182,11 +182,23 @@ class MessageBubble extends ConsumerWidget {
     );
   }
 
+  // DateFormat parses its pattern on construction. Cache one per locale so
+  // rebuilding after an in-app language change does not reuse the formatter
+  // created for the previous locale.
+  static final Map<Locale, DateFormat> _format24hByLocale = {};
+  static final Map<Locale, DateFormat> _format12hByLocale = {};
+
   String _formatTime(BuildContext context) {
     if (message.createdAt == null) return '';
     final use24h = MediaQuery.alwaysUse24HourFormatOf(context);
-    return DateFormat(use24h ? 'HH:mm' : 'h:mm a')
-        .format(message.createdAt!.toLocal());
+    final locale = Localizations.localeOf(context);
+    final formatters = use24h ? _format24hByLocale : _format12hByLocale;
+    final pattern = use24h ? 'HH:mm' : 'h:mm a';
+    final formatter = formatters.putIfAbsent(
+      locale,
+      () => DateFormat(pattern, locale.toString()),
+    );
+    return formatter.format(message.createdAt!.toLocal());
   }
 
   Widget _buildTimestamp(BuildContext context) {
