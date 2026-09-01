@@ -1,3 +1,6 @@
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
+import 'package:mostro_mobile/data/models/order.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -53,8 +56,16 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
       ? null
       : DateTime.now().subtract(Duration(hours: expirationHours));
 
+  final messageStorage = ref.read(mostroStorageProvider);
   for (final session in sessionManager.sessions) {
     if(session.orderId == null || (cutoff != null && session.startTime.isBefore(cutoff))) continue;
+
+    // Terminal orders initialize lazily when a screen watches them: an eager
+    // notifier per finished trade meant a storage watcher, a book listener
+    // and (for chats) a history decrypt alive until process exit.
+    final latest =
+        await messageStorage.getLatestMessageById(session.orderId!);
+    if (isTerminalOrderMessage(latest)) continue;
 
     ref.read(orderNotifierProvider(session.orderId!).notifier);
 
@@ -63,3 +74,11 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
     }
   }
 });
+
+/// Whether the order's last stored message reports a terminal status. A
+/// missing message or a non-order payload counts as live, so anything
+/// ambiguous keeps today's eager behaviour.
+bool isTerminalOrderMessage(MostroMessage? message) {
+  final order = message?.getPayload<Order>();
+  return order != null && order.status.isTerminal;
+}
