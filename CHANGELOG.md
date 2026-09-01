@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.4.1] - 2026-09-01
+
+### Added
+- feat(notifications): open the chat when a chat notification is tapped (#681) (11365d54)
+
+### Fixed
+- fix: stop one chat conversation from showing as two chat rooms (#709) (0381ff85)
+- fix: re-issue open REQs when a relay comes back alive (#707) (4c0e57cc)
+- fix: expose order.status on a pending order you created (#680) (e84a30af)
+- fix: reset the replay budget for each new recovery generation (fe78cc6e)
+- fix: drop rejected admin messages before they disarm the take timeout (b5015250)
+- fix: reject admin resolutions naming a dispute this order does not track (26d75584)
+- fix: cap chained sync replays to prevent unbounded history reads from rejected resolutions (b7097101)
+- fix: remove sync replay cap to prevent premature hydration with pending resolutions (cc8f4cf1)
+- fix: prevent failed sync from claiming hydration and dropping recovery for rejected admin resolutions (e8c463a7)
+- fix: require tracked Dispute object to authorize admin resolutions, not just dispute status (500ae811)
+- fix: suppress side effects when admin dispute actions are rejected for lack of evidence (02c4f5ef)
+- fix: reword dispute resolution messages to attribute outcomes to admin and prompt wallet confirmation (864a7257)
+- fix: keep admin-canceled orders visible under the canceled filter (26648033)
+- fix: reject forged or replayed admin resolutions without dispute evidence (efa241d7)
+
+### Documentation
+- docs: clarify MostroFSM is not wired and explain actual order status derivation (5ae7cae3)
+
+### Changed
+- perf: default the orders transport to v2 (NIP-44 kind 14) (#704) (ef3aad30)
+- perf: run per-message verify and decrypt off the main isolate (#705) (8385a8e4)
+- perf: skip re-verifying and re-decrypting already-unwrapped envelopes (#702) (2406e473)
+- perf: run media sanitizing and file crypto off the main isolate (#703) (65a5801a)
+- perf: cache NIP-44 conversation keys per key pair (#701) (cd7533a4)
+- perf: cache key derivation and make session ECDH lazy (#700) (4fdbed3b)
+- perf: unread indicators through providers instead of per-build futures (#699) (87f72aba)
+- perf: cut per-build chat render costs (#697) (1c8a5238)
+- perf: cheaper order cards and scoped list tickers (#698) (fc1543ad)
+- perf: skip resubscribing when the session filter identity is unchanged (#696) (0a15a863)
+- perf: recompute the trades list only when its real inputs change (#695) (c65cc5dd)
+- perf: value equality for Order/PaymentFailed and no-op state guards (#694) (c2166a50)
+- perf: timer hygiene for settings poll, countdown and NWC health (#690) (ecf8c13c)
+- perf: dedupe and coalesce order book emissions (#691) (fbd3e93d)
+- perf: O(1) order event lookups and per-order public event listeners (#693) (0a210cc2)
+- perf: value equality for Settings and scoped settings watchers (#689) (473a1e9f)
+- perf: debounce background switch and ignore inactive lifecycle blips (#688) (c237a18a)
+- perf: remove dead work from event and rebuild hot paths (#687) (c5ef3392)
+- perf: honour log level and remove per-call logging cost (#686) (0d208335)
+- perf: switch bottom nav tabs with go instead of push (#685) (bae9c07d)
+- perf: build AppTheme.theme once instead of per access (#684) (708ca213)
+- perf: reuse the shared SubscriptionManager in RelaysNotifier (#683) (b9a066f2)
+- test: pin the guard order against the taker-reputation notice (df6a4bfb)
+- i18n: clarify admin attribution in dispute resolution messages across all locales (70cd782b)
+
+
 ## [v1.4.0] - 2026-08-24
 
 ### Added
