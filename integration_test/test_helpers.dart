@@ -268,6 +268,9 @@ class FakeMostroService implements MostroService {
   final Ref ref;
 
   @override
+  Set<String> get debugHeldEventIds => const {};
+
+  @override
   void init({List<NostrKeyPairs>? keys}) {}
 
   @override

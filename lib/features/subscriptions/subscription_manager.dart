@@ -295,6 +295,16 @@ class SubscriptionManager {
             .whereType<String>();
         await ref.read(chatCursorStoreProvider).warmUp(orderIds);
       }
+      if (type == SubscriptionType.orders) {
+        // Best-effort: a prefs/storage failure must not prevent the REQ.
+        try {
+          await ref
+              .read(ordersCursorStoreProvider)
+              .warmUp([ref.read(settingsProvider).mostroPublicKey]);
+        } catch (e) {
+          logger.w('Orders cursor warm-up unavailable: $e');
+        }
+      }
 
       final filter = _createFilterForType(type, sessions);
       if (filter == null) {
@@ -352,6 +362,21 @@ class SubscriptionManager {
     }
   }
 
+  /// Earliest start time across [sessions], or the default lookback when that
+  /// is older — whichever reaches further back. A session older than the
+  /// lookback widens the window to cover it, and a newer one cannot narrow it
+  /// below the lookback. Used as the bootstrap `since` when no cursor is
+  /// stored yet.
+  DateTime _sessionsFloor(List<Session> sessions) {
+    final defaultFloor =
+        DateTime.now().subtract(NostrEventExtensions.chatDefaultLookback);
+    if (sessions.isEmpty) return defaultFloor;
+    final oldest = sessions
+        .map((s) => s.startTime)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    return oldest.isBefore(defaultFloor) ? oldest : defaultFloor;
+  }
+
   NostrFilter? _createFilterForType(
       SubscriptionType type, List<Session> sessions) {
     switch (type) {
@@ -365,10 +390,30 @@ class SubscriptionManager {
         // and re-subscribe when the node info arrives after this subscription.
         final transport = _resolveOrdersTransport();
         _appliedOrdersTransport = transport;
+        final mostroPubkey = ref.read(settingsProvider).mostroPublicKey;
+        // Persisted cursor bounds the replay; fresh installs fall back to the
+        // default lookback (older history is served by the restore flow).
+        DateTime? cursorSince;
+        try {
+          cursorSince =
+              ref.read(ordersCursorStoreProvider).cachedSinceFor(mostroPubkey);
+        } catch (e) {
+          logger.w('Orders cursor unavailable, using default lookback: $e');
+        }
+        // No cursor yet means a fresh install *or* the first launch after
+        // upgrading to the cursor build. An upgrading install can hold orders
+        // far older than the default lookback (non-terminal orders are kept
+        // well past 30 days) and normal startup does not run the restore
+        // flow, so the window must also reach back to the oldest live
+        // session: no message of an active order predates its session.
+        final ordersSince = cursorSince ??
+            _sessionsFloor(sessions)
+                .subtract(ChatCursorStore.cursorOverlap);
         return buildOrdersFilter(
           transport,
           tradeKeys,
-          ref.read(settingsProvider).mostroPublicKey,
+          mostroPubkey,
+          since: ordersSince,
         );
       case SubscriptionType.chat:
         // Kind 14 chat envelope: filter by the K_sign authors derived from
@@ -670,19 +715,34 @@ class SubscriptionManager {
 NostrFilter buildOrdersFilter(
   Transport transport,
   List<String> tradeKeys,
-  String mostroPubkey,
-) {
+  String mostroPubkey, {
+  DateTime? since,
+}) {
   switch (transport) {
     case Transport.giftWrap:
+      // Legacy transport: gift wrap timestamps are randomized ±48 h, so a
+      // cursor since would silently drop messages. Left unbounded until the
+      // 1059 branch is removed.
       return NostrFilter(
         kinds: [1059],
         p: tradeKeys,
       );
     case Transport.nip44:
+      // kind 14 carries real timestamps, so the persisted cursor (minus its
+      // overlap) bounds the replay. Deliberately no limit on top of it: the
+      // relay answers a capped filter with the *newest* n and silently drops
+      // the rest of the window, and events that are never delivered never
+      // enter _retryableEvents, so nothing holds the cursor back — it
+      // advances past them and they are lost for good. That window is widest
+      // exactly when it matters (the first launch after upgrading, or a user
+      // offline for a long stretch). The filter is already scoped to one
+      // node's messages addressed to this user's trade keys, so `since`
+      // alone keeps it small.
       return NostrFilter(
         kinds: [14],
         authors: [mostroPubkey],
         p: tradeKeys,
+        since: since,
       );
   }
 }

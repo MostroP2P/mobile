@@ -22,6 +22,10 @@ class ChatCursorStore {
   /// generalization; keeping it preserves cursors stored by older builds.
   static const disputeKeyPrefix = 'dispute_chat_since_';
 
+  /// Orders (node message) namespace, keyed by the node pubkey: one live
+  /// orders subscription exists per connected node.
+  static const ordersKeyPrefix = 'orders_since_';
+
   /// Peer (buyer-seller) chat namespace, keyed by orderId. Shared with the
   /// background isolate, which builds its own store without Riverpod.
   static const peerKeyPrefix = 'chat_since_';
@@ -118,5 +122,13 @@ final chatCursorStoreProvider = Provider<ChatCursorStore>(
   (ref) => ChatCursorStore(
     ref.watch(sharedPreferencesProvider),
     keyPrefix: ChatCursorStore.peerKeyPrefix,
+  ),
+);
+
+/// Orders (node kind-14 message) cursors, keyed by the node pubkey.
+final ordersCursorStoreProvider = Provider<ChatCursorStore>(
+  (ref) => ChatCursorStore(
+    ref.watch(sharedPreferencesProvider),
+    keyPrefix: ChatCursorStore.ordersKeyPrefix,
   ),
 );
