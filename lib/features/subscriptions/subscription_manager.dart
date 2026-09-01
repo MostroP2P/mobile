@@ -471,7 +471,13 @@ class SubscriptionManager {
       request: request,
       streamSubscription: streamSubscription,
       onCancel: () {
-        ref.read(nostrServiceProvider).unsubscribe(request.subscriptionId!);
+        // Tolerate teardown ordering: when the container is being
+        // disposed, the socket (and its REQs) dies with it anyway.
+        try {
+          ref.read(nostrServiceProvider).unsubscribe(request.subscriptionId!);
+        } catch (e) {
+          logger.w('Skipping relay CLOSE during teardown: $e');
+        }
       },
     );
 

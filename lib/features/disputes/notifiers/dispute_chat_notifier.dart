@@ -17,6 +17,7 @@ import 'package:mostro_mobile/shared/mixins/media_cache_mixin.dart';
 import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/shared/providers/nostr_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:sembast/sembast.dart';
@@ -160,32 +161,16 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
       _subscription = null;
     }
 
-    // Subscribe to kind 14 chat events authored by K_sign. The spec requires
-    // filtering by authors, not #p, to prevent third-party flooding.
-    final chatKeys = _getChatKeys(session);
-    final nostrService = ref.read(nostrServiceProvider);
-
-    // Persisted per-conversation cursor (spec MUST); default lookback for
-    // conversations with no accepted events yet
-    final cursorSince =
-        await ref.read(disputeChatCursorStoreProvider).sinceFor(disputeId);
-    if (!mounted) return;
-    final since = cursorSince ??
-        DateTime.now().subtract(NostrEventExtensions.chatDefaultLookback);
-
-    final request = NostrRequest(
-      filters: [
-        NostrFilter(
-          kinds: [14],
-          authors: [chatKeys.sign.public],
-          since: since,
-          limit: NostrEventExtensions.chatDefaultLimit,
-        ),
-      ],
-    );
-
-    _subscription = nostrService.subscribeToEvents(request).listen(_onChatEvent);
-    logger.i('Subscribed to kind 14 chat via K_sign for dispute: $disputeId');
+    // Consume the app-wide dispute-chat stream: SubscriptionManager already
+    // maintains the kind-14 REQ (K_sign authors + shared persisted cursor)
+    // for every dispute session, and a private REQ here duplicated it on
+    // every relay. Events for other disputes are dropped by the K_sign
+    // pre-filter in _onChatEvent.
+    _subscription = ref
+        .read(subscriptionManagerProvider)
+        .disputeChat
+        .listen(_onChatEvent);
+    logger.i('Consuming shared dispute chat stream for dispute: $disputeId');
   }
 
   /// Listen for session changes and subscribe when admin shared key is ready
@@ -638,6 +623,16 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
     try {
       final sessions = ref.read(sessionNotifierProvider);
 
+      // Direct lookup: disputeId is persisted on the session when the
+      // dispute starts. Constant time, no side effects — the scan below
+      // instantiated an OrderNotifier per candidate on every event.
+      for (final session in sessions) {
+        if (session.disputeId == disputeId) {
+          return session;
+        }
+      }
+
+      // Fallback for sessions persisted before disputeId existed.
       for (final session in sessions) {
         if (session.orderId != null) {
           try {
