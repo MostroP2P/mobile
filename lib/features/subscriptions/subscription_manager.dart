@@ -362,10 +362,11 @@ class SubscriptionManager {
     }
   }
 
-  /// Earliest start time across [sessions], capped at the default lookback so
-  /// a long-lived session cannot widen the window beyond it *and* a short one
-  /// cannot narrow it below it. Used as the bootstrap `since` when no cursor
-  /// is stored yet.
+  /// Earliest start time across [sessions], or the default lookback when that
+  /// is older — whichever reaches further back. A session older than the
+  /// lookback widens the window to cover it, and a newer one cannot narrow it
+  /// below the lookback. Used as the bootstrap `since` when no cursor is
+  /// stored yet.
   DateTime _sessionsFloor(List<Session> sessions) {
     final defaultFloor =
         DateTime.now().subtract(NostrEventExtensions.chatDefaultLookback);
@@ -727,14 +728,21 @@ NostrFilter buildOrdersFilter(
         p: tradeKeys,
       );
     case Transport.nip44:
-      // kind 14 carries real timestamps: bound the replay with the persisted
-      // cursor (minus its overlap) and a limit, mirroring the chat filters.
+      // kind 14 carries real timestamps, so the persisted cursor (minus its
+      // overlap) bounds the replay. Deliberately no limit on top of it: the
+      // relay answers a capped filter with the *newest* n and silently drops
+      // the rest of the window, and events that are never delivered never
+      // enter _retryableEvents, so nothing holds the cursor back — it
+      // advances past them and they are lost for good. That window is widest
+      // exactly when it matters (the first launch after upgrading, or a user
+      // offline for a long stretch). The filter is already scoped to one
+      // node's messages addressed to this user's trade keys, so `since`
+      // alone keeps it small.
       return NostrFilter(
         kinds: [14],
         authors: [mostroPubkey],
         p: tradeKeys,
         since: since,
-        limit: NostrEventExtensions.chatDefaultLimit,
       );
   }
 }

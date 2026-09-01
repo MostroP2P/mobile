@@ -116,9 +116,20 @@ void main() {
     await db.close();
   });
 
-  Future<void> deliver(NostrEvent event) async {
+  MostroService service() => container.read(mostroServiceProvider);
+
+  /// Delivers [event] and waits for the pipeline to actually settle, rather
+  /// than for a fixed delay: processing runs an off-isolate NIP-44 decrypt, a
+  /// Sembast write and a SharedPreferences write, none of which this test can
+  /// await directly. A held event settles once it holds the cursor back; a
+  /// processed one settles once its durable marker is written (which is what
+  /// _markEventProcessed writes before advancing the cursor).
+  Future<void> deliver(NostrEvent event, {bool held = false}) async {
     ordersController.add(event);
-    await Future<void>.delayed(const Duration(milliseconds: 100));
+    final eventStore = EventStorage(db: db);
+    await _waitFor(() async => held
+        ? service().debugHeldEventIds.contains(event.id)
+        : await eventStore.hasItem(event.id!));
   }
 
   test('a processed kind-14 event advances the orders cursor', () async {
@@ -126,6 +137,9 @@ void main() {
 
     await deliver(event);
 
+    // The advance itself is fire-and-forget after the marker is written.
+    await _waitFor(
+        () async => await cursorStore.cursorFor(nodeKeys.public) != null);
     final cursor = await cursorStore.cursorFor(nodeKeys.public);
     expect(cursor, isNotNull);
     expect(cursor!.millisecondsSinceEpoch ~/ 1000,
@@ -151,8 +165,10 @@ void main() {
     final now = DateTime.now();
     // Arrives for a trade key whose session does not exist yet: not marked,
     // so a later replay must still cover it.
-    await deliver(orphanMessage(
-        createdAt: now.subtract(const Duration(minutes: 30))));
+    await deliver(
+      orphanMessage(createdAt: now.subtract(const Duration(minutes: 30))),
+      held: true,
+    );
 
     // A newer message for another session must not evict it from the window.
     await deliver(await nodeMessage(createdAt: now));
@@ -160,6 +176,18 @@ void main() {
     expect(await cursorStore.cursorFor(nodeKeys.public), isNull,
         reason: 'the cursor is a contiguous watermark, not a high-water mark');
   });
+}
+
+/// Polls [condition] until it holds or [timeout] elapses, yielding to the
+/// event loop between attempts.
+Future<void> _waitFor(
+  Future<bool> Function() condition, {
+  Duration timeout = const Duration(seconds: 10),
+}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (!await condition() && DateTime.now().isBefore(deadline)) {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
 }
 
 class _FixedSettingsNotifier extends SettingsNotifier {

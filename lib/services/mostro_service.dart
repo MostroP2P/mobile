@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/chat_cursor_store.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
@@ -146,8 +147,22 @@ class MostroService {
   /// keeps the replay window covering it.
   void _holdEventForRetry(NostrEvent event) {
     if (event.kind != 14 || event.id == null || event.createdAt == null) return;
+    _pruneExpiredHolds();
     _retryableEvents[event.id!] = event.createdAt!;
   }
+
+  /// Drops holds older than [_retryHoldWindow]. Runs on both the hold and the
+  /// advance path: pruning only when an event is accepted would let the map
+  /// grow unpruned through a run in which every event is held.
+  void _pruneExpiredHolds() {
+    _retryableEvents.removeWhere(
+      (_, at) => at.isBefore(DateTime.now().subtract(_retryHoldWindow)),
+    );
+  }
+
+  /// Ids currently holding the cursor back.
+  @visibleForTesting
+  Set<String> get debugHeldEventIds => _retryableEvents.keys.toSet();
 
   /// Advances the orders `since` cursor for a processed event.
   ///
@@ -162,9 +177,7 @@ class MostroService {
     _retryableEvents.remove(event.id);
     if (event.kind != 14) return;
     final accepted = event.createdAt!;
-    _retryableEvents.removeWhere(
-      (_, at) => at.isBefore(DateTime.now().subtract(_retryHoldWindow)),
-    );
+    _pruneExpiredHolds();
     final blocked = _retryableEvents.values.any((at) => !at.isAfter(accepted));
     if (blocked) return;
     unawaited(
