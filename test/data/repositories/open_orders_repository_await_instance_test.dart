@@ -49,7 +49,10 @@ void main() {
     nostrService = MockNostrService();
     eventController = StreamController<NostrEvent>.broadcast();
     when(nostrService.isInitialized).thenReturn(true);
-    when(nostrService.subscribeToEvents(any))
+    when(nostrService.relayGenerationStream)
+        .thenAnswer((_) => const Stream<int>.empty());
+    when(nostrService.liveRelayCount).thenReturn(1);
+    when(nostrService.subscribeToEvents(any, onEose: anyNamed('onEose')))
         .thenAnswer((_) => eventController.stream);
     repository = OpenOrdersRepository(nostrService, settings);
   });

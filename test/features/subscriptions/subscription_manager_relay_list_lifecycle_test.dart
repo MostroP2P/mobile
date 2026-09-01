@@ -58,7 +58,7 @@ void main() {
     orderRepository = MockOpenOrdersRepository();
 
     nextSubscriptionId = 0;
-    when(nostrService.subscribeToEvents(any)).thenAnswer((invocation) {
+    when(nostrService.subscribeToEvents(any, onEose: anyNamed('onEose'))).thenAnswer((invocation) {
       // The real service stamps the id while serialising the REQ; without one
       // Subscription.cancel() throws on `subscriptionId!`.
       final request = invocation.positionalArguments.first as NostrRequest;
