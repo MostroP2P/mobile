@@ -48,6 +48,18 @@ class RelayHealthMonitor {
   @visibleForTesting
   Future<void> checkNow({Duration? elapsed}) => _check(elapsed: elapsed);
 
+  /// Re-arms the backoff so the next check recovers immediately.
+  ///
+  /// A healthy tick is the only other reset, and it cannot fire while the
+  /// outage lasts. After a long stretch in the background with no network the
+  /// backoff sits at [maxBackoff], so without this a foreground return with
+  /// working network could wait up to five minutes for the safety net to try
+  /// again. Called from the foreground transition.
+  void resetBackoff() {
+    _backoff = initialBackoff;
+    _nextAttemptAfter = null;
+  }
+
   Future<void> _check({Duration? elapsed}) async {
     if (_recovering) return;
 
@@ -62,9 +74,11 @@ class RelayHealthMonitor {
     final hasLiveOperatingRelay =
         nostrService.connectedRelays.any(operatingRelays.contains);
     if (hasLiveOperatingRelay) {
-      // Healthy: arm the next outage for an immediate first attempt.
-      _backoff = initialBackoff;
-      _nextAttemptAfter = null;
+      // Healthy: arm the next outage for an immediate first attempt. Note this
+      // exit is unreachable while `settings.relays` is empty (cold start before
+      // kind-10002 discovery): there is no operating relay to be alive, so the
+      // backoff only grows. That is why [resetBackoff] exists.
+      resetBackoff();
       return;
     }
 
