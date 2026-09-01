@@ -12,6 +12,10 @@ abstract class NotificationsRepository {
   Future<void> markAllAsRead();
   Future<void> deleteNotification(String notificationId);
   Future<void> deleteByOrderId(String orderId);
+
+  /// Delete the given notifications in one transaction. Used to enforce the
+  /// history cap by exact identity, so tied timestamps cannot survive it.
+  Future<int> deleteByIds(Iterable<String> ids);
   Future<void> clearAll();
   Stream<List<NotificationModel>> watchNotifications();
   Future<List<NotificationModel>> getUnreadNotifications();
@@ -116,6 +120,13 @@ class NotificationsStorage extends BaseStorage<NotificationModel>
   @override
   Future<void> deleteByOrderId(String orderId) async {
     await deleteWhere(Filter.equals('orderId', orderId));
+  }
+
+  @override
+  Future<int> deleteByIds(Iterable<String> ids) async {
+    final keys = ids.toSet();
+    if (keys.isEmpty) return 0;
+    return deleteWhere(Filter.custom((record) => keys.contains(record.key)));
   }
 
   @override

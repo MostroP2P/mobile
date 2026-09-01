@@ -31,6 +31,8 @@ class _FakeNotificationsRepository implements NotificationsRepository {
   @override
   Future<void> deleteByOrderId(String orderId) async {}
   @override
+  Future<int> deleteByIds(Iterable<String> ids) async => 0;
+  @override
   Future<void> clearAll() async {}
   @override
   Stream<List<NotificationModel>> watchNotifications() => const Stream.empty();

@@ -51,6 +51,87 @@ void main() {
     expect(await events.hasItem('fresh-res'), isTrue);
   });
 
+  test('reservations a live session could still see replayed are kept',
+      () async {
+    // The orders filter carries no `since`, and the reservation is the only
+    // dedup for Mostro DMs: anything the oldest live session could match must
+    // survive the 7-day floor.
+    await events.putItem('within-session', {
+      'id': 'within-session',
+      'created_at': secsAgo(const Duration(days: 20)),
+    });
+    await events.putItem('before-session', {
+      'id': 'before-session',
+      'created_at': secsAgo(const Duration(days: 40)),
+    });
+
+    await pruner.prune(
+      liveOrderIds: {},
+      liveDisputeIds: {},
+      oldestLiveSessionAt: now.subtract(const Duration(days: 30)),
+      now: now,
+    );
+
+    expect(await events.hasItem('within-session'), isTrue,
+        reason: 'a live session predates it: replay is still possible');
+    expect(await events.hasItem('before-session'), isFalse);
+  });
+
+  test('a seconds timestamp still gets the full grace window', () async {
+    // The daemon sends seconds; the app only fills in milliseconds when the
+    // field is absent, so both units coexist in the store.
+    final today = MostroMessage(action: Action.newOrder, id: 'dead-order');
+    today.timestamp = now.millisecondsSinceEpoch ~/ 1000;
+    await messages.addMessage('m1', today);
+
+    await pruner.prune(liveOrderIds: {}, liveDisputeIds: {}, now: now);
+
+    expect(await messages.getAllMessagesForOrderId('dead-order'), hasLength(1),
+        reason: 'the message was written today; the grace window protects it');
+  });
+
+  test('tied notification timestamps do not defeat the cap', () async {
+    final tied = now.subtract(const Duration(days: 1));
+    for (var i = 0; i < StoragePruner.notificationCap + 20; i++) {
+      await notifications.addNotification(NotificationModel(
+        id: 'n$i',
+        type: NotificationType.system,
+        action: Action.newOrder,
+        title: 't$i',
+        message: 'm$i',
+        timestamp: tied,
+      ));
+    }
+
+    await pruner.prune(liveOrderIds: {}, liveDisputeIds: {}, now: now);
+
+    expect(await notifications.getAll(),
+        hasLength(StoragePruner.notificationCap));
+  });
+
+  test('a second pass within the minimum interval is skipped', () async {
+    await pruner.prune(liveOrderIds: {}, liveDisputeIds: {}, now: now);
+    await events.putItem('old-res', {
+      'id': 'old-res',
+      'created_at': secsAgo(const Duration(days: 8)),
+    });
+
+    await pruner.prune(
+      liveOrderIds: {},
+      liveDisputeIds: {},
+      now: now.add(const Duration(minutes: 30)),
+    );
+    expect(await events.hasItem('old-res'), isTrue,
+        reason: 'a full scan of both stores is not paid at every tick');
+
+    await pruner.prune(
+      liveOrderIds: {},
+      liveDisputeIds: {},
+      now: now.add(StoragePruner.minimumInterval),
+    );
+    expect(await events.hasItem('old-res'), isFalse);
+  });
+
   test('old chat events survive only while their order has a session',
       () async {
     await events.putItem('dead-chat', {
