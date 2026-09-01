@@ -71,4 +71,24 @@ void main() {
     expect(derivator.privateToPublicKey(cached),
         derivator.privateToPublicKey(direct));
   });
+
+  test('getNextKeyIndex reserves an index that deriveTradeKey cannot reuse',
+      () async {
+    // Arrange: the counter points at the next index to hand out.
+    await manager.setCurrentKeyIndex(5);
+
+    // Act: reserve an index for a range order's child session, then derive
+    // the trade key for the next order the user creates or takes.
+    final reserved = await manager.getNextKeyIndex();
+    final reservedKey = await manager.deriveTradeKeyFromIndex(reserved);
+    final nextKey = await manager.deriveTradeKey();
+
+    // Assert: reusing the reserved index would give two live sessions the
+    // same trade key, and with a shared counterparty the same ECDH shared
+    // key — i.e. one conversation surfacing as two chats.
+    expect(reserved, 5, reason: 'reserves the index deriveTradeKey was on');
+    expect(reservedKey.public, isNot(nextKey.public));
+    expect(await manager.getCurrentKeyIndex(), 7,
+        reason: 'both handed-out indices are consumed, leaving no gap');
+  });
 }
