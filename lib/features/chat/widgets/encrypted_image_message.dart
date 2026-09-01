@@ -88,7 +88,11 @@ class _EncryptedImageMessageState extends State<EncryptedImageMessage> {
       return _buildErrorWidget();
     }
 
-    // Show loading widget while waiting for initState to trigger the load
+    // Show loading widget while waiting for initState to trigger the load.
+    // Also covers a cache miss after the media budget evicted the bytes of a
+    // still-mounted widget: without re-requesting, this would show the
+    // placeholder forever.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadImageIfNeeded());
     return _buildLoadingWidget();
   }
 
