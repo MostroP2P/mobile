@@ -1136,7 +1136,22 @@ class _CountdownWidget extends ConsumerWidget {
 
   /// Find the message that triggered the current state
   /// Returns null if no valid message is found
+  /// Memo per history-list instance: the index emits a new list only on real
+  /// changes, while the 1 s countdown tick rebuilds with the same instance —
+  /// the copy+sort below used to run every second.
+  static final Expando<Map<Status, MostroMessage?>> _stateMessageMemo =
+      Expando();
+
   MostroMessage? _findMessageForState(
+      List<MostroMessage> messages, Status status) {
+    final memo = _stateMessageMemo[messages] ??= {};
+    if (memo.containsKey(status)) return memo[status];
+    final result = _findMessageForStateUncached(messages, status);
+    memo[status] = result;
+    return result;
+  }
+
+  MostroMessage? _findMessageForStateUncached(
       List<MostroMessage> messages, Status status) {
     // Filter out messages with invalid timestamps
     final validMessages =

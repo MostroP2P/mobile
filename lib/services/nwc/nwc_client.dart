@@ -411,9 +411,14 @@ class NwcClient {
       // Only filter by kind + author; some NWC relay implementations
       // (e.g. Primal) don't support #e / #p tag filters, so we verify
       // the e-tag match in the event handler below.
+      // `since` bounds the replay: without it every request re-received the
+      // wallet's whole kind-23195 history from the relay (and the balance
+      // tick sends one request per minute). Responses are always newer than
+      // the request; one minute absorbs clock skew.
       final filter = NostrFilter(
         kinds: const [23195],
         authors: [connection.walletPubkey],
+        since: DateTime.now().subtract(const Duration(minutes: 1)),
       );
 
       final subId = 'nwc_${requestId.substring(0, 8)}';
