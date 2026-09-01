@@ -22,6 +22,10 @@ class BackgroundSessionCache {
   final Map<String, ChatKeys> _chatKeys = {};
   static const int _chatKeysLimit = 512;
 
+  /// Bumped by [invalidate]. A load that started before a local write must not
+  /// cache the snapshot it read, even though it resolves after the write.
+  int _generation = 0;
+
   /// Sessions, loading through [loader] at most once per TTL window. A
   /// concurrent burst shares one in-flight load. A throwing loader caches
   /// nothing, so a transient failure does not blind the isolate for a whole
@@ -38,11 +42,16 @@ class BackgroundSessionCache {
     }
     final inFlight = _inFlight;
     if (inFlight != null) return inFlight;
+    final generation = _generation;
     final load = () async {
       try {
         final loaded = await loader();
-        _sessions = loaded;
-        _loadedAt = DateTime.now();
+        // Callers still get this list, but caching it after an invalidate
+        // would serve a pre-write snapshot for the rest of the TTL window.
+        if (generation == _generation) {
+          _sessions = loaded;
+          _loadedAt = DateTime.now();
+        }
         return loaded;
       } finally {
         _inFlight = null;
@@ -60,9 +69,12 @@ class BackgroundSessionCache {
     if (_pubkeyLoadedAt != null && now.difference(_pubkeyLoadedAt!) < ttl) {
       return _mostroPubkey;
     }
+    final generation = _generation;
     final loaded = await loader();
-    _mostroPubkey = loaded;
-    _pubkeyLoadedAt = DateTime.now();
+    if (generation == _generation) {
+      _mostroPubkey = loaded;
+      _pubkeyLoadedAt = DateTime.now();
+    }
     return loaded;
   }
 
@@ -83,6 +95,7 @@ class BackgroundSessionCache {
   /// settings change) so the next event sees fresh state. Chat keys are pure
   /// derivations and stay.
   void invalidate() {
+    _generation++;
     _sessions = null;
     _loadedAt = null;
     _mostroPubkey = null;

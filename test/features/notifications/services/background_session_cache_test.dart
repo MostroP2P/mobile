@@ -202,4 +202,66 @@ void main() {
     expect(await resolveByAuthor('cc33'), isNull);
     expect(loads, 2, reason: 'all three lookups served from one load');
   });
+
+  /// _maybeUpdateSessionWithPeer writes the peer to disk and then invalidates,
+  /// but another event may already be mid-load. Without a generation guard
+  /// that load lands after the invalidate and re-caches its pre-write
+  /// snapshot, so the peer stays invisible for the whole TTL window and every
+  /// kind-14 chat event of that conversation fails to match a session.
+  test('a load in flight when invalidate() lands is not cached', () async {
+    const peer =
+        'aa11111111111111111111111111111111111111111111111111111111111111';
+    String? storedPeer; // what is on disk
+    var loads = 0;
+    final cache = BackgroundSessionCache();
+
+    Future<List<Session>> loader() async {
+      loads++;
+      final snapshot = storedPeer; // read taken at load start
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      return [session('o1', peerPubkey: snapshot)];
+    }
+
+    // Event B starts a load; do not await it yet.
+    final inFlight = cache.sessions(loader);
+
+    // Event A meanwhile persists the peer and invalidates.
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    storedPeer = peer;
+    cache.invalidate();
+
+    await inFlight; // the stale load resolves after the invalidate
+
+    final next = await cache.sessions(loader);
+
+    expect(loads, 2,
+        reason: 'the pre-write snapshot must not be cached by a load that '
+            'started before the peer was persisted');
+    expect(next.single.peer?.publicKey, peer);
+  });
+
+  test('a pubkey load in flight when invalidate() lands is not cached',
+      () async {
+    var loads = 0;
+    var stored = 'old-node-pubkey';
+    final cache = BackgroundSessionCache();
+
+    Future<String?> loader() async {
+      loads++;
+      final snapshot = stored;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      return snapshot;
+    }
+
+    final inFlight = cache.mostroPubkey(loader);
+
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    stored = 'new-node-pubkey';
+    cache.invalidate();
+
+    await inFlight;
+
+    expect(await cache.mostroPubkey(loader), 'new-node-pubkey');
+    expect(loads, 2);
+  });
 }
