@@ -23,7 +23,9 @@ class BackgroundSessionCache {
   static const int _chatKeysLimit = 512;
 
   /// Sessions, loading through [loader] at most once per TTL window. A
-  /// concurrent burst shares one in-flight load.
+  /// concurrent burst shares one in-flight load. A throwing loader caches
+  /// nothing, so a transient failure does not blind the isolate for a whole
+  /// TTL window.
   Future<List<Session>> sessions(
     Future<List<Session>> Function() loader,
   ) {
@@ -50,17 +52,18 @@ class BackgroundSessionCache {
     return load;
   }
 
-  /// Node pubkey with the same TTL semantics.
+  /// Node pubkey with the same TTL semantics. An absent pubkey is a valid
+  /// answer and is cached like any other; a *failing* loader throws through,
+  /// leaving nothing cached so the next event retries.
   Future<String?> mostroPubkey(Future<String?> Function() loader) async {
     final now = DateTime.now();
-    if (_mostroPubkey != null &&
-        _pubkeyLoadedAt != null &&
-        now.difference(_pubkeyLoadedAt!) < ttl) {
+    if (_pubkeyLoadedAt != null && now.difference(_pubkeyLoadedAt!) < ttl) {
       return _mostroPubkey;
     }
-    _mostroPubkey = await loader();
+    final loaded = await loader();
+    _mostroPubkey = loaded;
     _pubkeyLoadedAt = DateTime.now();
-    return _mostroPubkey;
+    return loaded;
   }
 
   /// K_conv/K_sign pair per shared key (two EC multiplications each),

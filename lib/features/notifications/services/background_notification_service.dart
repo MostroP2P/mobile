@@ -538,8 +538,10 @@ Future<String?> _loadMostroPubkey() async {
     }
     return Settings.fromJson(jsonDecode(settingsJson)).mostroPublicKey;
   } catch (e) {
+    // Rethrow for the same reason as _loadSessionsFromDatabase: a cached null
+    // means "no pubkey configured", not "the read blew up this once".
     logger.e('Failed to load Mostro pubkey in background: $e');
-    return null;
+    rethrow;
   }
 }
 
@@ -559,8 +561,11 @@ Future<List<Session>> _loadSessionsFromDatabase() async {
     final sessionStorage = SessionStorage(keyManager, db: db);
     return await sessionStorage.getAll();
   } catch (e) {
+    // Rethrow: an empty list is a valid answer the cache keeps for a whole TTL
+    // window, so returning [] here would silently discard every event that
+    // arrives during a transient database/secure-storage failure.
     logger.e('Session load error: $e');
-    return [];
+    rethrow;
   }
 }
 

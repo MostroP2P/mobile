@@ -107,4 +107,99 @@ void main() {
     expect(loads, 1);
     expect(results, everyElement(hasLength(1)));
   });
+
+  test('a failed session load is not cached', () async {
+    var loads = 0;
+    final cache = BackgroundSessionCache();
+    Future<List<Session>> loader() async {
+      loads++;
+      if (loads == 1) throw StateError('transient database error');
+      return [session('o1')];
+    }
+
+    await expectLater(cache.sessions(loader), throwsStateError);
+    final after = await cache.sessions(loader);
+
+    expect(loads, 2,
+        reason: 'a transient failure must not be cached as an empty session '
+            'list, or every event in the TTL window is silently discarded');
+    expect(after.single.orderId, 'o1');
+  });
+
+  test('a missing Mostro pubkey is cached for the TTL', () async {
+    var loads = 0;
+    final cache = BackgroundSessionCache();
+    Future<String?> loader() async {
+      loads++;
+      return null;
+    }
+
+    expect(await cache.mostroPubkey(loader), isNull);
+    expect(await cache.mostroPubkey(loader), isNull);
+
+    expect(loads, 1,
+        reason: 'an absent pubkey is a valid answer; re-reading settings on '
+            'every kind-14 event is the work this cache exists to avoid');
+  });
+
+  test('a failed pubkey load is not cached', () async {
+    var loads = 0;
+    final cache = BackgroundSessionCache();
+    Future<String?> loader() async {
+      loads++;
+      if (loads == 1) throw StateError('secure storage unavailable');
+      return 'npubdeadbeef';
+    }
+
+    await expectLater(cache.mostroPubkey(loader), throwsStateError);
+
+    expect(await cache.mostroPubkey(loader), 'npubdeadbeef');
+    expect(loads, 2);
+  });
+
+  /// The wiring concern behind the cache: a kind-14 event is matched by the
+  /// K_sign public key derived from the session's shared key, so a cache hit
+  /// must resolve the same session a fresh load would; and the peer written by
+  /// _maybeUpdateSessionWithPeer must be visible to the very next event, which
+  /// is what its invalidate() call buys.
+  test('cached sessions resolve the event author, and a peer write is visible '
+      'after invalidate', () async {
+    const peer =
+        'aa11111111111111111111111111111111111111111111111111111111111111';
+    var loads = 0;
+    String? storedPeer;
+    final cache = BackgroundSessionCache();
+    Future<List<Session>> loader() async {
+      loads++;
+      return [session('o1', peerPubkey: storedPeer)];
+    }
+
+    Future<Session?> resolveByAuthor(String author) async {
+      for (final s in await cache.sessions(loader)) {
+        final shared = s.sharedKey;
+        if (shared == null) continue;
+        if (cache.chatKeysFor(shared).sign.public == author) return s;
+      }
+      return null;
+    }
+
+    // No peer yet: nothing to match a chat author against.
+    expect(await resolveByAuthor('cc33'), isNull);
+    expect(loads, 1);
+
+    // _maybeUpdateSessionWithPeer writes the peer, then invalidates.
+    storedPeer = peer;
+    cache.invalidate();
+
+    final signPublic = cache
+        .chatKeysFor((await cache.sessions(loader)).single.sharedKey!)
+        .sign
+        .public;
+    expect(loads, 2, reason: 'the peer write must be observed');
+
+    expect((await resolveByAuthor(signPublic))?.orderId, 'o1');
+    expect((await resolveByAuthor(signPublic))?.peer?.publicKey, peer);
+    expect(await resolveByAuthor('cc33'), isNull);
+    expect(loads, 2, reason: 'all three lookups served from one load');
+  });
 }
