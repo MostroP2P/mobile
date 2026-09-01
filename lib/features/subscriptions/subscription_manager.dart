@@ -4,6 +4,7 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/services/nostr_service.dart';
 import 'package:mostro_mobile/core/models/relay_list_event.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/data/models/session.dart';
@@ -471,13 +472,25 @@ class SubscriptionManager {
       request: request,
       streamSubscription: streamSubscription,
       onCancel: () {
-        // Tolerate teardown ordering: when the container is being
-        // disposed, the socket (and its REQs) dies with it anyway.
+        // dart_nostr assigns the id when it serializes the REQ onto a socket,
+        // so a request that never reached a relay (none connected) has none
+        // and there is nothing to CLOSE.
+        final subscriptionId = request.subscriptionId;
+        if (subscriptionId == null) return;
+
+        // Tolerate teardown ordering: reading the provider throws once the
+        // container is being disposed, and the socket (and its REQs) dies
+        // with it anyway. Only the read is guarded — a failing unsubscribe()
+        // means the relay CLOSE was skipped and the REQ lingers, which is
+        // exactly the waste this path exists to avoid, so it must surface.
+        final NostrService nostrService;
         try {
-          ref.read(nostrServiceProvider).unsubscribe(request.subscriptionId!);
+          nostrService = ref.read(nostrServiceProvider);
         } catch (e) {
           logger.w('Skipping relay CLOSE during teardown: $e');
+          return;
         }
+        nostrService.unsubscribe(subscriptionId);
       },
     );
 
@@ -510,6 +523,25 @@ class SubscriptionManager {
       type: type,
       filter: filter,
     );
+  }
+
+  /// Re-issues the dispute-chat REQ so the relay replays from the persisted
+  /// cursor.
+  ///
+  /// [disputeChat] is a broadcast stream, and a broadcast stream drops events
+  /// while nothing is listening. `DisputeChatNotifier` is built lazily — only
+  /// when the Disputes tab renders — so every envelope delivered before that,
+  /// including the backlog replayed when the REQ is first issued, would be
+  /// lost to the listener that shows up afterwards. Clearing the applied
+  /// filter key forces the next update past the identity skip. Still a single
+  /// REQ: it is re-issued once, when a consumer attaches.
+  void refreshDisputeChatSubscription() {
+    if (_isSuspended) return;
+    final sessions = ref.read(sessionNotifierProvider);
+    if (sessions.isEmpty) return;
+    logger.i('Re-issuing dispute chat REQ for a newly attached listener');
+    unsubscribeByType(SubscriptionType.disputeChat);
+    unawaited(_updateSubscription(SubscriptionType.disputeChat, sessions));
   }
 
   void unsubscribeByType(SubscriptionType type) {

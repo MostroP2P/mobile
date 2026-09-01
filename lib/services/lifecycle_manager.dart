@@ -119,7 +119,10 @@ class LifecycleManager extends WidgetsBindingObserver {
 
       // Reload dispute chats: the background service persists admin messages
       // to disk while the app sleeps, but an already-initialized notifier
-      // never re-reads storage nor re-opens its relay subscription on its own
+      // never re-reads storage on its own. It no longer owns a relay
+      // subscription — it consumes SubscriptionManager.disputeChat — so the
+      // rebuild also re-attaches its listener and asks for the catch-up
+      // re-issue.
       logger.i("Reloading dispute chats");
       ref.invalidate(disputeChatNotifierProvider);
 

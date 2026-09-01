@@ -121,6 +121,46 @@ void main() {
             'session.disputeId without touching order notifiers');
     expect(messages.single.content, 'hola admin');
   });
+
+  test('an envelope delivered before the notifier exists is still recovered',
+      () async {
+    // `disputeChat` is a broadcast stream and `DisputeChatNotifier` is built
+    // lazily, only when the Disputes tab renders. Everything the shared REQ
+    // delivers before that — including the backlog replayed when the REQ is
+    // first issued — is dropped for want of a listener. The notifier must ask
+    // for a catch-up re-issue when it attaches, so the relay replays from the
+    // persisted cursor with the listener connected.
+    final backlog = await adminEnvelope('mensaje del admin');
+
+    // Relay replay: the re-issued REQ resends what the cursor still covers.
+    when(manager.refreshDisputeChatSubscription()).thenAnswer((_) {
+      disputeStream.add(backlog);
+    });
+
+    // Delivered while nothing is listening -> dropped by the broadcast stream.
+    disputeStream.add(backlog);
+    await pumpEventQueue(times: 10);
+
+    // Only now does the user open the Disputes tab.
+    container.read(disputeChatNotifierProvider(disputeId).notifier);
+
+    final deadline = DateTime.now().add(const Duration(seconds: 5));
+    while (container
+            .read(disputeChatNotifierProvider(disputeId))
+            .messages
+            .isEmpty &&
+        DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+
+    verify(manager.refreshDisputeChatSubscription()).called(1);
+    final messages =
+        container.read(disputeChatNotifierProvider(disputeId)).messages;
+    expect(messages, hasLength(1),
+        reason: 'an admin message delivered before the Disputes tab was '
+            'opened must not stay invisible');
+    expect(messages.single.content, 'mensaje del admin');
+  });
 }
 
 /// Session list the notifier can read without touching storage.

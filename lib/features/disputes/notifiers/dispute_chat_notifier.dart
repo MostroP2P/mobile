@@ -111,6 +111,11 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
   ChatKeys? _chatKeys;
   String? _chatKeysSource;
 
+  /// Whether the one-shot catch-up re-issue of the shared dispute-chat REQ
+  /// has already been asked for. [_subscribe] can run more than once (it
+  /// retries once the admin shared key lands), and one replay is enough.
+  bool _requestedBackfill = false;
+
   DisputeChatNotifier(this.disputeId, this.ref) : super(const DisputeChatState());
 
   /// Derive (and cache) the K_conv/K_sign pair from the admin shared key.
@@ -166,11 +171,20 @@ class DisputeChatNotifier extends StateNotifier<DisputeChatState> with MediaCach
     // for every dispute session, and a private REQ here duplicated it on
     // every relay. Events for other disputes are dropped by the K_sign
     // pre-filter in _onChatEvent.
-    _subscription = ref
-        .read(subscriptionManagerProvider)
-        .disputeChat
-        .listen(_onChatEvent);
+    final subscriptionManager = ref.read(subscriptionManagerProvider);
+    _subscription = subscriptionManager.disputeChat.listen(_onChatEvent);
     logger.i('Consuming shared dispute chat stream for dispute: $disputeId');
+
+    // The shared stream is a broadcast controller, so it dropped everything
+    // delivered while this lazily built notifier did not exist — including
+    // the backlog replayed when the REQ was first issued. Ask for one
+    // re-issue so the relay replays from the persisted cursor now that a
+    // listener is attached; without it an admin message that arrived before
+    // the Disputes tab was opened stays invisible until a background cycle.
+    if (!_requestedBackfill) {
+      _requestedBackfill = true;
+      subscriptionManager.refreshDisputeChatSubscription();
+    }
   }
 
   /// Listen for session changes and subscribe when admin shared key is ready
