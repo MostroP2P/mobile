@@ -14,7 +14,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/push_notification_service.dart';
+import 'package:mostro_mobile/data/repositories/notifications_history_repository.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/services/storage_pruner.dart';
 import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:dart_nostr/dart_nostr.dart';
@@ -162,6 +164,25 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   }
 
   void _cleanup() async {
+    // Bounded-growth pruning runs regardless of the session retention policy:
+    // reservations, orphaned chat/message records and the notification cap
+    // are storage hygiene, not session lifetime.
+    try {
+      final pruner = StoragePruner(
+        eventStorage: ref.read(eventStorageProvider),
+        messageStorage: ref.read(mostroStorageProvider),
+        notificationsStorage:
+            ref.read(notificationsRepositoryProvider) as NotificationsStorage,
+      );
+      await pruner.prune(
+        liveOrderIds: _sessions.keys.toSet(),
+        liveDisputeIds:
+            _sessions.values.map((s) => s.disputeId).whereType<String>().toSet(),
+      );
+    } catch (e) {
+      logger.w('Storage pruning skipped: $e');
+    }
+
     if (_isForever) return;
 
     final cutoff = DateTime.now()

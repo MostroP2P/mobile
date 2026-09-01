@@ -22,6 +22,12 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   @visibleForTesting
   int get debugIndexSize => _byOrder.length;
 
+  /// Order ids currently holding messages (index-backed).
+  Future<List<String>> allOrderIds() async {
+    await _ensureIndex();
+    return _byOrder.keys.toList(growable: false);
+  }
+
   Future<void> _ensureIndex() {
     return _warmup ??= () async {
       final all = await getAll();
