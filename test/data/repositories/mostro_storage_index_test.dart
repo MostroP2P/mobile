@@ -91,6 +91,59 @@ void main() {
     expect(await storage.getAllMessagesForOrderId('a'), isEmpty);
   });
 
+  test('deleteAll clears the index, not just the disk', () async {
+    await storage.addMessage('k1', message('a', Action.newOrder, 1000));
+    await storage.addMessage('k2', message('a', Action.payInvoice, 2000));
+    final emissions = <MostroMessage?>[];
+    final sub = storage.watchLatestMessage('a').listen(emissions.add);
+    addTearDown(sub.cancel);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    // The wipe-everything flows (account restore, master-key rotation) call
+    // the inherited deleteAll(), not deleteAllMessages().
+    await storage.deleteAll();
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    expect(await storage.getLatestMessageById('a'), isNull);
+    expect(await storage.getAllMessagesForOrderId('a'), isEmpty);
+    expect(storage.debugIndexSize, 0);
+    expect(emissions.last, isNull);
+  });
+
+  test('a restore does not merge pre-wipe history into the restored order',
+      () async {
+    await storage.addMessage('k1', message('a', Action.newOrder, 1000));
+    await storage.addMessage('k2', message('a', Action.payInvoice, 2000));
+
+    // What restore_manager does: wipe, then re-add the restored messages.
+    await storage.deleteAll();
+    await storage.addMessage('k3', message('a', Action.newOrder, 3000));
+
+    final history = await storage.getAllMessagesForOrderId('a');
+    expect(history.map((m) => m.action), [Action.newOrder]);
+  });
+
+  test('a failed warm-up is retried instead of poisoning every query',
+      () async {
+    await storage.addMessage('k1', message('a', Action.newOrder, 1000));
+    final flaky = _FlakyWarmupStorage(db: storage.db);
+
+    await expectLater(
+        flaky.getLatestMessageById('a'), throwsA(isA<StateError>()));
+
+    // A retained failed future would rethrow here for the rest of the session.
+    expect((await flaky.getLatestMessageById('a'))!.action, Action.newOrder);
+  });
+
+  test('concurrent writes of the same key index the message once', () async {
+    await Future.wait([
+      storage.addMessage('k1', message('a', Action.newOrder, 1000)),
+      storage.addMessage('k1', message('a', Action.newOrder, 1000)),
+    ]);
+
+    expect((await storage.getAllMessagesForOrderId('a')).length, 1);
+  });
+
   test('duplicate keys are ignored without notifying watchers twice',
       () async {
     await storage.addMessage('k1', message('a', Action.newOrder, 1000));
@@ -106,4 +159,19 @@ void main() {
 
     expect(emissions, 0);
   });
+}
+
+/// Fails the first index warm-up read, then behaves normally.
+class _FlakyWarmupStorage extends MostroStorage {
+  _FlakyWarmupStorage({required super.db});
+
+  int _failuresLeft = 1;
+
+  @override
+  Future<List<MostroMessage>> getAll() {
+    if (_failuresLeft-- > 0) {
+      return Future.error(StateError('transient read failure'));
+    }
+    return super.getAll();
+  }
 }
