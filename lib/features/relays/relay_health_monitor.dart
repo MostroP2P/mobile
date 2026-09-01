@@ -29,7 +29,13 @@ class RelayHealthMonitor {
   static const Duration initialBackoff = Config.relayDiscoveryTimeout;
   static const Duration maxBackoff = Duration(minutes: 5);
   Duration _backoff = initialBackoff;
-  DateTime? _nextAttemptAt;
+  Duration? _nextAttemptAfter;
+
+  /// Monotonic time source for the backoff deadline. The wall clock is not
+  /// usable here: a backward correction (manual change or an NTP sync during
+  /// the outage) would park the deadline in the future and suppress recovery
+  /// for far longer than [maxBackoff].
+  final Stopwatch _elapsed = Stopwatch()..start();
 
   RelayHealthMonitor(this.ref) {
     _timer = Timer.periodic(Config.relayDiscoveryTimeout, (_) => _check());
@@ -37,11 +43,12 @@ class RelayHealthMonitor {
   }
 
   /// Runs a single health check synchronously. Exposed for tests so the
-  /// periodic timer does not need to be awaited; [now] injects the clock.
+  /// periodic timer does not need to be awaited; [elapsed] injects the
+  /// monotonic clock reading.
   @visibleForTesting
-  Future<void> checkNow({DateTime? now}) => _check(now: now);
+  Future<void> checkNow({Duration? elapsed}) => _check(elapsed: elapsed);
 
-  Future<void> _check({DateTime? now}) async {
+  Future<void> _check({Duration? elapsed}) async {
     if (_recovering) return;
 
     final nostrService = ref.read(nostrServiceProvider);
@@ -57,13 +64,13 @@ class RelayHealthMonitor {
     if (hasLiveOperatingRelay) {
       // Healthy: arm the next outage for an immediate first attempt.
       _backoff = initialBackoff;
-      _nextAttemptAt = null;
+      _nextAttemptAfter = null;
       return;
     }
 
-    final tick = now ?? DateTime.now();
-    if (_nextAttemptAt != null && tick.isBefore(_nextAttemptAt!)) return;
-    _nextAttemptAt = tick.add(_backoff);
+    final tick = elapsed ?? _elapsed.elapsed;
+    if (_nextAttemptAfter != null && tick < _nextAttemptAfter!) return;
+    _nextAttemptAfter = tick + _backoff;
     final doubled = _backoff * 2;
     _backoff = doubled > maxBackoff ? maxBackoff : doubled;
 
