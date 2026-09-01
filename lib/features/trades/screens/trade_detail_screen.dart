@@ -17,6 +17,7 @@ import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
+import 'package:mostro_mobile/features/trades/state_message_finder.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -1136,54 +1137,7 @@ class _CountdownWidget extends ConsumerWidget {
 
   /// Find the message that triggered the current state
   /// Returns null if no valid message is found
-  /// Memo per history-list instance: the index emits a new list only on real
-  /// changes, while the 1 s countdown tick rebuilds with the same instance —
-  /// the copy+sort below used to run every second.
-  static final Expando<Map<Status, MostroMessage?>> _stateMessageMemo =
-      Expando();
-
   MostroMessage? _findMessageForState(
-      List<MostroMessage> messages, Status status) {
-    final memo = _stateMessageMemo[messages] ??= {};
-    if (memo.containsKey(status)) return memo[status];
-    final result = _findMessageForStateUncached(messages, status);
-    memo[status] = result;
-    return result;
-  }
-
-  MostroMessage? _findMessageForStateUncached(
-      List<MostroMessage> messages, Status status) {
-    // Filter out messages with invalid timestamps
-    final validMessages =
-        messages.where((m) => m.timestamp != null && m.timestamp! > 0).toList();
-
-    if (validMessages.isEmpty) {
-      return null;
-    }
-
-    // Sort messages by timestamp (newest first)
-    final sortedMessages = List<MostroMessage>.from(validMessages)
-      ..sort((a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0));
-
-    // Find the message that caused this state
-    for (final message in sortedMessages) {
-      // Additional validation: ensure timestamp is not in the future
-      final messageTime =
-          DateTime.fromMillisecondsSinceEpoch(message.timestamp!);
-      if (messageTime.isAfter(DateTime.now().add(const Duration(hours: 1)))) {
-        continue; // Skip messages with future timestamps
-      }
-
-      if (status == Status.waitingBuyerInvoice &&
-          (message.action == actions.Action.addInvoice ||
-              message.action == actions.Action.waitingBuyerInvoice)) {
-        return message;
-      } else if (status == Status.waitingPayment &&
-          (message.action == actions.Action.payInvoice ||
-              message.action == actions.Action.waitingSellerToPay)) {
-        return message;
-      }
-    }
-    return null;
-  }
+          List<MostroMessage> messages, Status status) =>
+      StateMessageFinder.findMessageForState(messages, status);
 }
