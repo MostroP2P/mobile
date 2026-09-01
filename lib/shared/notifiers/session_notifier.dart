@@ -148,11 +148,59 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   }
 
   void _emitState() {
+    // A session is reachable through three maps and only `_sessions` is keyed
+    // by orderId, so the same order can otherwise surface twice (e.g. a
+    // request-id session whose orderId was assigned by Mostro alongside the
+    // persisted session the restore flow rebuilt for that same order). Every
+    // consumer derived from this state — most visibly the chat list, which
+    // renders one row per session — would then show the order twice.
+    // `_sessions` holds the persisted session, so it wins.
     final combined = <Session>[];
-    combined.addAll(_sessions.values);
-    combined.addAll(_requestIdToSession.values);
-    combined.addAll(_pendingChildSessions.values);
+    final claimedOrderIds = <String>{};
+    for (final session in [
+      ..._sessions.values,
+      ..._requestIdToSession.values,
+      ..._pendingChildSessions.values,
+    ]) {
+      final orderId = session.orderId;
+      if (orderId != null && !claimedOrderIds.add(orderId)) continue;
+      combined.add(session);
+    }
     state = combined;
+  }
+
+  /// Drops every *other* in-memory session that carries [orderId] now that
+  /// [owner] is the session of record for it. Identity is not enough: the
+  /// restore flow rebuilds a brand new [Session] for an order that a pending
+  /// request-id or child session may already point at.
+  void _claimOrderId(String orderId, Session owner) {
+    bool isStale(Session session) =>
+        !identical(session, owner) && session.orderId == orderId;
+
+    void logEviction(Session session) {
+      // A differing trade key means the evicted session held key material no
+      // other map can resolve any more, so surface it rather than dropping it
+      // silently.
+      if (session.tradeKey.public != owner.tradeKey.public) {
+        logger.w(
+          'Evicting session for order $orderId with a different trade key '
+          '(${session.tradeKey.public}); it is no longer resolvable.',
+        );
+      } else {
+        logger.d('Evicted a duplicate in-memory session for order $orderId');
+      }
+    }
+
+    _requestIdToSession.removeWhere((_, session) {
+      if (!isStale(session)) return false;
+      logEviction(session);
+      return true;
+    });
+    _pendingChildSessions.removeWhere((_, session) {
+      if (!isStale(session)) return false;
+      logEviction(session);
+      return true;
+    });
   }
 
   void _scheduleCleanup() {
@@ -242,6 +290,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
     if (orderId != null) {
       _sessions[orderId] = session;
+      _claimOrderId(orderId, session);
     } else if (requestId != null) {
       _requestIdToSession[requestId] = session;
     }
@@ -254,6 +303,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     _sessions[session.orderId!] = session;
     _requestIdToSession.removeWhere((_, value) => identical(value, session));
     _pendingChildSessions.remove(session.tradeKey.public);
+    _claimOrderId(session.orderId!, session);
     await _storage.putSession(session);
     _emitState();
 
@@ -271,6 +321,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     if (orderId == null) return;
     _sessions[orderId] = session;
     _requestIdToSession.removeWhere((_, value) => identical(value, session));
+    _claimOrderId(orderId, session);
     _emitState();
   }
 
@@ -431,6 +482,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
     session.orderId = childOrderId;
     _sessions[childOrderId] = session;
+    _claimOrderId(childOrderId, session);
     await _storage.putSession(session);
     _emitState();
 
