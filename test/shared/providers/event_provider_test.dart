@@ -39,7 +39,10 @@ void main() {
     relay = StreamController<NostrEvent>.broadcast();
     final nostr = MockNostrService();
     when(nostr.isInitialized).thenReturn(true);
-    when(nostr.subscribeToEvents(any)).thenAnswer((_) => relay.stream);
+    when(nostr.relayGenerationStream)
+        .thenAnswer((_) => const Stream<int>.empty());
+    when(nostr.liveRelayCount).thenReturn(1);
+    when(nostr.subscribeToEvents(any, onEose: anyNamed('onEose'))).thenAnswer((_) => relay.stream);
     repo = OpenOrdersRepository(
       nostr,
       Settings(

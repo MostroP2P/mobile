@@ -35,7 +35,10 @@ class _SilentNostrService extends NostrService {
   bool get isInitialized => true;
 
   @override
-  Stream<NostrEvent> subscribeToEvents(NostrRequest request) =>
+  Stream<NostrEvent> subscribeToEvents(
+    NostrRequest request, {
+    void Function(String)? onEose,
+  }) =>
       const Stream.empty();
 }
 

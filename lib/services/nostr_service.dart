@@ -309,13 +309,20 @@ class NostrService {
     );
   }
 
-  Stream<NostrEvent> subscribeToEvents(NostrRequest request) {
+  /// Opens a REQ. [onEose] fires once per relay that finishes replaying its
+  /// stored events, which is the only signal that a replay is complete —
+  /// callers that resume from a cursor need it to know the gap was covered.
+  Stream<NostrEvent> subscribeToEvents(
+    NostrRequest request, {
+    void Function(String relay)? onEose,
+  }) {
     if (!_isInitialized) {
       throw Exception('Nostr is not initialized. Call init() first.');
     }
 
     final subscription = _nostr.services.relays.startEventsSubscription(
       request: request,
+      onEose: onEose == null ? null : (relay, _) => onEose(relay),
     );
 
     return subscription.stream;
