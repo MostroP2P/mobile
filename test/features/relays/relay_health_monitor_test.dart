@@ -65,6 +65,142 @@ void main() {
       verify(subscriptionManager.subscribeToMostroRelayList('test')).called(1);
     });
 
+    test('holds an exponential backoff while the outage persists', () async {
+      when(nostrService.connectedRelays).thenReturn(<String>{});
+      final monitor = buildContainer(relays: ['wss://discovered.example.com'])
+          .read(relayHealthMonitorProvider);
+      const t0 = Duration.zero;
+
+      await monitor.checkNow(elapsed: t0);
+      verify(subscriptionManager.subscribeAll()).called(1);
+      clearInteractions(subscriptionManager);
+      clearInteractions(nostrService);
+      when(nostrService.isInitialized).thenReturn(true);
+      when(nostrService.connectedRelays).thenReturn(<String>{});
+      when(nostrService.ensureBootstrapConnectivity())
+          .thenAnswer((_) async {});
+
+      // Next periodic tick, still down: within the backoff window, no re-run.
+      await monitor.checkNow(elapsed: t0 + const Duration(seconds: 1));
+      verifyNever(subscriptionManager.subscribeAll());
+
+      // After the first backoff interval elapses, it retries once...
+      await monitor.checkNow(
+          elapsed: t0 +
+              RelayHealthMonitor.initialBackoff +
+              const Duration(seconds: 1));
+      verify(subscriptionManager.subscribeAll()).called(1);
+      clearInteractions(subscriptionManager);
+      clearInteractions(nostrService);
+      when(nostrService.isInitialized).thenReturn(true);
+      when(nostrService.connectedRelays).thenReturn(<String>{});
+      when(nostrService.ensureBootstrapConnectivity())
+          .thenAnswer((_) async {});
+
+      // ...and the second window is wider than the first.
+      await monitor.checkNow(
+          elapsed: t0 +
+              RelayHealthMonitor.initialBackoff * 2 +
+              const Duration(seconds: 2));
+      verifyNever(subscriptionManager.subscribeAll());
+    });
+
+    test('a healthy check resets the backoff', () async {
+      when(nostrService.connectedRelays).thenReturn(<String>{});
+      final monitor = buildContainer(relays: ['wss://discovered.example.com'])
+          .read(relayHealthMonitorProvider);
+      const t0 = Duration.zero;
+      await monitor.checkNow(elapsed: t0);
+      clearInteractions(subscriptionManager);
+      clearInteractions(nostrService);
+      when(nostrService.isInitialized).thenReturn(true);
+      when(nostrService.ensureBootstrapConnectivity())
+          .thenAnswer((_) async {});
+
+      // Relay comes back: healthy tick resets the backoff...
+      when(nostrService.connectedRelays)
+          .thenReturn({'wss://discovered.example.com'});
+      await monitor.checkNow(elapsed: t0 + const Duration(seconds: 1));
+
+      // ...so a new outage right after recovers immediately.
+      when(nostrService.connectedRelays).thenReturn(<String>{});
+      await monitor.checkNow(elapsed: t0 + const Duration(seconds: 2));
+      verify(subscriptionManager.subscribeAll()).called(1);
+    });
+
+    test('drives the backoff from its own monotonic clock, not the wall clock',
+        () async {
+      // Without an injected reading the monitor must use its internal
+      // Stopwatch: two back-to-back checks are one backoff window apart in
+      // monotonic terms, so the second is skipped regardless of what the
+      // device wall clock does in between (a backward correction during an
+      // outage must not park the deadline in the future).
+      when(nostrService.connectedRelays).thenReturn(<String>{});
+      final monitor = buildContainer(relays: ['wss://discovered.example.com'])
+          .read(relayHealthMonitorProvider);
+
+      await monitor.checkNow();
+      verify(subscriptionManager.subscribeAll()).called(1);
+      clearInteractions(subscriptionManager);
+
+      await monitor.checkNow();
+      verifyNever(subscriptionManager.subscribeAll());
+    });
+
+    test('caps the backoff at maxBackoff', () async {
+      when(nostrService.connectedRelays).thenReturn(<String>{});
+      final monitor = buildContainer(relays: ['wss://discovered.example.com'])
+          .read(relayHealthMonitorProvider);
+
+      // Ten attempts, each far past its window, so the backoff saturates.
+      var t = Duration.zero;
+      var lastAttempt = t;
+      for (var i = 0; i < 10; i++) {
+        await monitor.checkNow(elapsed: t);
+        lastAttempt = t;
+        t += const Duration(hours: 1);
+      }
+      clearInteractions(subscriptionManager);
+
+      // Uncapped, doubling would put the next window ~1.7h out. It must be
+      // exactly maxBackoff: just under is skipped...
+      await monitor.checkNow(
+          elapsed: lastAttempt +
+              RelayHealthMonitor.maxBackoff -
+              const Duration(seconds: 1));
+      verifyNever(subscriptionManager.subscribeAll());
+
+      // ...and just over retries.
+      await monitor.checkNow(
+          elapsed: lastAttempt +
+              RelayHealthMonitor.maxBackoff +
+              const Duration(seconds: 1));
+      verify(subscriptionManager.subscribeAll()).called(1);
+    });
+
+    test('resetBackoff re-arms an immediate attempt', () async {
+      // The healthy tick is the only other reset, and it is unreachable while
+      // the outage lasts: after a long background stretch with no network the
+      // backoff sits at the cap, so a foreground return would otherwise wait
+      // up to five minutes for the safety net to try again.
+      when(nostrService.connectedRelays).thenReturn(<String>{});
+      final monitor = buildContainer(relays: ['wss://discovered.example.com'])
+          .read(relayHealthMonitorProvider);
+      const t0 = Duration.zero;
+
+      await monitor.checkNow(elapsed: t0);
+      clearInteractions(subscriptionManager);
+
+      // Inside the backoff window: nothing happens...
+      await monitor.checkNow(elapsed: t0 + const Duration(seconds: 1));
+      verifyNever(subscriptionManager.subscribeAll());
+
+      // ...until the reset, which recovers on the very next check.
+      monitor.resetBackoff();
+      await monitor.checkNow(elapsed: t0 + const Duration(seconds: 2));
+      verify(subscriptionManager.subscribeAll()).called(1);
+    });
+
     test('stays idle while an operating relay is alive', () async {
       when(nostrService.connectedRelays)
           .thenReturn({'wss://discovered.example.com'});

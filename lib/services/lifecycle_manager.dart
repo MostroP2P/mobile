@@ -9,6 +9,7 @@ import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
+import 'package:mostro_mobile/features/relays/relay_health_monitor.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
@@ -101,6 +102,11 @@ class LifecycleManager extends WidgetsBindingObserver {
       // not derived from sessions, so subscribeAll() alone cannot bring it
       // back after _switchToBackground() tore it down.
       subscriptionManager.resume();
+
+      // A long background stretch without network leaves the relay health
+      // monitor's backoff at its cap, so its safety net would be up to five
+      // minutes away right when the app is coming back.
+      ref.read(relayHealthMonitorProvider).resetBackoff();
 
       // Reinitialize the mostro service
       logger.i("Reinitializing MostroService");
