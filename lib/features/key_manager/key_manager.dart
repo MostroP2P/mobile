@@ -132,11 +132,20 @@ class KeyManager {
     return _storage.hasPersistedTradeKeyIndex();
   }
 
+  /// Reserve and return the next free trade key index, advancing the counter
+  /// past it.
+  ///
+  /// The stored counter is the index [deriveTradeKey] will hand out next, so
+  /// the reserved index must be that value — returning `currentIndex + 1`
+  /// while storing `currentIndex + 1` handed the very same index to the next
+  /// [deriveTradeKey] call. Two live sessions then shared a trade key, and
+  /// with a common counterparty also the ECDH shared key the chat envelope is
+  /// derived from, so one conversation surfaced as two chat rooms.
   Future<int> getNextKeyIndex() async {
     final currentIndex = await getCurrentKeyIndex();
     await setCurrentKeyIndex(currentIndex + 1);
 
-    return currentIndex + 1;
+    return currentIndex;
   }
 
   Future<void> setCurrentKeyIndex(int index) async {

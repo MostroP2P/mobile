@@ -174,7 +174,13 @@ void main() {
 
     nostrService.controller.add(forged);
     nostrService.controller.add(real);
-    await pumpEventQueue(times: 200);
+    // chatUnwrap verifies and decrypts on a worker isolate, whose spawn takes
+    // real wall-clock time: draining the event queue alone can return before
+    // the valid envelope has been accepted. Poll until it lands instead.
+    await _waitFor(
+      () => container.read(disputeChatNotifierProvider(disputeId)).messages
+          .isNotEmpty,
+    );
 
     final messages =
         container.read(disputeChatNotifierProvider(disputeId)).messages;
@@ -184,4 +190,16 @@ void main() {
     expect(messages.single.content, 'admin says hi');
     expect(notifier.mounted, isTrue);
   });
+}
+
+/// Polls [condition] until it holds or [timeout] elapses, yielding to the
+/// event loop between attempts so isolate results can be delivered.
+Future<void> _waitFor(
+  bool Function() condition, {
+  Duration timeout = const Duration(seconds: 10),
+}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (!condition() && DateTime.now().isBefore(deadline)) {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
 }
