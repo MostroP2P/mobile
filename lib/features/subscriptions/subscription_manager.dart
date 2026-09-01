@@ -362,6 +362,20 @@ class SubscriptionManager {
     }
   }
 
+  /// Earliest start time across [sessions], capped at the default lookback so
+  /// a long-lived session cannot widen the window beyond it *and* a short one
+  /// cannot narrow it below it. Used as the bootstrap `since` when no cursor
+  /// is stored yet.
+  DateTime _sessionsFloor(List<Session> sessions) {
+    final defaultFloor =
+        DateTime.now().subtract(NostrEventExtensions.chatDefaultLookback);
+    if (sessions.isEmpty) return defaultFloor;
+    final oldest = sessions
+        .map((s) => s.startTime)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    return oldest.isBefore(defaultFloor) ? oldest : defaultFloor;
+  }
+
   NostrFilter? _createFilterForType(
       SubscriptionType type, List<Session> sessions) {
     switch (type) {
@@ -385,8 +399,15 @@ class SubscriptionManager {
         } catch (e) {
           logger.w('Orders cursor unavailable, using default lookback: $e');
         }
+        // No cursor yet means a fresh install *or* the first launch after
+        // upgrading to the cursor build. An upgrading install can hold orders
+        // far older than the default lookback (non-terminal orders are kept
+        // well past 30 days) and normal startup does not run the restore
+        // flow, so the window must also reach back to the oldest live
+        // session: no message of an active order predates its session.
         final ordersSince = cursorSince ??
-            DateTime.now().subtract(NostrEventExtensions.chatDefaultLookback);
+            _sessionsFloor(sessions)
+                .subtract(ChatCursorStore.cursorOverlap);
         return buildOrdersFilter(
           transport,
           tradeKeys,
