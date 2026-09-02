@@ -59,17 +59,24 @@ final appInitializerProvider = FutureProvider<void>((ref) async {
       : DateTime.now().subtract(Duration(hours: expirationHours));
 
   final messageStorage = ref.read(mostroStorageProvider);
-  for (final session in sessionManager.sessions) {
-    if (session.orderId == null ||
-        (cutoff != null && session.startTime.isBefore(cutoff))) {
-      continue;
-    }
+  final sessions = sessionManager.sessions
+      .where((session) =>
+          session.orderId != null &&
+          (cutoff == null || !session.startTime.isBefore(cutoff)))
+      .toList();
+  // One storage lookup per session, issued together rather than awaited one
+  // by one, so the added startup cost is a single round trip.
+  final latestMessages = await Future.wait(
+    sessions.map((s) => messageStorage.getLatestMessageById(s.orderId!)),
+  );
+
+  for (var i = 0; i < sessions.length; i++) {
+    final session = sessions[i];
 
     // Settled orders initialize lazily when a screen watches them: an eager
     // notifier per finished trade meant a storage watcher and a book listener
     // alive until process exit.
-    final latest = await messageStorage.getLatestMessageById(session.orderId!);
-    if (!isSettledOrderMessage(latest)) {
+    if (!isSettledOrderMessage(latestMessages[i])) {
       ref.read(orderNotifierProvider(session.orderId!).notifier);
     }
 

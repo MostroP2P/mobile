@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/shared/mixins/media_cache_mixin.dart';
 
@@ -16,6 +17,16 @@ void main() {
         width: 1,
         height: 1,
         filename: 'x.png',
+        encryptedSize: size,
+      );
+
+  EncryptedFileUploadResult fileMeta(int size) => EncryptedFileUploadResult(
+        blossomUrl: 'https://blossom/f',
+        nonce: '00',
+        mimeType: 'application/pdf',
+        fileType: 'pdf',
+        originalSize: size,
+        filename: 'f.pdf',
         encryptedSize: size,
       );
 
@@ -80,6 +91,50 @@ void main() {
         lessThanOrEqualTo(MediaCacheMixin.mediaCacheMaxBytes));
     expect(first.getCachedImage('a'), isNull,
         reason: 'a second conversation must not double the ceiling');
+  });
+
+  test(
+      'an entry larger than the budget stays cached instead of evicting itself',
+      () {
+    // Evicting the entry just inserted made the image widget re-download and
+    // re-decrypt on every frame: cache miss -> load -> cache -> self-evict ->
+    // setState -> cache miss again.
+    final cache = _CacheHost();
+    final huge = Uint8List(MediaCacheMixin.mediaCacheMaxBytes + 1);
+
+    cache.cacheDecryptedImage('huge', huge, meta(huge.length));
+
+    expect(cache.getCachedImage('huge'), isNotNull);
+    expect(MediaCacheMixin.debugMediaCacheBytes, huge.length);
+  });
+
+  test('an oversized entry still evicts everything older than itself', () {
+    final cache = _CacheHost();
+    final data = chunk();
+    final huge = Uint8List(MediaCacheMixin.mediaCacheMaxBytes + 1);
+
+    cache.cacheDecryptedImage('a', data, meta(data.length));
+    cache.cacheDecryptedImage('huge', huge, meta(huge.length));
+
+    expect(cache.getCachedImage('a'), isNull);
+    expect(MediaCacheMixin.debugMediaCacheBytes, huge.length);
+  });
+
+  test('an image and a file under the same message id are tracked separately',
+      () {
+    final cache = _CacheHost();
+    final image = Uint8List(4);
+    final file = Uint8List(1);
+
+    cache.cacheDecryptedImage('m', image, meta(image.length));
+    cache.cacheDecryptedFile('m', file, fileMeta(file.length));
+
+    expect(MediaCacheMixin.debugMediaCacheBytes, image.length + file.length);
+    expect(cache.getCachedImage('m'), isNotNull);
+    expect(cache.getCachedFile('m'), isNotNull);
+
+    cache.clearMediaCaches();
+    expect(MediaCacheMixin.debugMediaCacheBytes, 0);
   });
 
   test('clearing one conversation releases only its own bytes', () {

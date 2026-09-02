@@ -5,12 +5,18 @@ import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 /// One cached blob, tracked globally so the budget is a real ceiling rather
 /// than a per-conversation one.
 class _MediaCacheEntry {
-  _MediaCacheEntry(this.owner, this.messageId, this.bytes);
+  _MediaCacheEntry(this.owner, this.kind, this.messageId, this.bytes);
 
   final MediaCacheMixin owner;
+  final _MediaKind kind;
   final String messageId;
   int bytes;
 }
+
+/// Images and files are separate maps, so one message id may hold both;
+/// keying the accounting by kind keeps their bytes from overwriting each
+/// other.
+enum _MediaKind { image, file }
 
 /// Shared media cache for decrypted images and files.
 /// Used by both ChatRoomNotifier (P2P) and DisputeChatNotifier.
@@ -42,9 +48,12 @@ mixin MediaCacheMixin {
 
   /// Moves an entry to the most-recently-used end. [bytes] is the new size on
   /// a write; omitted on a read, which promotes without changing accounting.
-  void _mediaTouch(String messageId, {int? bytes}) {
+  void _mediaTouch(_MediaKind kind, String messageId, {int? bytes}) {
     final index = _lru.indexWhere(
-      (e) => identical(e.owner, this) && e.messageId == messageId,
+      (e) =>
+          identical(e.owner, this) &&
+          e.kind == kind &&
+          e.messageId == messageId,
     );
     _MediaCacheEntry? entry;
     if (index >= 0) {
@@ -55,20 +64,28 @@ mixin MediaCacheMixin {
     // A read miss has nothing to promote.
     if (size == null) return;
     _lru.add(entry == null
-        ? _MediaCacheEntry(this, messageId, size)
+        ? _MediaCacheEntry(this, kind, messageId, size)
         : (entry..bytes = size));
     _totalBytes += size;
     _evict();
   }
 
+  /// Evicts from the least recently used end until the budget is met. The
+  /// entry just touched (the last one) is never evicted: an entry larger than
+  /// the whole budget would otherwise evict itself, and the widget that asked
+  /// for it would re-download and re-decrypt it on every rebuild.
   static void _evict() {
-    while (_totalBytes > mediaCacheMaxBytes && _lru.isNotEmpty) {
+    while (_totalBytes > mediaCacheMaxBytes && _lru.length > 1) {
       final oldest = _lru.removeAt(0);
       _totalBytes -= oldest.bytes;
       // Metadata is kept: it is small, and the widgets re-request the blob on
       // a miss, which re-decrypts and re-caches it.
-      oldest.owner._imageCache.remove(oldest.messageId);
-      oldest.owner._fileCache.remove(oldest.messageId);
+      switch (oldest.kind) {
+        case _MediaKind.image:
+          oldest.owner._imageCache.remove(oldest.messageId);
+        case _MediaKind.file:
+          oldest.owner._fileCache.remove(oldest.messageId);
+      }
     }
   }
 
@@ -76,13 +93,13 @@ mixin MediaCacheMixin {
       String messageId, Uint8List data, EncryptedImageUploadResult meta) {
     _imageCache[messageId] = data;
     _imageMetadata[messageId] = meta;
-    _mediaTouch(messageId, bytes: data.length);
+    _mediaTouch(_MediaKind.image, messageId, bytes: data.length);
   }
 
   Uint8List? getCachedImage(String messageId) {
     final data = _imageCache[messageId];
     // Reads promote too, or the cache would evict a hot entry FIFO-style.
-    if (data != null) _mediaTouch(messageId);
+    if (data != null) _mediaTouch(_MediaKind.image, messageId);
     return data;
   }
 
@@ -93,14 +110,14 @@ mixin MediaCacheMixin {
       String messageId, Uint8List? data, EncryptedFileUploadResult meta) {
     if (data != null) {
       _fileCache[messageId] = data;
-      _mediaTouch(messageId, bytes: data.length);
+      _mediaTouch(_MediaKind.file, messageId, bytes: data.length);
     }
     _fileMetadata[messageId] = meta;
   }
 
   Uint8List? getCachedFile(String messageId) {
     final data = _fileCache[messageId];
-    if (data != null) _mediaTouch(messageId);
+    if (data != null) _mediaTouch(_MediaKind.file, messageId);
     return data;
   }
 
