@@ -264,4 +264,79 @@ void main() {
     expect(await cache.mostroPubkey(loader), 'new-node-pubkey');
     expect(loads, 2);
   });
+
+  /// The load that races a write is not only a caching problem: while it is
+  /// still in flight it is also *shared*. An event arriving after the peer was
+  /// persisted used to be handed that pre-write future, and background
+  /// notifications are processed once, so its kind-14 chat message was
+  /// dropped even though nothing stale was ever cached.
+  test('a call after invalidate() does not share the stale in-flight load',
+      () async {
+    const peer =
+        'aa11111111111111111111111111111111111111111111111111111111111111';
+    String? storedPeer; // what is on disk
+    var loads = 0;
+    final cache = BackgroundSessionCache();
+
+    Future<List<Session>> loader() async {
+      loads++;
+      final snapshot = storedPeer; // read taken at load start
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      return [session('o1', peerPubkey: snapshot)];
+    }
+
+    // Event B starts a load, before the write.
+    final inFlight = cache.sessions(loader);
+
+    // Event A persists the peer and invalidates.
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    storedPeer = peer;
+    cache.invalidate();
+
+    // Event C asks *after* the write but while the old load is still running.
+    final duringWindow = await cache.sessions(loader);
+
+    expect(loads, 2,
+        reason: 'a caller arriving after the write must get a load started '
+            'after it, not the shared pre-write one');
+    expect(duringWindow.single.peer?.publicKey, peer);
+
+    await inFlight;
+  });
+
+  /// Retiring the slot in invalidate() introduces its own hazard: the load it
+  /// retired still runs, and its `finally` must not clear the slot a newer
+  /// load now owns — that would break burst sharing and start a third load.
+  test('an old loader does not retire the newer in-flight load', () async {
+    var loads = 0;
+    final cache = BackgroundSessionCache();
+
+    Future<List<Session>> loader() async {
+      loads++;
+      // The first load finishes well before the second.
+      final ms = loads == 1 ? 60 : 300;
+      await Future<void>.delayed(Duration(milliseconds: ms));
+      return [session('o$loads')];
+    }
+
+    final first = cache.sessions(loader);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    cache.invalidate();
+    final second = cache.sessions(loader);
+    expect(loads, 2);
+
+    // The retired load completes while the newer one is still in flight.
+    await first;
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    // A burst arriving now must still share the newer load.
+    final a = cache.sessions(loader);
+    final b = cache.sessions(loader);
+
+    expect(loads, 2,
+        reason: 'the finished old load must not have freed the slot the '
+            'newer load owns');
+    expect(identical(await a, await b), isTrue);
+    expect(identical(await a, await second), isTrue);
+  });
 }

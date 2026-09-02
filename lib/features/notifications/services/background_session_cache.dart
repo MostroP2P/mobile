@@ -30,6 +30,9 @@ class BackgroundSessionCache {
   /// concurrent burst shares one in-flight load. A throwing loader caches
   /// nothing, so a transient failure does not blind the isolate for a whole
   /// TTL window.
+  ///
+  /// A caller that arrives after [invalidate] always gets a load started after
+  /// it; only one that asked before the write can miss it.
   Future<List<Session>> sessions(
     Future<List<Session>> Function() loader,
   ) {
@@ -54,7 +57,9 @@ class BackgroundSessionCache {
         }
         return loaded;
       } finally {
-        _inFlight = null;
+        // Only clear the slot if it is still this load's: invalidate() may
+        // have retired it and a newer load may already own it.
+        if (generation == _generation) _inFlight = null;
       }
     }();
     _inFlight = load;
@@ -98,6 +103,9 @@ class BackgroundSessionCache {
     _generation++;
     _sessions = null;
     _loadedAt = null;
+    // Stop sharing a load that started before this write: a caller arriving
+    // now must see the write, not that load's pre-write snapshot.
+    _inFlight = null;
     _mostroPubkey = null;
     _pubkeyLoadedAt = null;
   }
