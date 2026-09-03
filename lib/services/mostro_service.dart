@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:collection/collection.dart';
 import 'package:dart_nostr/dart_nostr.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mostro_mobile/services/chat_cursor_store.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/data/models.dart';
@@ -119,11 +121,70 @@ class MostroService {
   /// message write) — the daemon's message then never notified, was skipped
   /// by every later replay, and the order sat at a stale status across
   /// restarts.
-  Future<void> _markEventProcessed(NostrEvent event) {
-    return ref.read(eventStorageProvider).putItem(event.id!, {
-      'id': event.id,
+  Future<void> _markEventProcessed(NostrEvent event) async {
+    final eventId = event.id!;
+    await ref.read(eventStorageProvider).putItem(eventId, {
+      'id': eventId,
       'created_at': event.createdAt!.millisecondsSinceEpoch ~/ 1000,
     });
+    // Only once the durable marker is written may the cursor move: a failed
+    // putItem leaves the event unmarked, and a cursor advanced past it would
+    // drop it from every later replay.
+    _advanceOrdersCursor(event);
+  }
+
+  /// Events seen but deliberately left unmarked (no matching session yet, or
+  /// a failure mid-processing), keyed by id. They still need replaying, so
+  /// the shared node cursor must not move past the oldest of them.
+  final Map<String, DateTime> _retryableEvents = <String, DateTime>{};
+
+  /// How long an unmarked event holds the cursor back. Bounded so an event
+  /// that can never be processed (a trade key whose session is gone) cannot
+  /// freeze the cursor — and with it the replay window — forever.
+  static const _retryHoldWindow = Duration(hours: 1);
+
+  /// Records an event that was not marked processed, so [_advanceOrdersCursor]
+  /// keeps the replay window covering it.
+  void _holdEventForRetry(NostrEvent event) {
+    if (event.kind != 14 || event.id == null || event.createdAt == null) return;
+    _pruneExpiredHolds();
+    _retryableEvents[event.id!] = event.createdAt!;
+  }
+
+  /// Drops holds older than [_retryHoldWindow]. Runs on both the hold and the
+  /// advance path: pruning only when an event is accepted would let the map
+  /// grow unpruned through a run in which every event is held.
+  void _pruneExpiredHolds() {
+    _retryableEvents.removeWhere(
+      (_, at) => at.isBefore(DateTime.now().subtract(_retryHoldWindow)),
+    );
+  }
+
+  /// Ids currently holding the cursor back.
+  @visibleForTesting
+  Set<String> get debugHeldEventIds => _retryableEvents.keys.toSet();
+
+  /// Advances the orders `since` cursor for a processed event.
+  ///
+  /// Only kind 14 counts: the cursor feeds the NIP-44 filter, and gift wrap
+  /// (1059) timestamps are randomized, so letting them move it would push
+  /// `since` past kind-14 messages once the node switches transport.
+  ///
+  /// The cursor is a contiguous watermark: it never moves past an event still
+  /// awaiting a retry, otherwise one trade's newer response would evict
+  /// another trade's older, still-unprocessed one from the replay window.
+  void _advanceOrdersCursor(NostrEvent event) {
+    _retryableEvents.remove(event.id);
+    if (event.kind != 14) return;
+    final accepted = event.createdAt!;
+    _pruneExpiredHolds();
+    final blocked = _retryableEvents.values.any((at) => !at.isAfter(accepted));
+    if (blocked) return;
+    unawaited(
+      ref
+          .read(ordersCursorStoreProvider)
+          .advance(_settings.mostroPublicKey, accepted),
+    );
   }
 
   Future<void> _onData(NostrEvent event) async {
@@ -149,6 +210,7 @@ class MostroService {
       // Deliberately NOT marked processed: the session may simply not exist
       // yet (startup ordering, a child order being linked), and a later
       // replay must be able to retry this event.
+      _holdEventForRetry(event);
       logger.w('No matching session found for recipient: ${event.recipient}');
       return;
     }
@@ -172,7 +234,10 @@ class MostroService {
         decryptedId = decryptedEvent.id;
       }
 
-      if (content == null) return;
+      if (content == null) {
+        _holdEventForRetry(event);
+        return;
+      }
 
       final result = jsonDecode(content);
 
@@ -224,6 +289,7 @@ class MostroService {
       // transient failure. A permanently undecryptable event costs one
       // decrypt attempt per replay, which the dedup above bounds to one
       // relay copy at a time.
+      _holdEventForRetry(event);
       logger.e('Error processing event', error: e);
     }
   }

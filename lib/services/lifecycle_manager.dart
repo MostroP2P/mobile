@@ -9,6 +9,7 @@ import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/features/chat/providers/chat_room_providers.dart';
 import 'package:mostro_mobile/features/disputes/notifiers/dispute_chat_notifier.dart';
+import 'package:mostro_mobile/features/relays/relay_health_monitor.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
@@ -102,6 +103,11 @@ class LifecycleManager extends WidgetsBindingObserver {
       // back after _switchToBackground() tore it down.
       subscriptionManager.resume();
 
+      // A long background stretch without network leaves the relay health
+      // monitor's backoff at its cap, so its safety net would be up to five
+      // minutes away right when the app is coming back.
+      ref.read(relayHealthMonitorProvider).resetBackoff();
+
       // Reinitialize the mostro service
       logger.i("Reinitializing MostroService");
       ref.read(mostroServiceProvider).init();
@@ -119,7 +125,10 @@ class LifecycleManager extends WidgetsBindingObserver {
 
       // Reload dispute chats: the background service persists admin messages
       // to disk while the app sleeps, but an already-initialized notifier
-      // never re-reads storage nor re-opens its relay subscription on its own
+      // never re-reads storage on its own. It no longer owns a relay
+      // subscription — it consumes SubscriptionManager.disputeChat — so the
+      // rebuild also re-attaches its listener and asks for the catch-up
+      // re-issue.
       logger.i("Reloading dispute chats");
       ref.invalidate(disputeChatNotifierProvider);
 

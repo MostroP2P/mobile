@@ -1,4 +1,6 @@
 import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
 import 'package:dart_nostr/nostr/model/request/filter.dart';
 import 'package:dart_nostr/nostr/model/request/request.dart';
@@ -44,6 +46,40 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   static const Duration emitDebounce = Duration(milliseconds: 50);
   Timer? _emitTimer;
 
+  /// Timestamp of the newest event *received* on the current relay set (not
+  /// necessarily one that superseded a cached copy — a stale copy carries an
+  /// older created_at and cannot move the maximum anyway). While the
+  /// in-memory cache survives, a resubscription only needs the window after
+  /// this point: kind 38383 is addressable, so any change to an order carries
+  /// a newer created_at, and unchanged orders are already cached. Reset
+  /// (null) when the cache stops being known-complete: cache cleared, node
+  /// switched, or the relay set changed.
+  DateTime? _lastEventAt;
+  @visibleForTesting
+  static const Duration resumeOverlap = Duration(minutes: 10);
+
+  /// Relays that signalled EOSE for the *current* subscription, and whether
+  /// that covered every live relay.
+  ///
+  /// Resuming from [_lastEventAt] is only sound when the replay it was
+  /// collected from actually finished. A REQ cancelled mid-replay (a
+  /// `reloadData` on foreground resume while the cold-start window is still
+  /// streaming) has already set [_lastEventAt] from the first event it saw,
+  /// and relays commonly serve stored events newest-first — so the entire
+  /// undelivered tail is older than that point and a narrowed window would
+  /// drop it permanently. Until EOSE is in, the cold-start lookback applies.
+  final Set<String> _eosedRelays = {};
+  bool _replayComplete = false;
+
+  /// Watches for relays joining the set. A relay connected after the REQ was
+  /// opened carries orders this cache has never seen, so the cache is no
+  /// longer complete for the set about to be queried and the next
+  /// resubscription must go back to the full lookback. Narrowing without this
+  /// would remove the last automatic recovery path for orders that live only
+  /// on a late-connected relay (see
+  /// docs/architecture/OPEN_ORDERS_38383_MISSING_BUG_REPORT.md).
+  StreamSubscription<int>? _relayGenerationSubscription;
+
   static const _initRetryInterval = Duration(milliseconds: 200);
   static const _maxInitRetries = 150; // ~30s before giving up
 
@@ -83,6 +119,14 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   }
 
   OpenOrdersRepository(this._nostrService, this._settings) {
+    _relayGenerationSubscription =
+        _nostrService.relayGenerationStream.listen((_) {
+      if (_lastEventAt == null && !_replayComplete) return;
+      logger.i('Relay set changed; order cache is no longer known complete '
+          'for it, falling back to the cold-start lookback');
+      _lastEventAt = null;
+      _replayComplete = false;
+    });
     // Subscribe to orders and initialize data
     _subscribeToOrders();
     // Immediately emit current (possibly empty) cache so UI doesn't remain in loading state
@@ -104,8 +148,16 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       return;
     }
 
-    final filterTime =
+    final coldStart =
         DateTime.now().subtract(Duration(hours: orderFilterDurationHours));
+    // Only the replay that actually reached EOSE proves the cache covers
+    // everything up to _lastEventAt; anything else falls back to coldStart.
+    final resume = _replayComplete ? _lastEventAt?.subtract(resumeOverlap) : null;
+    _replayComplete = false;
+    _eosedRelays.clear();
+    // Narrow resume window while the cache is warm; full lookback otherwise.
+    final filterTime =
+        (resume != null && resume.isAfter(coldStart)) ? resume : coldStart;
 
     final filter = NostrFilter(
       kinds: [orderEventKind, infoEventKind],
@@ -117,7 +169,9 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       filters: [filter],
     );
 
-    _subscription = _nostrService.subscribeToEvents(request).listen((event) {
+    _subscription =
+        _nostrService.subscribeToEvents(request, onEose: _onEose).listen((event) {
+      _recordEventTime(event);
       if (event.type == 'order') {
         final orderId = event.orderId!;
         // Drop duplicate/stale relay copies: kind 38383 is addressable, only
@@ -192,6 +246,30 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
     return candidateId.compareTo(knownId) < 0;
   }
 
+  /// A relay finished replaying its stored events. Once every live relay has,
+  /// the window up to [_lastEventAt] is covered and the next resubscription
+  /// may resume from it. If some relay never sends EOSE the flag simply stays
+  /// false and the full lookback keeps being used — the safe direction.
+  void _onEose(String relay) {
+    _eosedRelays.add(relay);
+    final live = _nostrService.liveRelayCount;
+    if (live > 0 && _eosedRelays.length >= live) {
+      _replayComplete = true;
+    }
+  }
+
+  void _recordEventTime(NostrEvent event) {
+    final at = event.createdAt;
+    if (at == null) return;
+    // A future-dated event (a node clock running ahead) must not advance the
+    // watermark: resuming from it would start the window past events that
+    // have not been seen. Ignore it rather than clamping to now.
+    if (at.isAfter(DateTime.now())) return;
+    if (_lastEventAt == null || at.isAfter(_lastEventAt!)) {
+      _lastEventAt = at;
+    }
+  }
+
   void _emitEvents() {
     _emitTimer?.cancel();
     _emitTimer = null;
@@ -208,6 +286,7 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   @override
   void dispose() {
     _subscription?.cancel();
+    _relayGenerationSubscription?.cancel();
     _initRetryTimer?.cancel();
     _emitTimer?.cancel();
     _eventStreamController.close();
@@ -262,6 +341,8 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
       logger.i('Mostro instance changed, updating...');
       _settings = settings.copyWith();
       _events.clear();
+      _lastEventAt = null;
+      _replayComplete = false;
       // Drop the previous node's info so stale data is not reported for the new
       // instance until its kind 38385 is received again.
       _mostroInstance = null;
@@ -281,6 +362,8 @@ class OpenOrdersRepository implements OrderRepository<NostrEvent> {
   void clearCache() {
     logger.i('Clearing order cache and reloading');
     _events.clear();
+    _lastEventAt = null;
+    _replayComplete = false;
     _subscribeToOrders(); // Resubscribe to reload orders from relays
   }
 }

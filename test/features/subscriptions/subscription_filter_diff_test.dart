@@ -61,7 +61,7 @@ void main() {
     orderRepository = MockOpenOrdersRepository();
     nextSubscriptionId = 0;
     issuedRequests = <NostrRequest>[];
-    when(nostrService.subscribeToEvents(any)).thenAnswer((invocation) {
+    when(nostrService.subscribeToEvents(any, onEose: anyNamed('onEose'))).thenAnswer((invocation) {
       final request = invocation.positionalArguments.first as NostrRequest;
       request.subscriptionId ??= 'sub-${nextSubscriptionId++}';
       issuedRequests.add(request);
@@ -112,7 +112,7 @@ void main() {
     sessions.emit([session('order-a', keyA)]);
     await flush();
 
-    verifyNever(nostrService.subscribeToEvents(any));
+    verifyNever(nostrService.subscribeToEvents(any, onEose: anyNamed('onEose')));
     verifyNever(nostrService.unsubscribe(any));
   });
 
@@ -122,7 +122,7 @@ void main() {
     sessions.emit([session('order-a', keyA), session('order-b', keyB)]);
     await flush();
 
-    verify(nostrService.subscribeToEvents(any)).called(1);
+    verify(nostrService.subscribeToEvents(any, onEose: anyNamed('onEose'))).called(1);
   });
 
   test('subscribeAll still forces a resubscribe with unchanged sessions',
@@ -132,7 +132,7 @@ void main() {
     manager.subscribeAll();
     await flush();
 
-    verify(nostrService.subscribeToEvents(any)).called(greaterThan(0));
+    verify(nostrService.subscribeToEvents(any, onEose: anyNamed('onEose'))).called(greaterThan(0));
   });
 
   test('a relay coming alive re-issues the REQs for unchanged sessions',
@@ -148,7 +148,7 @@ void main() {
     await Future<void>.delayed(SubscriptionManager.relayResubscribeDebounce +
         const Duration(milliseconds: 200));
 
-    verify(nostrService.subscribeToEvents(any)).called(1);
+    verify(nostrService.subscribeToEvents(any, onEose: anyNamed('onEose'))).called(1);
   });
 
   test('relay come-alive bursts coalesce into a single re-issue', () async {
@@ -162,7 +162,7 @@ void main() {
     await Future<void>.delayed(SubscriptionManager.relayResubscribeDebounce +
         const Duration(milliseconds: 200));
 
-    verify(nostrService.subscribeToEvents(any)).called(1);
+    verify(nostrService.subscribeToEvents(any, onEose: anyNamed('onEose'))).called(1);
   });
 
   test(

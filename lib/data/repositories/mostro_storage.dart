@@ -17,6 +17,7 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   /// demultiplexed per order.
   final Map<String, List<MostroMessage>> _byOrder = {};
   final StreamController<String> _orderChanges = StreamController.broadcast();
+  final Set<String> _writesInFlight = <String>{};
   Future<void>? _warmup;
 
   @visibleForTesting
@@ -30,11 +31,21 @@ class MostroStorage extends BaseStorage<MostroMessage> {
 
   Future<void> _ensureIndex() {
     return _warmup ??= () async {
-      final all = await getAll();
-      for (final message in all) {
-        _indexAdd(message, notify: false);
+      try {
+        final all = await getAll();
+        for (final message in all) {
+          _indexAdd(message, notify: false);
+        }
+        logger.i('Mostro message index warmed: ${_byOrder.length} orders');
+      } catch (e, stack) {
+        // A retained failed future would rethrow on every later query for the
+        // rest of the session: drop it so the next call retries the warm-up.
+        _warmup = null;
+        _byOrder.clear();
+        logger.e('Mostro message index warm-up failed',
+            error: e, stackTrace: stack);
+        rethrow;
       }
-      logger.i('Mostro message index warmed: ${_byOrder.length} orders');
     }();
   }
 
@@ -64,7 +75,18 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     StreamSubscription<String>? changes;
     controller = StreamController<R>(
       onListen: () async {
-        await _ensureIndex();
+        try {
+          await _ensureIndex();
+        } catch (e, stack) {
+          // onListen's future is not observed by the controller: without this
+          // the subscriber would wait forever and the rejection would surface
+          // as an unhandled async error.
+          if (!controller.isClosed) {
+            controller.addError(e, stack);
+            await controller.close();
+          }
+          return;
+        }
         if (controller.isClosed) return;
         controller.add(read());
         changes = _orderChanges.stream
@@ -73,7 +95,10 @@ class MostroStorage extends BaseStorage<MostroMessage> {
       },
       onCancel: () async {
         await changes?.cancel();
-        await controller.close();
+        // Skip when onListen already closed the controller: its done future
+        // only completes after onCancel returns, so awaiting close() again
+        // here would deadlock.
+        if (!controller.isClosed) await controller.close();
       },
     );
     return controller.stream;
@@ -82,6 +107,9 @@ class MostroStorage extends BaseStorage<MostroMessage> {
   /// Save or update any MostroMessage
   Future<void> addMessage(String key, MostroMessage message) async {
     final id = key;
+    // Claimed synchronously so two concurrent writes for the same key cannot
+    // both pass the existence check below and index the message twice.
+    if (!_writesInFlight.add(id)) return;
     try {
       await _ensureIndex();
       if (await hasItem(id)) return;
@@ -102,6 +130,8 @@ class MostroStorage extends BaseStorage<MostroMessage> {
         stackTrace: stack,
       );
       rethrow;
+    } finally {
+      _writesInFlight.remove(id);
     }
   }
 
@@ -115,24 +145,42 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     }
   }
 
-  /// Delete all messages
-  Future<void> deleteAllMessages() async {
+  /// Delete every message, on disk and in the index.
+  ///
+  /// Overridden rather than left to callers: the wipe-everything flows
+  /// (account restore, master-key rotation) call [deleteAll] directly, and a
+  /// disk-only wipe would leave the index serving deleted messages — merged
+  /// with the restored ones — for the rest of the session.
+  @override
+  Future<void> deleteAll() async {
     try {
-      await _ensureIndex();
-      await deleteAll();
+      // Serialize with any warm-up already in flight, so it cannot repopulate
+      // the index after the wipe. A broken index must not block the wipe.
+      try {
+        await _ensureIndex();
+      } catch (_) {}
+      await super.deleteAll();
       final orderIds = _byOrder.keys.toList();
       _byOrder.clear();
       orderIds.forEach(_notifyOrder);
       logger.i('All messages deleted');
     } catch (e, stack) {
-      logger.e('deleteAllMessages failed', error: e, stackTrace: stack);
+      logger.e('deleteAll failed', error: e, stackTrace: stack);
       rethrow;
     }
   }
 
+  /// Delete all messages
+  Future<void> deleteAllMessages() => deleteAll();
+
   /// Delete all messages by Id regardless of type
   Future<void> deleteAllMessagesByOrderId(String orderId) async {
-    await _ensureIndex();
+    // Awaited first so a warm-up in flight cannot re-index records this call
+    // is about to delete, but its failure (already logged and reset for
+    // retry) must not leave the records on disk.
+    try {
+      await _ensureIndex();
+    } catch (_) {}
     await deleteWhere(
       Filter.equals('id', orderId),
     );
@@ -218,12 +266,20 @@ class MostroStorage extends BaseStorage<MostroMessage> {
       ),
     );
 
-    return query.onSnapshots(db).map((snapshots) =>
-        snapshots.isNotEmpty ? MostroMessage.fromJson(snapshots.first.value) : null);
+    return query.onSnapshots(db).map((snapshots) => snapshots.isNotEmpty
+        ? MostroMessage.fromJson(snapshots.first.value)
+        : null);
   }
 
   Future<List<MostroMessage>> getAllMessagesForOrderId(String orderId) async {
     await _ensureIndex();
     return _historyFor(orderId);
+  }
+
+  /// Release the change stream. The app-lifetime provider never disposes, but
+  /// short-lived instances (tests) would otherwise leak a controller each.
+  Future<void> dispose() async {
+    _byOrder.clear();
+    await _orderChanges.close();
   }
 }

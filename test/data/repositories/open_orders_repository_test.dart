@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dart_nostr/nostr/model/event/event.dart';
+import 'package:dart_nostr/nostr/model/request/request.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/data/models/nostr_event.dart';
@@ -20,6 +21,7 @@ void main() {
 
   late MockNostrService nostr;
   late StreamController<NostrEvent> relay;
+  late StreamController<int> relayGeneration;
   late OpenOrdersRepository repo;
 
   NostrEvent order(String id,
@@ -55,11 +57,25 @@ void main() {
     );
   }
 
+  /// Signals EOSE for every live relay on the current subscription, which is
+  /// what lets the repository trust its cursor.
+  void completeReplay() {
+    final onEose = verify(nostr.subscribeToEvents(any,
+            onEose: captureAnyNamed('onEose')))
+        .captured
+        .last as void Function(String)?;
+    onEose?.call('wss://relay.a');
+  }
+
   setUp(() {
     relay = StreamController<NostrEvent>.broadcast();
+    relayGeneration = StreamController<int>.broadcast();
     nostr = MockNostrService();
     when(nostr.isInitialized).thenReturn(true);
-    when(nostr.subscribeToEvents(any)).thenAnswer((_) => relay.stream);
+    when(nostr.relayGenerationStream).thenAnswer((_) => relayGeneration.stream);
+    when(nostr.liveRelayCount).thenReturn(1);
+    when(nostr.subscribeToEvents(any, onEose: anyNamed('onEose')))
+        .thenAnswer((_) => relay.stream);
     repo = OpenOrdersRepository(
       nostr,
       Settings(
@@ -73,6 +89,7 @@ void main() {
   tearDown(() async {
     repo.dispose();
     await relay.close();
+    await relayGeneration.close();
   });
 
   test('coalesces a burst of events into a single emission', () async {
@@ -107,6 +124,130 @@ void main() {
     // Assert: the older event must not overwrite the newer state
     final kept = await repo.getOrderById('a');
     expect(kept!.status.toString(), contains('canceled'));
+  });
+
+  test('reloadData resumes from the last received event, not 48h back',
+      () async {
+    final recent =
+        DateTime.now().subtract(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+            1000;
+    relay.add(order('a', createdAt: recent));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    completeReplay();
+
+    repo.reloadData();
+
+    final captured =
+        verify(nostr.subscribeToEvents(captureAny, onEose: anyNamed('onEose'))).captured.cast<NostrRequest>();
+    final since = captured.last.filters.first.since!;
+    // Pinned exactly: the last received event minus the resume overlap, so a
+    // change to either end of the window fails here instead of sliding by.
+    expect(
+      since,
+      DateTime.fromMillisecondsSinceEpoch(recent * 1000)
+          .subtract(OpenOrdersRepository.resumeOverlap),
+      reason: 'the in-memory cache retains older orders; only the missed '
+          'window (plus the overlap) needs replaying',
+    );
+  });
+
+  test('an interrupted replay keeps the full lookback', () async {
+    // A reloadData while the cold-start replay is still streaming cancels it.
+    // Relays commonly serve stored events newest-first, so the undelivered
+    // tail is older than the first event seen: resuming from it would drop
+    // that tail for good.
+    final recent =
+        DateTime.now().subtract(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+            1000;
+    relay.add(order('a', createdAt: recent));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    // Deliberately no completeReplay(): no EOSE arrived.
+
+    repo.reloadData();
+
+    final captured =
+        verify(nostr.subscribeToEvents(captureAny, onEose: anyNamed('onEose'))).captured.cast<NostrRequest>();
+    final since = captured.last.filters.first.since!;
+    expect(
+      since.isBefore(DateTime.now().subtract(const Duration(hours: 47))),
+      isTrue,
+      reason: 'without EOSE the replay is not known complete, so the cursor '
+          'cannot be trusted',
+    );
+  });
+
+  test('a relay joining the set restores the full lookback', () async {
+    // A relay connected after the REQ opened holds orders this cache has
+    // never seen, so the cache is no longer complete for the set about to be
+    // queried. Narrowing here would remove the last automatic recovery path
+    // for the missing-38383 bug.
+    final recent =
+        DateTime.now().subtract(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+            1000;
+    relay.add(order('a', createdAt: recent));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    completeReplay();
+
+    relayGeneration.add(2);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    repo.reloadData();
+
+    final captured =
+        verify(nostr.subscribeToEvents(captureAny, onEose: anyNamed('onEose'))).captured.cast<NostrRequest>();
+    final since = captured.last.filters.first.since!;
+    expect(
+      since.isBefore(DateTime.now().subtract(const Duration(hours: 47))),
+      isTrue,
+      reason: 'the new relay may hold older orders the cache never saw',
+    );
+  });
+
+  test('a future-dated event does not advance the resume cursor', () async {
+    // A node clock running ahead must not push the window past events that
+    // have not been seen.
+    final future =
+        DateTime.now().add(const Duration(hours: 2)).millisecondsSinceEpoch ~/
+            1000;
+    relay.add(order('a', createdAt: future));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    completeReplay();
+
+    repo.reloadData();
+
+    final captured =
+        verify(nostr.subscribeToEvents(captureAny, onEose: anyNamed('onEose'))).captured.cast<NostrRequest>();
+    final since = captured.last.filters.first.since!;
+    expect(
+      since.isBefore(DateTime.now().subtract(const Duration(hours: 47))),
+      isTrue,
+      reason: 'no trustworthy cursor was recorded, so the full lookback stays',
+    );
+  });
+
+  test('a node switch resets the resume window to the cold-start lookback',
+      () async {
+    final recent =
+        DateTime.now().subtract(const Duration(hours: 1)).millisecondsSinceEpoch ~/
+            1000;
+    relay.add(order('a', createdAt: recent));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    completeReplay();
+
+    repo.updateSettings(Settings(
+      relays: const ['wss://relay.a'],
+      fullPrivacyMode: false,
+      mostroPublicKey: 'other-node',
+    ));
+
+    final captured =
+        verify(nostr.subscribeToEvents(captureAny, onEose: anyNamed('onEose'))).captured.cast<NostrRequest>();
+    final since = captured.last.filters.first.since!;
+    expect(
+      since.isBefore(DateTime.now().subtract(const Duration(hours: 47))),
+      isTrue,
+      reason: 'the cache was cleared, so the full lookback applies again',
+    );
   });
 
   test('keeps the newer copy when it arrives second', () async {
