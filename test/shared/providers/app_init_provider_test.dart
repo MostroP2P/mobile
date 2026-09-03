@@ -98,5 +98,14 @@ void main() {
       expect(isSettledOrderMessage(message, now: now), isFalse,
           reason: 'one hour old: still inside the grace window');
     });
+
+    test('a timestamp beyond the DateTime range counts as live, not a crash',
+        () {
+      // DateTime.fromMillisecondsSinceEpoch throws past 8640000000000000 ms;
+      // a corrupt stored value must not abort app initialization.
+      final message = withStatus(Status.expired);
+      message.timestamp = 8640000000000001;
+      expect(isSettledOrderMessage(message, now: now), isFalse);
+    });
   });
 }

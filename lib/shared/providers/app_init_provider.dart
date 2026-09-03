@@ -129,10 +129,17 @@ bool isSettledOrderMessage(MostroMessage? message, {DateTime? now}) {
   return (now ?? DateTime.now()).difference(at) > settledOrderGrace;
 }
 
+/// Largest value `DateTime.fromMillisecondsSinceEpoch` accepts; anything
+/// past it throws a `RangeError`.
+const int _maxMillisecondsSinceEpoch = 8640000000000000;
+
 /// The daemon sends seconds, the app fills in milliseconds when the field is
-/// absent, and both units coexist in the store.
+/// absent, and both units coexist in the store. A value outside the
+/// `DateTime` range is treated as unknown rather than allowed to abort
+/// initialization.
 DateTime? _messageTime(int? raw) {
   if (raw == null || raw <= 0) return null;
   final ms = raw < 1000000000000 ? raw * 1000 : raw;
+  if (ms > _maxMillisecondsSinceEpoch) return null;
   return DateTime.fromMillisecondsSinceEpoch(ms);
 }

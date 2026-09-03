@@ -3,11 +3,14 @@ import 'package:mostro_mobile/services/encrypted_image_upload_service.dart';
 import 'package:mostro_mobile/services/encrypted_file_upload_service.dart';
 
 /// One cached blob, tracked globally so the budget is a real ceiling rather
-/// than a per-conversation one.
+/// than a per-conversation one. The owner is held weakly: the list is
+/// process-global, and a strong reference would keep a notifier (and every
+/// blob in its maps) alive if `dispose()` never ran.
 class _MediaCacheEntry {
-  _MediaCacheEntry(this.owner, this.kind, this.messageId, this.bytes);
+  _MediaCacheEntry(MediaCacheMixin owner, this.kind, this.messageId, this.bytes)
+      : owner = WeakReference(owner);
 
-  final MediaCacheMixin owner;
+  final WeakReference<MediaCacheMixin> owner;
   final _MediaKind kind;
   final String messageId;
   int bytes;
@@ -51,7 +54,7 @@ mixin MediaCacheMixin {
   void _mediaTouch(_MediaKind kind, String messageId, {int? bytes}) {
     final index = _lru.indexWhere(
       (e) =>
-          identical(e.owner, this) &&
+          identical(e.owner.target, this) &&
           e.kind == kind &&
           e.messageId == messageId,
     );
@@ -79,12 +82,15 @@ mixin MediaCacheMixin {
       final oldest = _lru.removeAt(0);
       _totalBytes -= oldest.bytes;
       // Metadata is kept: it is small, and the widgets re-request the blob on
-      // a miss, which re-decrypts and re-caches it.
+      // a miss, which re-decrypts and re-caches it. A collected owner has
+      // already released its maps; only the accounting was left to drop.
+      final owner = oldest.owner.target;
+      if (owner == null) continue;
       switch (oldest.kind) {
         case _MediaKind.image:
-          oldest.owner._imageCache.remove(oldest.messageId);
+          owner._imageCache.remove(oldest.messageId);
         case _MediaKind.file:
-          oldest.owner._fileCache.remove(oldest.messageId);
+          owner._fileCache.remove(oldest.messageId);
       }
     }
   }
@@ -130,7 +136,7 @@ mixin MediaCacheMixin {
     _fileCache.clear();
     _fileMetadata.clear();
     _lru.removeWhere((e) {
-      if (!identical(e.owner, this)) return false;
+      if (!identical(e.owner.target, this)) return false;
       _totalBytes -= e.bytes;
       return true;
     });
