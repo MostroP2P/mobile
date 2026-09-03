@@ -69,7 +69,18 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     StreamSubscription<String>? changes;
     controller = StreamController<R>(
       onListen: () async {
-        await _ensureIndex();
+        try {
+          await _ensureIndex();
+        } catch (e, stack) {
+          // onListen's future is not observed by the controller: without this
+          // the subscriber would wait forever and the rejection would surface
+          // as an unhandled async error.
+          if (!controller.isClosed) {
+            controller.addError(e, stack);
+            await controller.close();
+          }
+          return;
+        }
         if (controller.isClosed) return;
         controller.add(read());
         changes = _orderChanges.stream
@@ -78,7 +89,10 @@ class MostroStorage extends BaseStorage<MostroMessage> {
       },
       onCancel: () async {
         await changes?.cancel();
-        await controller.close();
+        // Skip when onListen already closed the controller: its done future
+        // only completes after onCancel returns, so awaiting close() again
+        // here would deadlock.
+        if (!controller.isClosed) await controller.close();
       },
     );
     return controller.stream;
@@ -155,7 +169,12 @@ class MostroStorage extends BaseStorage<MostroMessage> {
 
   /// Delete all messages by Id regardless of type
   Future<void> deleteAllMessagesByOrderId(String orderId) async {
-    await _ensureIndex();
+    // Awaited first so a warm-up in flight cannot re-index records this call
+    // is about to delete, but its failure (already logged and reset for
+    // retry) must not leave the records on disk.
+    try {
+      await _ensureIndex();
+    } catch (_) {}
     await deleteWhere(
       Filter.equals('id', orderId),
     );
@@ -241,8 +260,9 @@ class MostroStorage extends BaseStorage<MostroMessage> {
       ),
     );
 
-    return query.onSnapshots(db).map((snapshots) =>
-        snapshots.isNotEmpty ? MostroMessage.fromJson(snapshots.first.value) : null);
+    return query.onSnapshots(db).map((snapshots) => snapshots.isNotEmpty
+        ? MostroMessage.fromJson(snapshots.first.value)
+        : null);
   }
 
   Future<List<MostroMessage>> getAllMessagesForOrderId(String orderId) async {

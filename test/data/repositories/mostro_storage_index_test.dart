@@ -60,8 +60,7 @@ void main() {
 
     final history = await storage.getAllMessagesForOrderId('a');
 
-    expect(history.map((m) => m.action),
-        [Action.payInvoice, Action.newOrder]);
+    expect(history.map((m) => m.action), [Action.payInvoice, Action.newOrder]);
     expect(await storage.getLatestMessageById('b'),
         isA<MostroMessage>().having((m) => m.id, 'id', 'b'));
   });
@@ -135,6 +134,28 @@ void main() {
     expect((await flaky.getLatestMessageById('a'))!.action, Action.newOrder);
   });
 
+  test('a watcher whose warm-up fails receives the error and closes', () async {
+    // onListen is async: a rejected warm-up used to escape as an unhandled
+    // error while the subscriber waited for data that never came.
+    final flaky = _FlakyWarmupStorage(db: storage.db);
+
+    await expectLater(
+      flaky.watchLatestMessage('a'),
+      emitsInOrder([emitsError(isA<StateError>()), emitsDone]),
+    );
+  });
+
+  test('a failed warm-up does not stop an order deletion reaching disk',
+      () async {
+    await storage.addMessage('k1', message('a', Action.newOrder, 1000));
+    final flaky = _FlakyWarmupStorage(db: storage.db);
+
+    await flaky.deleteAllMessagesByOrderId('a');
+
+    // The retry warms from disk, so an empty result proves the delete ran.
+    expect(await flaky.getAllMessagesForOrderId('a'), isEmpty);
+  });
+
   test('concurrent writes of the same key index the message once', () async {
     await Future.wait([
       storage.addMessage('k1', message('a', Action.newOrder, 1000)),
@@ -144,8 +165,7 @@ void main() {
     expect((await storage.getAllMessagesForOrderId('a')).length, 1);
   });
 
-  test('duplicate keys are ignored without notifying watchers twice',
-      () async {
+  test('duplicate keys are ignored without notifying watchers twice', () async {
     await storage.addMessage('k1', message('a', Action.newOrder, 1000));
     var emissions = 0;
     final sub = storage.watchLatestMessage('a').skip(1).listen((_) {
