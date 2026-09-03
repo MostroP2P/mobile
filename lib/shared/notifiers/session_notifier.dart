@@ -15,6 +15,7 @@ import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/services/push_notification_service.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
+import 'package:mostro_mobile/services/storage_pruner.dart';
 import 'package:mostro_mobile/shared/utils/chat_keys.dart';
 import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
 import 'package:dart_nostr/dart_nostr.dart';
@@ -87,8 +88,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
     await eventStore.deleteWhere(Filter.equals('order_id', orderId));
     if (session.disputeId != null) {
-      await eventStore.deleteWhere(
-          Filter.equals('dispute_id', session.disputeId));
+      await eventStore
+          .deleteWhere(Filter.equals('dispute_id', session.disputeId));
     }
     await mostroStore.deleteAllMessagesByOrderId(orderId);
     await notificationsRepo.deleteByOrderId(orderId);
@@ -119,8 +120,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
         _sessions[session.orderId!] = session;
       }
     } else {
-      final cutoff = DateTime.now()
-          .subtract(Duration(hours: _expirationHours));
+      final cutoff = DateTime.now().subtract(Duration(hours: _expirationHours));
       for (final session in allSessions) {
         if (session.startTime.isAfter(cutoff)) {
           _sessions[session.orderId!] = session;
@@ -136,7 +136,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
           try {
             await _cleanupSessionData(session);
           } catch (e) {
-            logger.e('Failed to cleanup data for session ${session.orderId}: $e');
+            logger
+                .e('Failed to cleanup data for session ${session.orderId}: $e');
           }
         }
       }
@@ -209,11 +210,48 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     );
   }
 
+  /// Kept across ticks: the pruner rate-limits itself, so a fresh instance
+  /// every 30 minutes would defeat its own minimum interval.
+  StoragePruner? _storagePruner;
+
+  StoragePruner get _pruner => _storagePruner ??= StoragePruner(
+        eventStorage: ref.read(eventStorageProvider),
+        messageStorage: ref.read(mostroStorageProvider),
+        notificationsStorage: ref.read(notificationsRepositoryProvider),
+      );
+
+  /// The oldest live session bounds how far back a relay can still replay a
+  /// DM the orders subscription (which carries no `since`) would accept.
+  DateTime? get _oldestLiveSessionStart {
+    final starts = [
+      ..._sessions.values.map((s) => s.startTime),
+      ..._requestIdToSession.values.map((s) => s.startTime),
+      ..._pendingChildSessions.values.map((s) => s.startTime),
+    ];
+    if (starts.isEmpty) return null;
+    return starts.reduce((a, b) => a.isBefore(b) ? a : b);
+  }
+
   void _cleanup() async {
+    // Bounded-growth pruning runs regardless of the session retention policy:
+    // reservations, orphaned chat/message records and the notification cap
+    // are storage hygiene, not session lifetime.
+    try {
+      await _pruner.prune(
+        liveOrderIds: _sessions.keys.toSet(),
+        liveDisputeIds: _sessions.values
+            .map((s) => s.disputeId)
+            .whereType<String>()
+            .toSet(),
+        oldestLiveSessionAt: _oldestLiveSessionStart,
+      );
+    } catch (e, stackTrace) {
+      logger.e('Storage pruning failed', error: e, stackTrace: stackTrace);
+    }
+
     if (_isForever) return;
 
-    final cutoff = DateTime.now()
-        .subtract(Duration(hours: _expirationHours));
+    final cutoff = DateTime.now().subtract(Duration(hours: _expirationHours));
     // Iterate the in-memory sessions: getAllSessions() re-decoded every row,
     // re-running trade-key derivation per session every 30 minutes.
     final candidates = _sessions.values.toList();
@@ -314,7 +352,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     // Fire and forget - don't block session save on push registration
     _pushService!.registerToken(tradePubkey).then((success) {
       if (success) {
-        logger.i('Push token registered for trade: ${tradePubkey.substring(0, 16)}...');
+        logger.i(
+            'Push token registered for trade: ${tradePubkey.substring(0, 16)}...');
       }
     }).catchError((e) {
       logger.w('Failed to register push token: $e');
