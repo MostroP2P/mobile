@@ -69,8 +69,7 @@ class StoragePruner {
     DateTime? oldestLiveSessionAt,
   ) async {
     var cutoffAt = now.subtract(reservationRetention);
-    if (oldestLiveSessionAt != null &&
-        oldestLiveSessionAt.isBefore(cutoffAt)) {
+    if (oldestLiveSessionAt != null && oldestLiveSessionAt.isBefore(cutoffAt)) {
       // Keep every reservation a live session could still see replayed.
       cutoffAt = oldestLiveSessionAt;
     }
@@ -87,8 +86,7 @@ class StoragePruner {
     Set<String> liveOrderIds,
     Set<String> liveDisputeIds,
   ) async {
-    final cutoff =
-        now.subtract(orphanRetention).millisecondsSinceEpoch ~/ 1000;
+    final cutoff = now.subtract(orphanRetention).millisecondsSinceEpoch ~/ 1000;
     final removed = await eventStorage.deleteWhere(Filter.custom((record) {
       final value = record.value;
       if (value is! Map) return false;
@@ -112,12 +110,19 @@ class StoragePruner {
     // Through the storage API so the in-memory index stays coherent.
     for (final orderId in await messageStorage.allOrderIds()) {
       if (liveOrderIds.contains(orderId)) continue;
-      final latest = await messageStorage.getLatestMessageById(orderId);
       // The daemon sends seconds, the app fills in milliseconds when the
-      // field is absent, and both units coexist in the store. An unknown or
-      // non-positive timestamp is never treated as proof of age.
-      final ts = _timestampMs(latest?.timestamp);
-      if (ts != null && ts < cutoffMs) {
+      // field is absent, and both units coexist in the store. The index
+      // orders on the raw field, where any millisecond value outranks any
+      // seconds value regardless of real time, so the newest record is picked
+      // here on normalized timestamps. An unknown or non-positive timestamp
+      // is never treated as proof of age.
+      int? newest;
+      for (final message
+          in await messageStorage.getAllMessagesForOrderId(orderId)) {
+        final ts = _timestampMs(message.timestamp);
+        if (ts != null && (newest == null || ts > newest)) newest = ts;
+      }
+      if (newest != null && newest < cutoffMs) {
         await messageStorage.deleteAllMessagesByOrderId(orderId);
         logger.i('Pruned orphaned messages for order $orderId');
       }

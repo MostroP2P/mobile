@@ -105,8 +105,8 @@ void main() {
 
     await pruner.prune(liveOrderIds: {}, liveDisputeIds: {}, now: now);
 
-    expect(await notifications.getAll(),
-        hasLength(StoragePruner.notificationCap));
+    expect(
+        await notifications.getAll(), hasLength(StoragePruner.notificationCap));
   });
 
   test('a second pass within the minimum interval is skipped', () async {
@@ -169,9 +169,8 @@ void main() {
   test('orphaned mostro messages are pruned through the storage index',
       () async {
     final old = MostroMessage(action: Action.newOrder, id: 'dead-order');
-    old.timestamp = now
-        .subtract(const Duration(days: 40))
-        .millisecondsSinceEpoch;
+    old.timestamp =
+        now.subtract(const Duration(days: 40)).millisecondsSinceEpoch;
     await messages.addMessage('m1', old);
     final live = MostroMessage(action: Action.newOrder, id: 'live-order');
     live.timestamp = now.millisecondsSinceEpoch;
@@ -184,8 +183,27 @@ void main() {
     );
 
     expect(await messages.getAllMessagesForOrderId('dead-order'), isEmpty);
-    expect(await messages.getAllMessagesForOrderId('live-order'),
-        hasLength(1));
+    expect(await messages.getAllMessagesForOrderId('live-order'), hasLength(1));
+  });
+
+  test('a fresh seconds record protects an order whose older record is in ms',
+      () async {
+    // Both units coexist in `timestamp`. A raw sort ranks any millisecond
+    // value above any seconds value regardless of real time, so "the latest
+    // message" must be chosen on normalized timestamps or a 40-day-old ms
+    // record would count as newer than a seconds record written today.
+    final old = MostroMessage(action: Action.newOrder, id: 'mixed-order');
+    old.timestamp =
+        now.subtract(const Duration(days: 40)).millisecondsSinceEpoch;
+    await messages.addMessage('m1', old);
+    final fresh = MostroMessage(action: Action.payInvoice, id: 'mixed-order');
+    fresh.timestamp = now.millisecondsSinceEpoch ~/ 1000;
+    await messages.addMessage('m2', fresh);
+
+    await pruner.prune(liveOrderIds: {}, liveDisputeIds: {}, now: now);
+
+    expect(await messages.getAllMessagesForOrderId('mixed-order'), hasLength(2),
+        reason: 'the newest record is from today, so nothing is orphaned');
   });
 
   test('the notification history is capped to the newest entries', () async {

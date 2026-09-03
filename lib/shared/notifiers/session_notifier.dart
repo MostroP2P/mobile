@@ -88,8 +88,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
     await eventStore.deleteWhere(Filter.equals('order_id', orderId));
     if (session.disputeId != null) {
-      await eventStore.deleteWhere(
-          Filter.equals('dispute_id', session.disputeId));
+      await eventStore
+          .deleteWhere(Filter.equals('dispute_id', session.disputeId));
     }
     await mostroStore.deleteAllMessagesByOrderId(orderId);
     await notificationsRepo.deleteByOrderId(orderId);
@@ -120,8 +120,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
         _sessions[session.orderId!] = session;
       }
     } else {
-      final cutoff = DateTime.now()
-          .subtract(Duration(hours: _expirationHours));
+      final cutoff = DateTime.now().subtract(Duration(hours: _expirationHours));
       for (final session in allSessions) {
         if (session.startTime.isAfter(cutoff)) {
           _sessions[session.orderId!] = session;
@@ -137,7 +136,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
           try {
             await _cleanupSessionData(session);
           } catch (e) {
-            logger.e('Failed to cleanup data for session ${session.orderId}: $e');
+            logger
+                .e('Failed to cleanup data for session ${session.orderId}: $e');
           }
         }
       }
@@ -225,6 +225,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   DateTime? get _oldestLiveSessionStart {
     final starts = [
       ..._sessions.values.map((s) => s.startTime),
+      ..._requestIdToSession.values.map((s) => s.startTime),
       ..._pendingChildSessions.values.map((s) => s.startTime),
     ];
     if (starts.isEmpty) return null;
@@ -238,8 +239,10 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     try {
       await _pruner.prune(
         liveOrderIds: _sessions.keys.toSet(),
-        liveDisputeIds:
-            _sessions.values.map((s) => s.disputeId).whereType<String>().toSet(),
+        liveDisputeIds: _sessions.values
+            .map((s) => s.disputeId)
+            .whereType<String>()
+            .toSet(),
         oldestLiveSessionAt: _oldestLiveSessionStart,
       );
     } catch (e, stackTrace) {
@@ -248,8 +251,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
 
     if (_isForever) return;
 
-    final cutoff = DateTime.now()
-        .subtract(Duration(hours: _expirationHours));
+    final cutoff = DateTime.now().subtract(Duration(hours: _expirationHours));
     // Iterate the in-memory sessions: getAllSessions() re-decoded every row,
     // re-running trade-key derivation per session every 30 minutes.
     final candidates = _sessions.values.toList();
@@ -350,7 +352,8 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     // Fire and forget - don't block session save on push registration
     _pushService!.registerToken(tradePubkey).then((success) {
       if (success) {
-        logger.i('Push token registered for trade: ${tradePubkey.substring(0, 16)}...');
+        logger.i(
+            'Push token registered for trade: ${tradePubkey.substring(0, 16)}...');
       }
     }).catchError((e) {
       logger.w('Failed to register push token: $e');
