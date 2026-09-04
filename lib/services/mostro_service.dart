@@ -294,28 +294,34 @@ class MostroService {
     }
   }
 
+  /// Links a pending range-order child session to its concrete child order id.
+  ///
+  /// The trigger is any message carrying an order id, not just the child
+  /// new-order confirmation: after a restart (or when the confirmation was
+  /// only seen by the background isolate) the first message this notifier sees
+  /// for the child trade key can be a later one, and leaving the session
+  /// pending would keep the child order out of My Trades. The child trade key
+  /// is used by exactly one order, so any id other than the parent's
+  /// identifies it.
   Future<void> _maybeLinkChildOrder(
     MostroMessage message,
     Session session,
   ) async {
-    if (message.action != Action.newOrder || message.id == null) {
-      return;
-    }
-
-    if (session.orderId != null || session.parentOrderId == null) {
-      return;
-    }
+    final childOrderId = message.id;
+    if (childOrderId == null || childOrderId.isEmpty) return;
+    if (session.orderId != null || session.parentOrderId == null) return;
+    if (childOrderId == session.parentOrderId) return;
 
     final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
     await sessionNotifier.linkChildSessionToOrderId(
-      message.id!,
+      childOrderId,
       session.tradeKey.public,
     );
 
-    ref.read(orderNotifierProvider(message.id!).notifier).subscribe();
+    ref.read(orderNotifierProvider(childOrderId).notifier).subscribe();
 
     logger.i(
-      'Linked child order ${message.id} to parent ${session.parentOrderId}',
+      'Linked child order $childOrderId to parent ${session.parentOrderId}',
     );
   }
 

@@ -113,32 +113,85 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     return order != null && !order.status.isTerminal;
   }
 
+  /// Cutoff past which a persisted pending child session is discarded.
+  ///
+  /// Pending children are a short-lived handoff: mostrod publishes the child
+  /// order right after the release, so a record still unlinked after
+  /// [Config.pendingChildSessionExpirationHours] never will be. The bound
+  /// applies even when session expiration is disabled, otherwise orphan
+  /// records would pile up on disk and keep widening the orders subscription
+  /// filter on every launch. When session expiration is enabled and stricter,
+  /// it wins.
+  DateTime get _pendingChildCutoff {
+    final now = DateTime.now();
+    final pendingCutoff = now.subtract(
+      const Duration(hours: Config.pendingChildSessionExpirationHours),
+    );
+    if (_isForever) return pendingCutoff;
+    final sessionCutoff = now.subtract(Duration(hours: _expirationHours));
+    // The later cutoff is the stricter one.
+    return sessionCutoff.isAfter(pendingCutoff) ? sessionCutoff : pendingCutoff;
+  }
+
+  /// Restores a persisted record that carries no orderId. Only pending
+  /// range-order children are stored that way (keyed by trade key) so they
+  /// survive an app kill between release and the child new-order message; any
+  /// other orderId-less record can never be linked and is dropped.
+  Future<void> _restorePendingChildSession(Session session) async {
+    final isPendingChild = session.parentOrderId != null;
+    if (isPendingChild && session.startTime.isAfter(_pendingChildCutoff)) {
+      _pendingChildSessions[session.tradeKey.public] = session;
+      return;
+    }
+    if (!isPendingChild) {
+      logger.w(
+        'Dropping stored session without orderId nor parentOrderId '
+        '(trade key ${session.tradeKey.public})',
+      );
+    }
+    _evictSessionKeyMaterial(session);
+    await _dropPendingChildRecord(session.tradeKey.public);
+  }
+
+  /// Drops the pending record of a child session that no longer needs it
+  /// (linked under its orderId, or expired). Failures are logged instead of
+  /// thrown: the session is already stored correctly and a leftover pending
+  /// record expires on its own, whereas an exception here would skip the
+  /// state emission and the push-token retry of the caller.
+  Future<void> _dropPendingChildRecord(String tradeKeyPublic) async {
+    try {
+      await _storage.deletePendingChildSession(tradeKeyPublic);
+    } catch (e) {
+      logger.e(
+        'Failed to delete pending child record for $tradeKeyPublic: $e',
+      );
+    }
+  }
+
   Future<void> init() async {
     final allSessions = await _storage.getAllSessions();
-    if (_isForever) {
-      for (final session in allSessions) {
-        _sessions[session.orderId!] = session;
+    final cutoff = DateTime.now().subtract(Duration(hours: _expirationHours));
+    for (final session in allSessions) {
+      if (session.orderId == null) {
+        await _restorePendingChildSession(session);
+        continue;
       }
-    } else {
-      final cutoff = DateTime.now().subtract(Duration(hours: _expirationHours));
-      for (final session in allSessions) {
-        if (session.startTime.isAfter(cutoff)) {
+
+      if (_isForever || session.startTime.isAfter(cutoff)) {
+        _sessions[session.orderId!] = session;
+      } else {
+        if (await _isActiveSession(session)) {
+          logger.i('Skipping cleanup for active session ${session.orderId}');
           _sessions[session.orderId!] = session;
-        } else {
-          if (await _isActiveSession(session)) {
-            logger.i('Skipping cleanup for active session ${session.orderId}');
-            _sessions[session.orderId!] = session;
-            continue;
-          }
-          await _storage.deleteSession(session.orderId!);
-          _sessions.remove(session.orderId!);
-          _evictSessionKeyMaterial(session);
-          try {
-            await _cleanupSessionData(session);
-          } catch (e) {
-            logger
-                .e('Failed to cleanup data for session ${session.orderId}: $e');
-          }
+          continue;
+        }
+        await _storage.deleteSession(session.orderId!);
+        _sessions.remove(session.orderId!);
+        _evictSessionKeyMaterial(session);
+        try {
+          await _cleanupSessionData(session);
+        } catch (e) {
+          logger.e('Failed to cleanup data for session ${session.orderId}: $e');
         }
       }
     }
@@ -249,12 +302,14 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       logger.e('Storage pruning failed', error: e, stackTrace: stackTrace);
     }
 
-    if (_isForever) return;
-
+    // Pending children expire on their own bounded window, so their pass
+    // below runs even when session expiration is disabled.
+    final pendingCutoff = _pendingChildCutoff;
     final cutoff = DateTime.now().subtract(Duration(hours: _expirationHours));
     // Iterate the in-memory sessions: getAllSessions() re-decoded every row,
     // re-running trade-key derivation per session every 30 minutes.
-    final candidates = _sessions.values.toList();
+    final candidates =
+        _isForever ? const <Session>[] : _sessions.values.toList();
 
     for (final session in candidates) {
       if (session.startTime.isBefore(cutoff)) {
@@ -273,11 +328,20 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       }
     }
 
-    _pendingChildSessions.removeWhere((_, session) {
-      final expired = session.startTime.isBefore(cutoff);
-      if (expired) _evictSessionKeyMaterial(session);
-      return expired;
-    });
+    // Expired pending child sessions (no orderId yet) are keyed by trade key
+    // and have no associated order data to clean up, but their persisted
+    // record must go too or init() would restore them on the next launch.
+    // This also covers pending children whose persistence failed and
+    // therefore only live in memory. pendingCutoff is already the stricter of
+    // the two windows, so this subsumes the session expiration cutoff.
+    final expiredPending = _pendingChildSessions.values
+        .where((session) => session.startTime.isBefore(pendingCutoff))
+        .toList();
+    for (final session in expiredPending) {
+      _pendingChildSessions.remove(session.tradeKey.public);
+      _evictSessionKeyMaterial(session);
+      await _dropPendingChildRecord(session.tradeKey.public);
+    }
 
     _emitState();
   }
@@ -319,9 +383,18 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   Future<void> saveSession(Session session) async {
     _sessions[session.orderId!] = session;
     _requestIdToSession.removeWhere((_, value) => identical(value, session));
-    _pendingChildSessions.remove(session.tradeKey.public);
+    final wasPendingChild =
+        _pendingChildSessions.remove(session.tradeKey.public) != null;
     _claimOrderId(session.orderId!, session);
-    await _storage.putSession(session);
+    // A child session is stored under its orderId and its pending record is
+    // dropped in one transaction, so a crash in between cannot lose it. The
+    // parentOrderId check also clears records left behind when the link
+    // already happened in the background isolate.
+    if (wasPendingChild || session.parentOrderId != null) {
+      await _storage.promotePendingChildSession(session);
+    } else {
+      await _storage.putSession(session);
+    }
     _emitState();
 
     // Register push notification token for this trade
@@ -468,6 +541,22 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       role: role,
     );
 
+    // Persist immediately: the session must survive an app kill between
+    // release and the child new-order message, and the background isolate
+    // loads sessions from storage to decrypt events addressed to this trade
+    // key. Without this, child-order events received while the app is not in
+    // the foreground could never be decrypted (and never notified). A failed
+    // write is propagated rather than swallowed: the caller is about to hand
+    // this trade key to mostrod as next_trade, and must not do so with a
+    // child the app cannot track after a restart.
+    try {
+      await _storage.putPendingChildSession(session);
+    } catch (e) {
+      _evictSessionKeyMaterial(session);
+      logger.e('Failed to persist pending child session: $e');
+      rethrow;
+    }
+
     _pendingChildSessions[tradeKey.public] = session;
     _emitState();
 
@@ -490,7 +579,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     String childOrderId,
     String tradeKeyPublic,
   ) async {
-    final session = _pendingChildSessions.remove(tradeKeyPublic);
+    final session = _pendingChildSessions[tradeKeyPublic];
     if (session == null) {
       logger.w(
         'No pending child session found for trade key $tradeKeyPublic; nothing to link.',
@@ -498,10 +587,22 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       return;
     }
 
+    // Store under the orderId and drop the pending record atomically so the
+    // session is neither lost nor restored twice on the next init. The
+    // in-memory maps are only updated once that write is durable: on failure
+    // the session stays pending (orderId reset) so the next message for the
+    // child retries the link instead of finding nothing to link.
     session.orderId = childOrderId;
+    try {
+      await _storage.promotePendingChildSession(session);
+    } catch (e) {
+      session.orderId = null;
+      logger.e('Failed to promote pending child session $tradeKeyPublic: $e');
+      rethrow;
+    }
+    _pendingChildSessions.remove(tradeKeyPublic);
     _sessions[childOrderId] = session;
     _claimOrderId(childOrderId, session);
-    await _storage.putSession(session);
     _emitState();
 
     // Retry the push registration on link in case the creation-time attempt

@@ -81,6 +81,13 @@ class Config {
   static const int cleanupIntervalMinutes = 30;
   static const int sessionExpirationHours = 720;
 
+  /// Upper bound for a pending range-order child session (persisted without an
+  /// orderId while waiting for mostrod's child new-order message). The handoff
+  /// resolves in seconds, so a record still unlinked after this window never
+  /// will be. Bounded independently of [sessionExpirationHours] so orphan
+  /// records cannot accumulate when session expiration is disabled (0).
+  static const int pendingChildSessionExpirationHours = 48;
+
   // Notification configuration
   static String notificationChannelId = 'mostro_mobile';
   static int notificationId = 38383;
