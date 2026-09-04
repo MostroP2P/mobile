@@ -579,7 +579,7 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     String childOrderId,
     String tradeKeyPublic,
   ) async {
-    final session = _pendingChildSessions.remove(tradeKeyPublic);
+    final session = _pendingChildSessions[tradeKeyPublic];
     if (session == null) {
       logger.w(
         'No pending child session found for trade key $tradeKeyPublic; nothing to link.',
@@ -587,12 +587,22 @@ class SessionNotifier extends StateNotifier<List<Session>> {
       return;
     }
 
+    // Store under the orderId and drop the pending record atomically so the
+    // session is neither lost nor restored twice on the next init. The
+    // in-memory maps are only updated once that write is durable: on failure
+    // the session stays pending (orderId reset) so the next message for the
+    // child retries the link instead of finding nothing to link.
     session.orderId = childOrderId;
+    try {
+      await _storage.promotePendingChildSession(session);
+    } catch (e) {
+      session.orderId = null;
+      logger.e('Failed to promote pending child session $tradeKeyPublic: $e');
+      rethrow;
+    }
+    _pendingChildSessions.remove(tradeKeyPublic);
     _sessions[childOrderId] = session;
     _claimOrderId(childOrderId, session);
-    // Store under the orderId and drop the pending record atomically so the
-    // session is neither lost nor restored twice on the next init.
-    await _storage.promotePendingChildSession(session);
     _emitState();
 
     // Retry the push registration on link in case the creation-time attempt

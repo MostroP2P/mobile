@@ -24,6 +24,17 @@ class _FailingPendingChildStorage extends SessionStorage {
   }
 }
 
+/// SessionStorage whose promotion always fails, to exercise the durable-first
+/// ordering of linkChildSessionToOrderId.
+class _FailingPromotionStorage extends SessionStorage {
+  _FailingPromotionStorage(super.keyManager, {required super.db});
+
+  @override
+  Future<void> promotePendingChildSession(Session session) async {
+    throw StateError('disk full');
+  }
+}
+
 void main() {
   late MockRef mockRef;
   late MockKeyManager mockKeyManager;
@@ -200,6 +211,46 @@ void main() {
       final stored = await storage.getAllSessions();
       expect(stored, hasLength(1));
       expect(stored.first.orderId, 'child-order-id');
+    });
+  });
+
+  group('linkChildSessionToOrderId durability', () {
+    test('keeps the session pending when the promotion fails', () async {
+      // Arrange: create through a working storage so the pending record
+      // exists, then link through a storage whose promotion fails.
+      final creator = buildNotifier();
+      await creator.createChildOrderSession(
+        tradeKey: childTradeKey,
+        keyIndex: childKeyIndex,
+        parentOrderId: 'parent-order-id',
+        role: Role.seller,
+      );
+      final failingStorage = _FailingPromotionStorage(
+        mockKeyManager,
+        db: storage.db,
+      );
+      final notifier = SessionNotifier(mockRef, failingStorage, buildSettings());
+      await notifier.init();
+      expect(notifier.getSessionByTradeKey(childTradeKey.public), isNotNull);
+
+      // Act
+      Future<void> link() => notifier.linkChildSessionToOrderId(
+            'child-order-id',
+            childTradeKey.public,
+          );
+
+      // Assert: the failure is propagated and nothing moved in memory, so a
+      // later message for the child can retry the link.
+      await expectLater(link, throwsStateError);
+      final pending = notifier.getSessionByTradeKey(childTradeKey.public);
+      expect(pending, isNotNull);
+      expect(pending!.orderId, isNull);
+      expect(notifier.getSessionByOrderId('child-order-id'), isNull);
+      expect(notifier.state.where((s) => s.orderId == 'child-order-id'),
+          isEmpty);
+      final pendingKey =
+          '${SessionStorage.pendingChildKeyPrefix}${childTradeKey.public}';
+      expect(await storage.store.record(pendingKey).exists(storage.db), isTrue);
     });
   });
 
