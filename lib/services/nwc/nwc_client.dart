@@ -33,6 +33,34 @@ class NwcNotification {
 /// app's architectural pattern of routing all Nostr communication through
 /// [NostrService] rather than accessing [Nostr.instance] directly.
 class NwcClient {
+  /// How far back the kind-23195 response subscription looks.
+  ///
+  /// Without a `since` the relay replays the wallet's entire response history
+  /// on every request. A response is always newer than its request in real
+  /// time, but `since` is computed from the *phone's* clock while the relay
+  /// filters on the `created_at` signed by the *wallet service* — two
+  /// independent machines. Too tight a window and a skewed wallet (or a phone
+  /// running ahead) has its live response silently dropped by the relay, which
+  /// times out every NWC operation, payments included.
+  ///
+  /// Ten minutes matches `ChatCursorStore.cursorOverlap`, the skew budget this
+  /// codebase already uses for relay-side `since` filters. It kills the replay
+  /// just as effectively while leaving a realistic clock margin.
+  static const responseReplayWindow = Duration(minutes: 10);
+
+  /// Builds the subscription filter for the wallet's kind-23195 responses.
+  ///
+  /// Only filters by kind + author; some NWC relay implementations (e.g.
+  /// Primal) don't support #e / #p tag filters, so the e-tag match is verified
+  /// in the event handler.
+  static NostrFilter responseFilter(String walletPubkey, {DateTime? now}) {
+    return NostrFilter(
+      kinds: const [23195],
+      authors: [walletPubkey],
+      since: (now ?? DateTime.now()).subtract(responseReplayWindow),
+    );
+  }
+
   /// The parsed NWC connection.
   final NwcConnection connection;
 
@@ -411,10 +439,10 @@ class NwcClient {
       // Only filter by kind + author; some NWC relay implementations
       // (e.g. Primal) don't support #e / #p tag filters, so we verify
       // the e-tag match in the event handler below.
-      final filter = NostrFilter(
-        kinds: const [23195],
-        authors: [connection.walletPubkey],
-      );
+      // `since` bounds the replay: without it every request re-received the
+      // wallet's whole kind-23195 history from the relay (and the balance
+      // tick sends one request per minute).
+      final filter = responseFilter(connection.walletPubkey);
 
       final subId = 'nwc_${requestId.substring(0, 8)}';
       final stream = _nostr.services.relays.startEventsSubscription(

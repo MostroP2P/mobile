@@ -17,6 +17,7 @@ import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/shared/widgets/order_cards.dart';
+import 'package:mostro_mobile/features/trades/state_message_finder.dart';
 import 'package:mostro_mobile/features/trades/widgets/mostro_message_detail_widget.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
@@ -1137,38 +1138,6 @@ class _CountdownWidget extends ConsumerWidget {
   /// Find the message that triggered the current state
   /// Returns null if no valid message is found
   MostroMessage? _findMessageForState(
-      List<MostroMessage> messages, Status status) {
-    // Filter out messages with invalid timestamps
-    final validMessages =
-        messages.where((m) => m.timestamp != null && m.timestamp! > 0).toList();
-
-    if (validMessages.isEmpty) {
-      return null;
-    }
-
-    // Sort messages by timestamp (newest first)
-    final sortedMessages = List<MostroMessage>.from(validMessages)
-      ..sort((a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0));
-
-    // Find the message that caused this state
-    for (final message in sortedMessages) {
-      // Additional validation: ensure timestamp is not in the future
-      final messageTime =
-          DateTime.fromMillisecondsSinceEpoch(message.timestamp!);
-      if (messageTime.isAfter(DateTime.now().add(const Duration(hours: 1)))) {
-        continue; // Skip messages with future timestamps
-      }
-
-      if (status == Status.waitingBuyerInvoice &&
-          (message.action == actions.Action.addInvoice ||
-              message.action == actions.Action.waitingBuyerInvoice)) {
-        return message;
-      } else if (status == Status.waitingPayment &&
-          (message.action == actions.Action.payInvoice ||
-              message.action == actions.Action.waitingSellerToPay)) {
-        return message;
-      }
-    }
-    return null;
-  }
+          List<MostroMessage> messages, Status status) =>
+      StateMessageFinder.findMessageForState(messages, status);
 }
