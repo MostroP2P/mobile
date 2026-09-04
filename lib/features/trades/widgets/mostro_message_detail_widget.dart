@@ -91,9 +91,8 @@ class MostroMessageDetail extends ConsumerWidget {
   }
 
   actions.Action? _previousNonBondAction(List<MostroMessage> messages) {
-    final sorted = [...messages]..sort(
-        (a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0),
-      );
+    final sorted = [...messages]
+      ..sort((a, b) => MostroMessage.compareByEventTime(b, a));
     for (final msg in sorted) {
       final a = msg.action;
       if (a == actions.Action.addBondInvoice) continue;

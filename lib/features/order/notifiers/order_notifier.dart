@@ -79,18 +79,15 @@ class OrderNotifier extends AbstractMostroNotifier {
       _isSyncing = true;
 
       final storage = ref.read(mostroStorageProvider);
-      final messages = await storage.getAllMessagesForOrderId(orderId);
+      // The index hands out an unmodifiable view: sort a copy.
+      final messages = (await storage.getAllMessagesForOrderId(orderId))
+          .toList()
+        ..sort(MostroMessage.compareByEventTime);
       if (messages.isEmpty) {
         logger.w('No messages found for order $orderId');
         succeeded = true;
         return;
       }
-
-      messages.sort((a, b) {
-        final timestampA = a.timestamp ?? 0;
-        final timestampB = b.timestamp ?? 0;
-        return timestampA.compareTo(timestampB);
-      });
 
       OrderState currentState = state;
 

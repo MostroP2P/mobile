@@ -52,9 +52,9 @@ class StateMessageFinder {
       return const _LookupResult(null, skippedFutureMessage: false);
     }
 
-    // Sort messages by timestamp (newest first)
+    // Sort messages by event time (newest first)
     final sortedMessages = List<MostroMessage>.from(validMessages)
-      ..sort((a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0));
+      ..sort((a, b) => MostroMessage.compareByEventTime(b, a));
 
     final cutoff = now.add(futureTimestampTolerance);
     var skippedFutureMessage = false;

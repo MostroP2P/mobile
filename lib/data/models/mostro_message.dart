@@ -15,7 +15,15 @@ class MostroMessage<T extends Payload> {
   final Action action;
   int? tradeIndex;
   T? _payload;
+
+  /// Local receive time in milliseconds, stamped by storage on first write.
+  /// Drives the recency gate for notifications and navigation.
   int? timestamp;
+
+  /// The daemon's `created_at` for the event that carried this message, in
+  /// milliseconds. Null for messages written before it was recorded and for
+  /// locally synthesized ones (restore, outbound copies).
+  int? eventCreatedAt;
 
   MostroMessage({
     required this.action,
@@ -24,7 +32,22 @@ class MostroMessage<T extends Payload> {
     T? payload,
     this.tradeIndex,
     this.timestamp,
+    this.eventCreatedAt,
   }) : _payload = payload;
+
+  /// Position of this message in the order's history.
+  ///
+  /// Mostrod's own event time is authoritative: relays replay pending events
+  /// newest-first and the decrypt pipeline is concurrent, so the receive time
+  /// alone puts an earlier message after a later one, and the order state
+  /// (and with it the trade buttons) ends up on a phase the trade already left.
+  /// The receive time is the fallback for legacy rows and the tie-break.
+  static int compareByEventTime(MostroMessage a, MostroMessage b) {
+    final byEvent = (a.eventCreatedAt ?? a.timestamp ?? 0)
+        .compareTo(b.eventCreatedAt ?? b.timestamp ?? 0);
+    if (byEvent != 0) return byEvent;
+    return (a.timestamp ?? 0).compareTo(b.timestamp ?? 0);
+  }
 
   Map<String, dynamic> toJson({int? version}) {
     Map<String, dynamic> json = {
@@ -47,6 +70,7 @@ class MostroMessage<T extends Payload> {
 
   factory MostroMessage.fromJson(Map<String, dynamic> json) {
     final timestamp = json['timestamp'];
+    final eventCreatedAt = json['event_created_at'];
     // IMPORTANT : Use 'order', 'restore' or 'cant-do' key as per protocol
     json = json['order'] ?? json['restore'] ?? json['cant-do'] ?? json;
     final num requestId = json['request_id'] ?? 0;
@@ -60,6 +84,7 @@ class MostroMessage<T extends Payload> {
           ? Payload.fromJson(json['payload']) as T?
           : null,
       timestamp: timestamp,
+      eventCreatedAt: eventCreatedAt,
     );
   }
 

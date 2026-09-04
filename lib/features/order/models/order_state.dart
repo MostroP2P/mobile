@@ -205,6 +205,21 @@ class OrderState {
       return copyWith(peerReputation: message.getPayload<Peer>()?.reputation);
     }
 
+    // A setup-phase message that lands after the trade moved on is a late
+    // delivery, not a transition: relays replay pending events newest-first
+    // and messages are decrypted concurrently, so `waiting-seller-to-pay` can
+    // be applied after `hold-invoice-payment-accepted`. Taking it would move
+    // the status back to a phase whose action table has no fiat-sent, release
+    // or chat button, which is how trades looked stuck until a dispute reset
+    // the row.
+    if (isStaleSetupMessage(message.action)) {
+      logger.w(
+        'Ignoring late ${message.action} for order ${message.id}: '
+        'the order is already $status',
+      );
+      return this;
+    }
+
     // Track whether fiat was sent at any point in this order's lifecycle
     final bool newFiatWasSent = fiatWasSent ||
         message.action == Action.fiatSent ||
@@ -400,6 +415,47 @@ class OrderState {
         .i('PaymentRequest preserved: ${newState.paymentRequest != null}');
 
     return newState;
+  }
+
+  /// Actions that only happen before the hold invoice is paid and the trade
+  /// becomes active. None of them is ever legitimately received once the
+  /// order is active, so from that point on they can only be late copies.
+  static const Set<Action> _preActiveActions = {
+    Action.takeBuy,
+    Action.takeSell,
+    Action.payBondInvoice,
+    Action.payInvoice,
+    Action.waitingSellerToPay,
+    Action.waitingBuyerInvoice,
+  };
+
+  /// Actions that open the active phase. Late copies are harmless while the
+  /// order is still active, but they must not pull a trade back from
+  /// fiat-sent, a cancel in progress, a dispute or a terminal state.
+  static const Set<Action> _activeEntryActions = {
+    Action.buyerTookOrder,
+    Action.holdInvoicePaymentAccepted,
+    Action.buyerInvoiceAccepted,
+  };
+
+  /// Whether [action] belongs to a phase this order has already left.
+  ///
+  /// `add-invoice` is deliberately not listed: Mostro reuses it to ask for a
+  /// payout invoice after a failed payment, well past the active phase.
+  bool isStaleSetupMessage(Action action) {
+    final activeOrLater = switch (status) {
+      Status.pending ||
+      Status.waitingTakerBond ||
+      Status.waitingPayment ||
+      Status.waitingBuyerInvoice ||
+      Status.inProgress ||
+      Status.expired =>
+        false,
+      _ => true,
+    };
+    if (!activeOrLater) return false;
+    if (_preActiveActions.contains(action)) return true;
+    return status != Status.active && _activeEntryActions.contains(action);
   }
 
   /// Maps actions to their corresponding statuses based on mostrod DM messages
