@@ -54,7 +54,7 @@ class MostroStorage extends BaseStorage<MostroMessage> {
     if (orderId == null) return;
     final list = _byOrder.putIfAbsent(orderId, () => <MostroMessage>[]);
     list.add(message);
-    list.sort((a, b) => (b.timestamp ?? 0).compareTo(a.timestamp ?? 0));
+    list.sort((a, b) => MostroMessage.compareByEventTime(b, a));
     if (notify) _notifyOrder(orderId);
   }
 
@@ -117,6 +117,7 @@ class MostroStorage extends BaseStorage<MostroMessage> {
       final Map<String, dynamic> dbMap = message.toJson();
       message.timestamp ??= DateTime.now().millisecondsSinceEpoch;
       dbMap['timestamp'] = message.timestamp;
+      dbMap['event_created_at'] = message.eventCreatedAt;
 
       await store.record(id).put(db, dbMap);
       _indexAdd(message);
@@ -197,15 +198,13 @@ class MostroStorage extends BaseStorage<MostroMessage> {
         .toList();
   }
 
-  /// Filter messages by payload type
+  /// Latest message for [orderId] whose payload is a [T], by event time.
   Future<MostroMessage?> getLatestMessageOfTypeById<T extends Payload>(
     String orderId,
   ) async {
-    final messages = await getMessagesForId(orderId);
-    for (final message in messages.reversed) {
-      if (message.payload is T) {
-        return message;
-      }
+    await _ensureIndex();
+    for (final message in _byOrder[orderId] ?? const <MostroMessage>[]) {
+      if (message.payload is T) return message;
     }
     return null;
   }

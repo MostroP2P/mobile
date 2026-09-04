@@ -222,16 +222,20 @@ class MostroService {
       // decrypts straight to the tuple. Both converge on jsonDecode below.
       String? content;
       String? decryptedId;
+      DateTime? eventCreatedAt;
       if (event.kind == 14) {
         content = await NostrUtils.decryptNIP44DirectEvent(
           event,
           privateKey,
           expectedAuthor: _settings.mostroPublicKey,
         );
+        eventCreatedAt = event.createdAt;
       } else {
         final decryptedEvent = await event.unWrap(privateKey);
         content = decryptedEvent.content;
         decryptedId = decryptedEvent.id;
+        // The wrap's created_at is randomized; the rumor's is the real one.
+        eventCreatedAt = decryptedEvent.createdAt ?? event.createdAt;
       }
 
       if (content == null) {
@@ -264,6 +268,9 @@ class MostroService {
       }
 
       final msg = MostroMessage.fromJson(result[0]);
+      // Ordering key for the order's history: the daemon's event time, not
+      // the moment this client happened to decrypt it.
+      msg.eventCreatedAt = eventCreatedAt?.millisecondsSinceEpoch;
 
       final messageStorage = ref.read(mostroStorageProvider);
 

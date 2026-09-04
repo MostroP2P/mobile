@@ -232,6 +232,22 @@ class OrderState {
     // DEBUG: Log status mapping
     logger.d('Status mapping: $effectiveAction → $newStatus');
 
+    // A message that would move the order back to a phase it already left is
+    // a late delivery, not a transition: relays replay pending events
+    // newest-first, decryption is concurrent and the wire `created_at` has
+    // one-second resolution, so `waiting-seller-to-pay` can be applied after
+    // `hold-invoice-payment-accepted`, or `fiat-sent-ok` after `released`.
+    // Taking it would land on a phase whose action table has no fiat-sent,
+    // release or chat button, which is how trades looked stuck until a
+    // dispute reset the row.
+    if (isStaleTransition(effectiveAction, newStatus)) {
+      logger.w(
+        'Ignoring late ${message.action} for order ${message.id}: '
+        'it would move the order from $status back to $newStatus',
+      );
+      return this;
+    }
+
     // A pending order has no counterpart: when Mostro republishes it after the
     // taker times out, the previous taker's snapshot must not be carried into
     // the next take and shown as if it belonged to whoever takes it next.
@@ -400,6 +416,48 @@ class OrderState {
         .i('PaymentRequest preserved: ${newState.paymentRequest != null}');
 
     return newState;
+  }
+
+  /// Position of a status along the trade lifecycle. Statuses that can
+  /// legitimately follow each other in either direction share a rank: a
+  /// cooperative cancel can be started from fiat-sent or during a dispute and
+  /// the trade can still reach fiat-sent while the cancel is pending; a
+  /// payout can fail and be retried while the hold invoice stays settled.
+  /// Every terminal status sits at the top so nothing reopens it.
+  static int phaseRank(Status status) => switch (status) {
+        Status.pending => 0,
+        Status.waitingTakerBond ||
+        Status.waitingPayment ||
+        Status.waitingBuyerInvoice ||
+        Status.inProgress =>
+          1,
+        Status.active => 2,
+        Status.fiatSent || Status.cooperativelyCanceled || Status.dispute => 3,
+        Status.settledHoldInvoice || Status.paymentFailed => 4,
+        Status.success => 5,
+        Status.canceled ||
+        Status.canceledByAdmin ||
+        Status.settledByAdmin ||
+        Status.completedByAdmin ||
+        Status.expired =>
+          6,
+      };
+
+  /// Whether applying [action] with [newStatus] would move the order back to
+  /// a phase it already left.
+  ///
+  /// The one backwards move the protocol makes is the republish after a taker
+  /// timeout: Mostro sends `new-order` with a pending payload to the maker
+  /// while the order waits for the taker's invoice or payment. Nothing else
+  /// goes backwards, so any other such message is a late copy.
+  bool isStaleTransition(Action action, Status newStatus) {
+    final current = phaseRank(status);
+    final next = phaseRank(newStatus);
+    if (next >= current) return false;
+    final isRepublish = action == Action.newOrder &&
+        newStatus == Status.pending &&
+        current <= phaseRank(Status.waitingPayment);
+    return !isRepublish;
   }
 
   /// Maps actions to their corresponding statuses based on mostrod DM messages

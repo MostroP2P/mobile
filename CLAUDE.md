@@ -50,10 +50,11 @@ When implementing or debugging protocol-related features (order flows, actions, 
 ### Nostr Integration
 - **NostrService** (`services/nostr_service.dart`) manages relay connections and messaging
 - All Nostr protocol interactions go through this service
+- **Message ordering**: an order's history is ordered by `MostroMessage.eventCreatedAt` (the daemon's `created_at`, set in `MostroService._processEvent`) via `MostroMessage.compareByEventTime`; `timestamp` is the local receive time, used only as tie-break and for the recency gate for notifications. Relays replay pending events newest-first, decryption is concurrent and the wire `created_at` has one-second resolution, so receive order is not trade order. `OrderState.updateWith` additionally drops any message that would move the order back to an earlier lifecycle phase (`isStaleTransition` over `phaseRank`, the only allowed backwards move being the `new-order` republish to pending after a taker timeout), so a late copy can never move a trade back to a phase without fiat-sent/release/chat buttons or reopen a terminal one (regression tests: `test/features/order/notifiers/order_notifier_replay_order_test.dart`, `test/features/order/models/order_state_late_setup_message_test.dart`)
 - **MostroFSM** (`core/mostro_fsm.dart`) defines a transition matrix but is **not wired in** — nothing imports it
   - Order status is actually derived by `OrderState._getStatusFromAction` (`features/order/models/order_state.dart`), which maps actions to statuses without consulting the matrix
   - Do not read `mostro_fsm.dart` as an active validation layer. Its role axis models who performs an action, not the local user's role in the trade (the app never assigns `Role.admin` to a session), so wiring it as-is would reject legitimate admin resolutions
-  - The only transition guard that runs today is the dispute-evidence check on `admin-*` actions in `OrderState.updateWith`
+  - The only transition guards that run today live in `OrderState.updateWith`: the dispute-evidence check on `admin-*` actions and the backwards-phase drop (`isStaleTransition`)
 
 ### Navigation and UI
 - **GoRouter** for navigation (configured in `core/app_routes.dart`)
