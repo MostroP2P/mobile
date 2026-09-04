@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.4.2] - 2026-09-04
+
+### Fixed
+- fix: order message history by event time and drop late setup messages (#723) (468dc22d)
+- fix: persist pending range-order child sessions across isolates and restarts (#641) (4a4e2acf)
+- fix: stop sharing an in-flight session load across an invalidate (fd776333)
+- fix: do not cache a session load that raced a background write (8f43efdb)
+- fix: widen the NWC skew budget and stop freezing a time-dependent memo (5e029a37)
+
+### Changed
+- perf: prune unbounded local storage growth (#716) (a67d1677)
+- perf: serve mostro message queries from a single in-memory index (#715) (e531df88)
+- perf: lazy notifiers for terminal orders and a bounded media cache (#717) (e8222d71)
+- perf: single dispute-chat REQ and constant-time session resolution (#714) (753a6efc)
+- perf: cache sessions and chat keys in the background isolate (#713) (fed47b50)
+- perf: back off relay recovery and stop reconnecting on NOTICE (#712) (aa761254)
+- perf: resume the order book from the last received event (#711) (9b6581c6)
+- perf: bound the orders subscription replay with a persisted since cursor (#708) (cbb1ed49)
+- perf: bound NWC response replay and memoize the countdown state lookup (31067098)
+
+
 ## [v1.4.1] - 2026-09-01
 
 ### Added
