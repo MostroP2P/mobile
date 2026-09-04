@@ -3,11 +3,12 @@ import 'package:mostro_mobile/data/models.dart';
 import 'package:mostro_mobile/data/enums.dart';
 import 'package:mostro_mobile/features/order/models/order_state.dart';
 
-/// Setup-phase messages that land after the trade moved on are late copies
-/// (relays replay newest-first, decryption is concurrent). Applying them used
-/// to move the status back to a phase whose action table has no fiat-sent,
-/// release or chat button, leaving the trade looking stuck until a dispute
-/// reset the row.
+/// Messages that land after the trade moved past their phase are late copies
+/// (relays replay newest-first, decryption is concurrent, and the wire
+/// created_at has one-second resolution). Applying them used to move the
+/// status back to a phase whose action table has no fiat-sent, release or
+/// chat button, leaving the trade looking stuck until a dispute reset the
+/// row, or reopen a terminal order.
 Order _order(Status status) => Order(
       id: 'order-1',
       kind: OrderType.sell,
@@ -83,6 +84,8 @@ void main() {
     });
   });
 
+  _lateCopiesOnLaterPhases();
+
   group('messages that are not late', () {
     test('the active-entry message still opens the active phase', () {
       final waiting = _state(Status.waitingPayment, Action.waitingSellerToPay);
@@ -114,5 +117,98 @@ void main() {
 
       expect(next.status, Status.pending);
     });
+  });
+}
+
+void _lateCopiesOnLaterPhases() {
+  group('late copies on later phases', () {
+    test('a same-second fiat-sent-ok does not undo a release', () {
+      // The wire created_at has one-second resolution, so the tie falls back
+      // to receive order; the transition guard must hold on its own.
+      final released = _state(Status.settledHoldInvoice, Action.released);
+
+      final next = released.updateWith(
+        _message(Action.fiatSentOk, status: Status.fiatSent),
+      );
+
+      expect(next.status, Status.settledHoldInvoice);
+      expect(next.action, Action.released);
+    });
+
+    test('a same-second released does not undo purchase-completed', () {
+      final done = _state(Status.success, Action.purchaseCompleted);
+
+      final next = done.updateWith(
+        _message(Action.released, status: Status.settledHoldInvoice),
+      );
+
+      expect(next.status, Status.success);
+      expect(next.getActions(Role.buyer), contains(Action.rate));
+    });
+
+    test('a late hold-invoice-payment-accepted keeps a cooperative cancel',
+        () {
+      final canceling = _state(
+          Status.cooperativelyCanceled, Action.cooperativeCancelNoFiatByYou);
+
+      final next = canceling.updateWith(
+        _message(Action.holdInvoicePaymentAccepted, status: Status.active),
+      );
+
+      expect(next.status, Status.cooperativelyCanceled);
+    });
+
+    test('fiat-sent-ok is still applied while a cooperative cancel is pending',
+        () {
+      // The buyer can still complete the trade: same rank, not a move back.
+      final canceling = _state(
+          Status.cooperativelyCanceled, Action.cooperativeCancelNoFiatByPeer);
+
+      final next = canceling.updateWith(
+        _message(Action.fiatSentOk, status: Status.fiatSent),
+      );
+
+      expect(next.status, Status.fiatSent);
+    });
+  });
+
+  group('late copies on terminal orders', () {
+    for (final status in [
+      Status.expired,
+      Status.canceled,
+      Status.success,
+      Status.settledByAdmin,
+    ]) {
+      test('a late waiting-seller-to-pay does not reopen $status', () {
+        final terminal = _state(status, Action.canceled);
+
+        final next = terminal.updateWith(
+          _message(Action.waitingSellerToPay, status: Status.waitingPayment),
+        );
+
+        expect(next.status, status);
+      });
+
+      test('a late hold-invoice-payment-accepted does not reopen $status',
+          () {
+        final terminal = _state(status, Action.canceled);
+
+        final next = terminal.updateWith(
+          _message(Action.holdInvoicePaymentAccepted, status: Status.active),
+        );
+
+        expect(next.status, status);
+      });
+
+      test('a late new-order does not reopen $status', () {
+        final terminal = _state(status, Action.canceled);
+
+        final next = terminal.updateWith(
+          _message(Action.newOrder, status: Status.pending),
+        );
+
+        expect(next.status, status);
+      });
+    }
   });
 }

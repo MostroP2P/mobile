@@ -1,5 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:sembast/sembast_memory.dart';
@@ -57,6 +60,8 @@ void main() {
     expect(history.map((m) => m.action), [Action.payInvoice, Action.newOrder]);
   });
 
+  _typedLookup();
+
   test('the event time survives a round trip through the database', () async {
     await storage.addMessage(
       'k1',
@@ -67,5 +72,44 @@ void main() {
     final history = await reopened.getAllMessagesForOrderId('order-a');
 
     expect(history.single.eventCreatedAt, 1234);
+  });
+}
+
+void _typedLookup() {
+  test('the typed latest lookup follows the event time too', () async {
+    final db =
+        await newDatabaseFactoryMemory().openDatabase('typed_lookup_test.db');
+    final storage = MostroStorage(db: db);
+    Order order(Status status) => Order(
+          id: 'order-a',
+          kind: OrderType.sell,
+          status: status,
+          fiatCode: 'VES',
+          fiatAmount: 100,
+          paymentMethod: 'face to face',
+        );
+
+    await storage.addMessage(
+      'newer',
+      MostroMessage<Order>(
+        action: Action.holdInvoicePaymentAccepted,
+        id: 'order-a',
+        eventCreatedAt: 2000,
+        payload: order(Status.active),
+      ),
+    );
+    await storage.addMessage(
+      'older',
+      MostroMessage<Order>(
+        action: Action.waitingSellerToPay,
+        id: 'order-a',
+        eventCreatedAt: 1000,
+        payload: order(Status.waitingPayment),
+      ),
+    );
+
+    final latest = await storage.getLatestMessageOfTypeById<Order>('order-a');
+
+    expect(latest?.getPayload<Order>()?.status, Status.active);
   });
 }

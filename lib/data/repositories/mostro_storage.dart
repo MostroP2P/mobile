@@ -198,15 +198,13 @@ class MostroStorage extends BaseStorage<MostroMessage> {
         .toList();
   }
 
-  /// Filter messages by payload type
+  /// Latest message for [orderId] whose payload is a [T], by event time.
   Future<MostroMessage?> getLatestMessageOfTypeById<T extends Payload>(
     String orderId,
   ) async {
-    final messages = await getMessagesForId(orderId);
-    for (final message in messages.reversed) {
-      if (message.payload is T) {
-        return message;
-      }
+    await _ensureIndex();
+    for (final message in _byOrder[orderId] ?? const <MostroMessage>[]) {
+      if (message.payload is T) return message;
     }
     return null;
   }

@@ -41,7 +41,10 @@ class MostroMessage<T extends Payload> {
   /// newest-first and the decrypt pipeline is concurrent, so the receive time
   /// alone puts an earlier message after a later one, and the order state
   /// (and with it the trade buttons) ends up on a phase the trade already left.
-  /// The receive time is the fallback for legacy rows and the tie-break.
+  /// The receive time is the fallback for legacy rows and the tie-break. The
+  /// wire `created_at` has one-second resolution, so two events from the same
+  /// second still fall back to receive order; `OrderState.isStaleTransition`
+  /// is what keeps such a tie from moving the order backwards.
   static int compareByEventTime(MostroMessage a, MostroMessage b) {
     final byEvent = (a.eventCreatedAt ?? a.timestamp ?? 0)
         .compareTo(b.eventCreatedAt ?? b.timestamp ?? 0);

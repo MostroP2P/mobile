@@ -205,21 +205,6 @@ class OrderState {
       return copyWith(peerReputation: message.getPayload<Peer>()?.reputation);
     }
 
-    // A setup-phase message that lands after the trade moved on is a late
-    // delivery, not a transition: relays replay pending events newest-first
-    // and messages are decrypted concurrently, so `waiting-seller-to-pay` can
-    // be applied after `hold-invoice-payment-accepted`. Taking it would move
-    // the status back to a phase whose action table has no fiat-sent, release
-    // or chat button, which is how trades looked stuck until a dispute reset
-    // the row.
-    if (isStaleSetupMessage(message.action)) {
-      logger.w(
-        'Ignoring late ${message.action} for order ${message.id}: '
-        'the order is already $status',
-      );
-      return this;
-    }
-
     // Track whether fiat was sent at any point in this order's lifecycle
     final bool newFiatWasSent = fiatWasSent ||
         message.action == Action.fiatSent ||
@@ -246,6 +231,22 @@ class OrderState {
 
     // DEBUG: Log status mapping
     logger.d('Status mapping: $effectiveAction → $newStatus');
+
+    // A message that would move the order back to a phase it already left is
+    // a late delivery, not a transition: relays replay pending events
+    // newest-first, decryption is concurrent and the wire `created_at` has
+    // one-second resolution, so `waiting-seller-to-pay` can be applied after
+    // `hold-invoice-payment-accepted`, or `fiat-sent-ok` after `released`.
+    // Taking it would land on a phase whose action table has no fiat-sent,
+    // release or chat button, which is how trades looked stuck until a
+    // dispute reset the row.
+    if (isStaleTransition(effectiveAction, newStatus)) {
+      logger.w(
+        'Ignoring late ${message.action} for order ${message.id}: '
+        'it would move the order from $status back to $newStatus',
+      );
+      return this;
+    }
 
     // A pending order has no counterpart: when Mostro republishes it after the
     // taker times out, the previous taker's snapshot must not be carried into
@@ -417,45 +418,46 @@ class OrderState {
     return newState;
   }
 
-  /// Actions that only happen before the hold invoice is paid and the trade
-  /// becomes active. None of them is ever legitimately received once the
-  /// order is active, so from that point on they can only be late copies.
-  static const Set<Action> _preActiveActions = {
-    Action.takeBuy,
-    Action.takeSell,
-    Action.payBondInvoice,
-    Action.payInvoice,
-    Action.waitingSellerToPay,
-    Action.waitingBuyerInvoice,
-  };
+  /// Position of a status along the trade lifecycle. Statuses that can
+  /// legitimately follow each other in either direction share a rank: a
+  /// cooperative cancel can be started from fiat-sent or during a dispute and
+  /// the trade can still reach fiat-sent while the cancel is pending; a
+  /// payout can fail and be retried while the hold invoice stays settled.
+  /// Every terminal status sits at the top so nothing reopens it.
+  static int phaseRank(Status status) => switch (status) {
+        Status.pending => 0,
+        Status.waitingTakerBond ||
+        Status.waitingPayment ||
+        Status.waitingBuyerInvoice ||
+        Status.inProgress =>
+          1,
+        Status.active => 2,
+        Status.fiatSent || Status.cooperativelyCanceled || Status.dispute => 3,
+        Status.settledHoldInvoice || Status.paymentFailed => 4,
+        Status.success => 5,
+        Status.canceled ||
+        Status.canceledByAdmin ||
+        Status.settledByAdmin ||
+        Status.completedByAdmin ||
+        Status.expired =>
+          6,
+      };
 
-  /// Actions that open the active phase. Late copies are harmless while the
-  /// order is still active, but they must not pull a trade back from
-  /// fiat-sent, a cancel in progress, a dispute or a terminal state.
-  static const Set<Action> _activeEntryActions = {
-    Action.buyerTookOrder,
-    Action.holdInvoicePaymentAccepted,
-    Action.buyerInvoiceAccepted,
-  };
-
-  /// Whether [action] belongs to a phase this order has already left.
+  /// Whether applying [action] with [newStatus] would move the order back to
+  /// a phase it already left.
   ///
-  /// `add-invoice` is deliberately not listed: Mostro reuses it to ask for a
-  /// payout invoice after a failed payment, well past the active phase.
-  bool isStaleSetupMessage(Action action) {
-    final activeOrLater = switch (status) {
-      Status.pending ||
-      Status.waitingTakerBond ||
-      Status.waitingPayment ||
-      Status.waitingBuyerInvoice ||
-      Status.inProgress ||
-      Status.expired =>
-        false,
-      _ => true,
-    };
-    if (!activeOrLater) return false;
-    if (_preActiveActions.contains(action)) return true;
-    return status != Status.active && _activeEntryActions.contains(action);
+  /// The one backwards move the protocol makes is the republish after a taker
+  /// timeout: Mostro sends `new-order` with a pending payload to the maker
+  /// while the order waits for the taker's invoice or payment. Nothing else
+  /// goes backwards, so any other such message is a late copy.
+  bool isStaleTransition(Action action, Status newStatus) {
+    final current = phaseRank(status);
+    final next = phaseRank(newStatus);
+    if (next >= current) return false;
+    final isRepublish = action == Action.newOrder &&
+        newStatus == Status.pending &&
+        current <= phaseRank(Status.waitingPayment);
+    return !isRepublish;
   }
 
   /// Maps actions to their corresponding statuses based on mostrod DM messages
