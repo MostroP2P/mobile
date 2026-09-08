@@ -1,0 +1,95 @@
+name: iOS unsigned build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "lib/**"
+      - "ios/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/ios.yml"
+  push:
+    branches:
+      - feat/ios-ci
+    paths:
+      - "lib/**"
+      - "ios/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/ios.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    name: Build iOS unsigned
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.32.2"
+          channel: stable
+          cache: true
+
+      - name: Show Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate required files
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod install
+          cd ..
+
+      - name: Build iOS without code signing
+        run: |
+          flutter build ios \
+            --release \
+            --no-codesign \
+            --dart-define=APP_VERSION=${{ github.ref_name }} \
+            --dart-define=GIT_COMMIT=${{ github.sha }}
+
+      - name: Verify iOS app
+        run: |
+          test -d build/ios/iphoneos/Runner.app
+          ls -lah build/ios/iphoneos/Runner.app
+
+      - name: Package unsigned build
+        run: |
+          mkdir -p artifacts
+          ditto \
+            -c \
+            -k \
+            --sequesterRsrc \
+            --keepParent \
+            build/ios/iphoneos/Runner.app \
+            artifacts/Mostro-iOS-unsigned.zip
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mostro-iOS-unsigned-${{ github.sha }}
+          path: artifacts/Mostro-iOS-unsigned.zip
+          if-no-files-found: error
+          retention-days: 14
