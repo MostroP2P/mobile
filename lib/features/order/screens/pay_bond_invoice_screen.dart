@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/data/enums.dart' as enums;
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -123,8 +124,16 @@ class PayBondInvoiceScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = S.of(context)!;
     final orderState = ref.watch(orderNotifierProvider(orderId));
-    final lnInvoice = orderState.paymentRequest?.lnInvoice ?? '';
-    final bondAmount = orderState.paymentRequest?.order?.amount;
+    // Only the invoice of the bond phase belongs on this screen. The order
+    // notifier is keyed by order id, so an escrow invoice from an earlier
+    // take of the same order could otherwise be rendered here as a bond —
+    // long after Mostro cancelled it node-side (#731).
+    final isBondPhase = orderState.action == enums.Action.payBondInvoice ||
+        orderState.status == enums.Status.waitingTakerBond;
+    final lnInvoice =
+        isBondPhase ? orderState.paymentRequest?.lnInvoice ?? '' : '';
+    final bondAmount =
+        isBondPhase ? orderState.paymentRequest?.order?.amount : null;
     // A maker creating an order pays the bond before it is published, so the
     // copy must warn them to keep the screen open or the order won't be created.
     final isMakerBond = ref
@@ -133,6 +142,44 @@ class PayBondInvoiceScreen extends ConsumerWidget {
             ?.bondPending ??
         false;
     final explanation = isMakerBond ? s.bondExplanationMaker : s.bondExplanation;
+
+    if (lnInvoice.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppTheme.dark1,
+        appBar: OrderAppBar(title: s.bondScreenTitle),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.hourglass_disabled,
+                color: AppTheme.textSecondary,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                s.bondInvoiceUnavailable,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppTheme.cream1,
+                  fontSize: 15,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => context.go('/'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.mostroGreen,
+                ),
+                child: Text(s.close),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,

@@ -92,12 +92,15 @@ class OrderState {
     bool? fiatWasSent,
     UserInfo? peerReputation,
     bool clearPeerReputation = false,
+    bool clearPaymentRequest = false,
   }) {
     return OrderState(
       status: status ?? this.status,
       action: action ?? this.action,
       order: order ?? this.order,
-      paymentRequest: paymentRequest ?? this.paymentRequest,
+      paymentRequest: clearPaymentRequest
+          ? null
+          : paymentRequest ?? this.paymentRequest,
       cantDo: cantDo ?? this.cantDo,
       dispute: dispute ?? this.dispute,
       peer: peer ?? this.peer,
@@ -108,6 +111,19 @@ class OrderState {
           : peerReputation ?? this.peerReputation,
     );
   }
+
+  /// Statuses that close the current take cycle: the order either went back
+  /// to the book or ended for good.
+  ///
+  /// Everything Mostro issued for that cycle — bond and escrow hold invoices
+  /// above all — is cancelled node-side when this happens, so no payload from
+  /// it may survive into the next take of the same order id.
+  static bool endsTradeCycle(Status status) =>
+      status == Status.pending ||
+      status == Status.canceled ||
+      status == Status.canceledByAdmin ||
+      status == Status.cooperativelyCanceled ||
+      status == Status.expired;
 
   /// Dispute statuses in which the dispute is over: a resolution has already
   /// been applied and no further admin action is expected for it.
@@ -256,11 +272,20 @@ class OrderState {
       logger.d('Order returned to pending: dropping the taker reputation');
     }
 
-    // Preserve PaymentRequest correctly
+    // Preserve PaymentRequest correctly — but only within the take cycle it
+    // belongs to. Mostro cancels the bond and escrow hold invoices when the
+    // cycle ends, so carrying one into the next take renders a bolt11 that
+    // can no longer be paid (INCORRECT_PAYMENT_DETAILS).
+    final bool cycleEnded = endsTradeCycle(newStatus);
     PaymentRequest? newPaymentRequest;
     if (message.payload is PaymentRequest) {
       newPaymentRequest = message.getPayload<PaymentRequest>();
       logger.d('New PaymentRequest found in message');
+    } else if (cycleEnded) {
+      newPaymentRequest = null;
+      if (paymentRequest != null) {
+        logger.d('Take cycle ended ($newStatus): dropping the stale invoice');
+      }
     } else {
       newPaymentRequest = paymentRequest; // Preserve existing
     }
@@ -400,6 +425,7 @@ class OrderState {
               ? message.getPayload<PaymentRequest>()!.order
               : order,
       paymentRequest: newPaymentRequest,
+      clearPaymentRequest: newPaymentRequest == null,
       cantDo: message.getPayload<CantDo>() ?? cantDo,
       dispute: updatedDispute,
       peer: newPeer,
@@ -459,6 +485,19 @@ class OrderState {
         current <= phaseRank(Status.waitingPayment);
     return !isRepublish;
   }
+
+  /// Whether [message] would be dropped by the stale-transition guard.
+  ///
+  /// Lets callers replaying persisted history tell a genuinely late copy from
+  /// the first message of a *new* take cycle: after a cancel, every later
+  /// message looks backwards to the guard, because a cancelled order outranks
+  /// every waiting phase. Combined with [endsTradeCycle] on the current
+  /// status, that is the signal to start the replay over instead of dropping
+  /// the rest of the history (#731).
+  bool wouldRejectAsStale(MostroMessage message) => isStaleTransition(
+        message.action,
+        _getStatusFromAction(message.action, message.getPayload<Order>()?.status),
+      );
 
   /// Maps actions to their corresponding statuses based on mostrod DM messages
   Status _getStatusFromAction(Action action, Status? payloadStatus) {

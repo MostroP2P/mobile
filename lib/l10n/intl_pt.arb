@@ -843,6 +843,7 @@
     "copy": "Copiar",
     "share": "Compartilhar",
     "failedToShareInvoice": "Falha ao compartilhar a fatura. Por favor, tente copiar em vez disso.",
+    "bondInvoiceUnavailable": "Esta fatura de depósito já não é válida. Volta atrás e aceita a ordem novamente para obteres uma nova.",
     "bondScreenTitle": "Depósito antiabuso",
     "bondExplanation": "Para aceitar esta ordem, você deve pagar um depósito antiabuso. Veja como funciona:\n\n• Seus sats ficam retidos na sua carteira, eles não são gastos.\n• Se a troca for concluída com sucesso, você recebe seu depósito de volta automaticamente.\n• Se você tiver uma disputa nesta ordem e perdê-la, você perderá o depósito.\n• Este mecanismo protege todos os usuários contra golpistas.",
     "bondExplanationMaker": "Antes que sua ordem possa ser criada, você deve pagar um depósito antiabuso. Mantenha esta tela aberta até que o pagamento seja concluído — se você fechá-la ou não pagar, a ordem não será criada. Veja como funciona:\n\n• Seus sats ficam retidos na sua carteira, eles não são gastos.\n• Se a troca for concluída com sucesso, você recebe seu depósito de volta automaticamente.\n• Se você tiver uma disputa nesta ordem e perdê-la, você perderá o depósito.\n• Este mecanismo protege todos os usuários contra golpistas.",
