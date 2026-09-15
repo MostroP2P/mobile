@@ -91,26 +91,11 @@ class OrderNotifier extends AbstractMostroNotifier {
 
       OrderState currentState = state;
 
+      // The replay rebuilds the cycle bookkeeping from the history itself.
+      cycleEndedAt = null;
       for (final message in messages) {
         if (message.action == Action.cantDo) continue;
-
-        // A cancelled order outranks every waiting phase, so to the
-        // stale-transition guard the first message of the *next* take of the
-        // same order id looks like a late copy and the whole new cycle would
-        // be dropped — leaving the previous cycle's invoice on screen (#731).
-        // Replay it from a clean slate instead.
-        if (OrderState.endsTradeCycle(currentState.status) &&
-            currentState.wouldRejectAsStale(message)) {
-          logger.i(
-              'Order $orderId was retaken: replaying ${message.action} as a new cycle');
-          currentState = OrderState(
-            status: Status.pending,
-            action: Action.newOrder,
-            order: currentState.order,
-          );
-        }
-
-        currentState = currentState.updateWith(message);
+        currentState = applyToCycle(currentState, message);
       }
 
       // A replay that lands on the same values notifies nobody:
@@ -156,21 +141,6 @@ class OrderNotifier extends AbstractMostroNotifier {
     }
   }
 
-  /// Drops every payload the previous take cycle left on this order id.
-  ///
-  /// Notifiers are keyed by order id, so retaking an order the user had
-  /// already taken and cancelled resumes the very same state object. Its
-  /// invoices were cancelled node-side when the previous cycle ended, and
-  /// rendering one again is how the stale bond screen happened (#731). The
-  /// order snapshot survives: it describes the listing, not the take.
-  void _resetForNewTakeCycle() {
-    state = OrderState(
-      status: Status.pending,
-      action: Action.newOrder,
-      order: state.order,
-    );
-  }
-
   Future<void> takeSellOrder(
       String orderId, int? amount, String? lnAddress) async {
     // Serialize session creation + publish with the restore reset behind the
@@ -186,9 +156,6 @@ class OrderNotifier extends AbstractMostroNotifier {
       // Drop any stale grace timer/flag from a previous cycle on this order so
       // it can't delete the session we just created (retake within 60s).
       AbstractMostroNotifier.clearBondCancelDeletion(orderId);
-
-      // Same reason, for the state this notifier still holds from that cycle.
-      _resetForNewTakeCycle();
 
       // Start 10s timeout cleanup timer for orphan session prevention
       AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);
@@ -215,9 +182,6 @@ class OrderNotifier extends AbstractMostroNotifier {
       // Drop any stale grace timer/flag from a previous cycle on this order so
       // it can't delete the session we just created (retake within 60s).
       AbstractMostroNotifier.clearBondCancelDeletion(orderId);
-
-      // Same reason, for the state this notifier still holds from that cycle.
-      _resetForNewTakeCycle();
 
       // Start 10s timeout cleanup timer for orphan session prevention
       AbstractMostroNotifier.startSessionTimeoutCleanup(orderId, ref);

@@ -118,12 +118,34 @@ class OrderState {
   /// Everything Mostro issued for that cycle — bond and escrow hold invoices
   /// above all — is cancelled node-side when this happens, so no payload from
   /// it may survive into the next take of the same order id.
+  ///
+  /// [Status.cooperativelyCanceled] is deliberately absent: here it is the
+  /// *pending* cooperative cancel (every `cooperative-cancel-initiated-*`
+  /// action maps to it) and the trade can still reach fiat-sent. The cancel
+  /// only lands with `cooperative-cancel-accepted`, which maps to
+  /// [Status.canceled].
   static bool endsTradeCycle(Status status) =>
       status == Status.pending ||
       status == Status.canceled ||
       status == Status.canceledByAdmin ||
-      status == Status.cooperativelyCanceled ||
       status == Status.expired;
+
+  /// Actions that can only be the first message of a take cycle.
+  ///
+  /// A message that ends up rejected by the stale-transition guard is either a
+  /// late copy or the start of the *next* take of the same order id; the action
+  /// is half of what tells them apart (the other half is its event time, see
+  /// `AbstractMostroNotifier.applyToCycle`). `add-invoice` also appears in the
+  /// payout-retry flow, but that runs from `payment-failed`, never from a
+  /// status that ends a cycle, so it cannot be confused with a take here.
+  static bool opensTakeCycle(Action action) =>
+      action == Action.takeBuy ||
+      action == Action.takeSell ||
+      action == Action.payBondInvoice ||
+      action == Action.payInvoice ||
+      action == Action.addInvoice ||
+      action == Action.waitingSellerToPay ||
+      action == Action.waitingBuyerInvoice;
 
   /// Dispute statuses in which the dispute is over: a resolution has already
   /// been applied and no further admin action is expected for it.
@@ -226,24 +248,15 @@ class OrderState {
         message.action == Action.fiatSent ||
         message.action == Action.fiatSentOk;
 
-    // Remap generic cooperative cancel actions to semantic variants
-    // based on whether fiat was sent before the cancel was initiated
-    Action effectiveAction = message.action;
-    if (message.action == Action.cooperativeCancelInitiatedByYou) {
-      effectiveAction = newFiatWasSent
-          ? Action.cooperativeCancelFiatSentByYou
-          : Action.cooperativeCancelNoFiatByYou;
-      logger.d('Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
-    } else if (message.action == Action.cooperativeCancelInitiatedByPeer) {
-      effectiveAction = newFiatWasSent
-          ? Action.cooperativeCancelFiatSentByPeer
-          : Action.cooperativeCancelNoFiatByPeer;
-      logger.d('Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
+    // Remap generic cooperative cancel actions to semantic variants, then
+    // derive the status — the same derivation `wouldRejectAsStale` consults.
+    final transition = _transitionFor(message, fiatSent: newFiatWasSent);
+    final Action effectiveAction = transition.action;
+    final Status newStatus = transition.status;
+    if (effectiveAction != message.action) {
+      logger.d(
+          'Remapped ${message.action} → $effectiveAction (fiatWasSent: $newFiatWasSent)');
     }
-
-    // Determine the new status based on the action received
-    Status newStatus = _getStatusFromAction(
-        effectiveAction, message.getPayload<Order>()?.status);
 
     // DEBUG: Log status mapping
     logger.d('Status mapping: $effectiveAction → $newStatus');
@@ -486,18 +499,49 @@ class OrderState {
     return !isRepublish;
   }
 
+  /// The action and status [updateWith] would apply for [message].
+  ///
+  /// The cooperative-cancel remap depends on whether fiat was sent, so it is
+  /// computed from this state unless the caller already knows the updated
+  /// value. Kept in one place so [wouldRejectAsStale] can never disagree with
+  /// what [updateWith] actually does.
+  ({Action action, Status status}) _transitionFor(
+    MostroMessage message, {
+    bool? fiatSent,
+  }) {
+    final sent = fiatSent ??
+        (fiatWasSent ||
+            message.action == Action.fiatSent ||
+            message.action == Action.fiatSentOk);
+
+    var action = message.action;
+    if (action == Action.cooperativeCancelInitiatedByYou) {
+      action = sent
+          ? Action.cooperativeCancelFiatSentByYou
+          : Action.cooperativeCancelNoFiatByYou;
+    } else if (action == Action.cooperativeCancelInitiatedByPeer) {
+      action = sent
+          ? Action.cooperativeCancelFiatSentByPeer
+          : Action.cooperativeCancelNoFiatByPeer;
+    }
+
+    return (
+      action: action,
+      status: _getStatusFromAction(action, message.getPayload<Order>()?.status),
+    );
+  }
+
   /// Whether [message] would be dropped by the stale-transition guard.
   ///
   /// Lets callers replaying persisted history tell a genuinely late copy from
   /// the first message of a *new* take cycle: after a cancel, every later
   /// message looks backwards to the guard, because a cancelled order outranks
-  /// every waiting phase. Combined with [endsTradeCycle] on the current
-  /// status, that is the signal to start the replay over instead of dropping
-  /// the rest of the history (#731).
-  bool wouldRejectAsStale(MostroMessage message) => isStaleTransition(
-        message.action,
-        _getStatusFromAction(message.action, message.getPayload<Order>()?.status),
-      );
+  /// every waiting phase. It is only half of the answer — see
+  /// `AbstractMostroNotifier.applyToCycle` for the rest (#731).
+  bool wouldRejectAsStale(MostroMessage message) {
+    final transition = _transitionFor(message);
+    return isStaleTransition(transition.action, transition.status);
+  }
 
   /// Maps actions to their corresponding statuses based on mostrod DM messages
   Status _getStatusFromAction(Action action, Status? payloadStatus) {

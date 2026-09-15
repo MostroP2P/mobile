@@ -45,6 +45,53 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   /// response is treated as a voluntary cancel (immediate session deletion)
   /// and notified as user-initiated rather than a counterparty timeout.
   @protected
+  /// Event time of the message that left this order in a cycle-ending status.
+  ///
+  /// `null` while the current cycle is still running. Maintained by
+  /// [applyToCycle], which is the only place that may restart a cycle.
+  int? cycleEndedAt;
+
+  /// Applies [message] to [current], restarting the take cycle first when the
+  /// message opens a *new* one rather than being a late copy of the old.
+  ///
+  /// After a cancel every later message looks backwards to the stale guard —
+  /// a cancelled order outranks every waiting phase — so the guard alone can
+  /// no longer tell "the order was taken again" (#731) from "a duplicate
+  /// arrived late" (#723). Restarting therefore needs positive evidence:
+  ///
+  /// 1. the action can only open a cycle ([OrderState.opensTakeCycle]), and
+  /// 2. its event time is *strictly* later than the message that ended the
+  ///    previous cycle. `created_at` has one-second resolution and relays
+  ///    replay newest-first, so a copy from the same second as the cancel is
+  ///    a late copy: Mostro cannot cancel a take and accept the next one
+  ///    within the same second.
+  OrderState applyToCycle(OrderState current, MostroMessage message) {
+    final eventTime = message.eventCreatedAt ?? message.timestamp ?? 0;
+    final endedAt = cycleEndedAt;
+
+    if (endedAt != null &&
+        eventTime > endedAt &&
+        OrderState.endsTradeCycle(current.status) &&
+        OrderState.opensTakeCycle(message.action) &&
+        current.wouldRejectAsStale(message)) {
+      logger.i(
+          'Order $orderId was taken again: replaying ${message.action} as a new cycle');
+      current = OrderState(
+        status: Status.pending,
+        action: Action.newOrder,
+        order: current.order,
+      );
+    }
+
+    final next = current.updateWith(message);
+
+    // Recorded from the resulting status rather than from the transition: a
+    // replay starts from the current state, so the message that ended the
+    // cycle can be applied onto an already-ended one.
+    cycleEndedAt = OrderState.endsTradeCycle(next.status) ? eventTime : null;
+    return next;
+  }
+
   static void markUserInitiatedCancel(String orderId) {
     _userInitiatedCancels.add(orderId);
   }
@@ -134,7 +181,7 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                   _userInitiatedCancels.remove(orderId);
 
               if (mounted) {
-                state = state.updateWith(msg);
+                state = applyToCycle(state, msg);
               }
 
               if (msg.timestamp != null &&

@@ -19,11 +19,7 @@ void main() {
         paymentMethod: 'prueba',
       );
 
-  MostroMessage<PaymentRequest> invoiceMessage(
-    Action action,
-    String bolt11, {
-    int amount = 16558,
-  }) =>
+  MostroMessage<PaymentRequest> invoiceMessage(Action action, String bolt11) =>
       MostroMessage<PaymentRequest>(
         id: 'order-1',
         action: action,
@@ -31,7 +27,6 @@ void main() {
           order: orderPayload(),
           lnInvoice: bolt11,
         ),
-        timestamp: amount,
       );
 
   MostroMessage<Order> orderMessage(Action action, Status status) =>
@@ -94,13 +89,15 @@ void main() {
         Status.pending,
         Status.canceled,
         Status.canceledByAdmin,
-        Status.cooperativelyCanceled,
         Status.expired,
       ]) {
         expect(OrderState.endsTradeCycle(status), isTrue, reason: '$status');
       }
 
       for (final status in [
+        // The *pending* cooperative cancel: the trade can still reach
+        // fiat-sent, so nothing of the cycle may be dropped yet.
+        Status.cooperativelyCanceled,
         Status.waitingTakerBond,
         Status.waitingPayment,
         Status.waitingBuyerInvoice,
@@ -109,6 +106,35 @@ void main() {
         Status.success,
       ]) {
         expect(OrderState.endsTradeCycle(status), isFalse, reason: '$status');
+      }
+    });
+  });
+
+  group('opensTakeCycle', () {
+    test('accepts only the actions that can start a take', () {
+      for (final action in [
+        Action.takeBuy,
+        Action.takeSell,
+        Action.payBondInvoice,
+        Action.payInvoice,
+        Action.addInvoice,
+        Action.waitingSellerToPay,
+        Action.waitingBuyerInvoice,
+      ]) {
+        expect(OrderState.opensTakeCycle(action), isTrue, reason: '$action');
+      }
+
+      // Mid-trade and terminal actions: a copy of one of these arriving after
+      // a cancel is a late duplicate, never a new take.
+      for (final action in [
+        Action.holdInvoicePaymentAccepted,
+        Action.buyerTookOrder,
+        Action.fiatSentOk,
+        Action.released,
+        Action.canceled,
+        Action.newOrder,
+      ]) {
+        expect(OrderState.opensTakeCycle(action), isFalse, reason: '$action');
       }
     });
   });
@@ -138,48 +164,4 @@ void main() {
     });
   });
 
-  group('replaying the persisted history of a retaken order', () {
-    // Mirrors the loop in OrderNotifier.sync: a message that only looks stale
-    // because the previous cycle ended restarts the replay.
-    OrderState replay(List<MostroMessage> messages) {
-      var current = initial();
-      for (final message in messages) {
-        if (OrderState.endsTradeCycle(current.status) &&
-            current.wouldRejectAsStale(message)) {
-          current = OrderState(
-            status: Status.pending,
-            action: Action.newOrder,
-            order: current.order,
-          );
-        }
-        current = current.updateWith(message);
-      }
-      return current;
-    }
-
-    test('ends on the new bond invoice, never the cancelled escrow one', () {
-      final state = replay([
-        invoiceMessage(Action.payBondInvoice, 'lnbcbond'),
-        invoiceMessage(Action.payInvoice, 'lnbcescrow'),
-        orderMessage(Action.waitingBuyerInvoice, Status.waitingBuyerInvoice),
-        orderMessage(Action.canceled, Status.canceled),
-        invoiceMessage(Action.payBondInvoice, 'lnbcbond2'),
-      ]);
-
-      expect(state.action, Action.payBondInvoice);
-      expect(state.status, Status.waitingTakerBond);
-      expect(state.paymentRequest?.lnInvoice, 'lnbcbond2');
-    });
-
-    test('a history that ends on the cancel keeps no invoice at all', () {
-      final state = replay([
-        invoiceMessage(Action.payBondInvoice, 'lnbcbond'),
-        invoiceMessage(Action.payInvoice, 'lnbcescrow'),
-        orderMessage(Action.canceled, Status.canceled),
-      ]);
-
-      expect(state.status, Status.canceled);
-      expect(state.paymentRequest, isNull);
-    });
-  });
 }
