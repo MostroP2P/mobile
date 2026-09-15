@@ -41,15 +41,34 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   // uses the same Action.canceled. Consumed once per cancel in subscribe().
   static final Set<String> _userInitiatedCancels = <String>{};
 
-  /// Marks an order as cancelled by the user, so the matching `canceled`
-  /// response is treated as a voluntary cancel (immediate session deletion)
-  /// and notified as user-initiated rather than a counterparty timeout.
-  @protected
   /// Event time of the message that left this order in a cycle-ending status.
   ///
   /// `null` while the current cycle is still running. Maintained by
   /// [applyToCycle], which is the only place that may restart a cycle.
   int? cycleEndedAt;
+
+  /// Event time of the message that opened the cycle this order is in.
+  ///
+  /// `null` until a cycle has been seen to open. Everything older than it
+  /// belongs to a cycle that is over — see [precedesActiveCycle].
+  int? cycleStartedAt;
+
+  static int _eventTimeOf(MostroMessage message) =>
+      message.eventCreatedAt ?? message.timestamp ?? 0;
+
+  /// Whether [message] belongs to a take cycle this order has already left.
+  ///
+  /// The replay is sorted by event time, but live delivery is not: a `canceled`
+  /// from the previous cycle can reach the stream *after* the new cycle's bond
+  /// invoice. The stale guard waves it through — a cancelled order outranks
+  /// every waiting phase — and it would then void the invoice the user is
+  /// looking at, delete the session and navigate away. Callers use this to
+  /// drop the message and its side effects, the way
+  /// [OrderState.rejectsAdminDisputeMessage] already does.
+  bool precedesActiveCycle(MostroMessage message) {
+    final startedAt = cycleStartedAt;
+    return startedAt != null && _eventTimeOf(message) < startedAt;
+  }
 
   /// Applies [message] to [current], restarting the take cycle first when the
   /// message opens a *new* one rather than being a late copy of the old.
@@ -65,9 +84,20 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
   ///    replay newest-first, so a copy from the same second as the cancel is
   ///    a late copy: Mostro cannot cancel a take and accept the next one
   ///    within the same second.
+  ///
+  /// Messages from before the current cycle opened are dropped outright
+  /// ([precedesActiveCycle]).
   OrderState applyToCycle(OrderState current, MostroMessage message) {
-    final eventTime = message.eventCreatedAt ?? message.timestamp ?? 0;
+    if (precedesActiveCycle(message)) {
+      logger.w(
+          'Ignoring ${message.action} for order $orderId: it belongs to a take '
+          'cycle that ended at $cycleStartedAt');
+      return current;
+    }
+
+    final eventTime = _eventTimeOf(message);
     final endedAt = cycleEndedAt;
+    var restarted = false;
 
     if (endedAt != null &&
         eventTime > endedAt &&
@@ -81,17 +111,27 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
         action: Action.newOrder,
         order: current.order,
       );
+      restarted = true;
     }
 
+    final cameFromEndedCycle = OrderState.endsTradeCycle(current.status);
     final next = current.updateWith(message);
 
     // Recorded from the resulting status rather than from the transition: a
     // replay starts from the current state, so the message that ended the
     // cycle can be applied onto an already-ended one.
-    cycleEndedAt = OrderState.endsTradeCycle(next.status) ? eventTime : null;
+    final ended = OrderState.endsTradeCycle(next.status);
+    cycleEndedAt = ended ? eventTime : null;
+    if (!ended && (restarted || cameFromEndedCycle)) {
+      cycleStartedAt = eventTime;
+    }
     return next;
   }
 
+  /// Marks an order as cancelled by the user, so the matching `canceled`
+  /// response is treated as a voluntary cancel (immediate session deletion)
+  /// and notified as user-initiated rather than a counterparty timeout.
+  @protected
   static void markUserInitiatedCancel(String orderId) {
     _userInitiatedCancels.add(orderId);
   }
@@ -163,6 +203,17 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                 logger.w(
                     'Dropping side effects for rejected ${msg.action} on order $orderId');
                 onAdminResolutionRejected(msg);
+                return;
+              }
+
+              // Same reasoning for a message the current cycle has outlived:
+              // live delivery is not ordered, so an old cycle's `canceled` can
+              // arrive after the new cycle started. Applying it would void the
+              // new bond invoice; notifying and navigating on it would send
+              // the user out of a trade that is running (#731).
+              if (precedesActiveCycle(msg)) {
+                logger.w(
+                    'Dropping ${msg.action} for order $orderId: it predates the current take cycle');
                 return;
               }
 

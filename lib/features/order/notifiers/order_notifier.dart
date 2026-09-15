@@ -93,6 +93,7 @@ class OrderNotifier extends AbstractMostroNotifier {
 
       // The replay rebuilds the cycle bookkeeping from the history itself.
       cycleEndedAt = null;
+      cycleStartedAt = null;
       for (final message in messages) {
         if (message.action == Action.cantDo) continue;
         currentState = applyToCycle(currentState, message);

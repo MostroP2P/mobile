@@ -158,7 +158,15 @@ void main() {
   }
 
   Future<OrderStateSnapshot> syncedState() async {
-    await container.read(orderNotifierProvider(orderId).notifier).sync();
+    // The OrderNotifier constructor starts a sync() it does not await, and a
+    // second sync() while that one runs only requests a replay. Let the
+    // constructor's pass drain first, then run one of our own on a quiet
+    // notifier, so the state read below is always the hydrated one.
+    final notifier = container.read(orderNotifierProvider(orderId).notifier);
+    for (var i = 0; i < 10; i++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+    await notifier.sync();
     final state = container.read(orderNotifierProvider(orderId));
     return OrderStateSnapshot(
       status: state.status,
@@ -279,6 +287,42 @@ void main() {
     // because an `admin-*` message is itself dropped without a tracked
     // dispute (`rejectsAdminDisputeMessage`), which would prove nothing
     // about the cycle rule.
+  });
+
+  group('live delivery is not ordered', () {
+    test('a cancel from the previous cycle cannot void the new invoice',
+        () async {
+      await persist([
+        ('a', invoice(Action.payBondInvoice, 'lnbcbond',
+            eventCreatedAt: 1000, timestamp: 1)),
+        (
+          'b',
+          message(Action.canceled, Status.canceled,
+              eventCreatedAt: 3000, timestamp: 2)
+        ),
+        ('c', invoice(Action.payBondInvoice, 'lnbcbond2',
+            eventCreatedAt: 4000, timestamp: 3)),
+      ]);
+
+      // Replay leaves the notifier inside the new cycle…
+      expect((await syncedState()).invoice, 'lnbcbond2');
+
+      // …and the previous cycle's cancel, delivered late by the live stream,
+      // must not reach the state: it would void the invoice on screen, and
+      // downstream it deletes the session and navigates away.
+      final notifier =
+          container.read(orderNotifierProvider(orderId).notifier);
+      final lateCancel = message(Action.canceled, Status.canceled,
+          eventCreatedAt: 3000, timestamp: 9);
+
+      expect(notifier.precedesActiveCycle(lateCancel), isTrue);
+      final after =
+          notifier.applyToCycle(container.read(orderNotifierProvider(orderId)),
+              lateCancel);
+
+      expect(after.status, Status.waitingTakerBond);
+      expect(after.paymentRequest?.lnInvoice, 'lnbcbond2');
+    });
   });
 
   group('a pending cooperative cancel is not a cycle end', () {
