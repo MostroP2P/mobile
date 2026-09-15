@@ -68,12 +68,28 @@ class _FixedSessionNotifier extends SessionNotifier {
   }
 }
 
-/// Real `sync()`, no live stream.
+/// Real `sync()`, no live stream — and no unawaited pass either.
+///
+/// The OrderNotifier constructor starts a `sync()` nothing can await, and a
+/// second `sync()` while that one runs only sets `_resyncRequested` and
+/// returns. Swallowing the constructor's call leaves the pass the test awaits
+/// as the only one, so the assertions never race hydration.
 class _SyncOnlyOrderNotifier extends OrderNotifier {
   _SyncOnlyOrderNotifier(super.orderId, super.ref);
 
+  bool _constructorSyncSkipped = false;
+
   @override
   void subscribe() {}
+
+  @override
+  Future<void> sync() async {
+    if (!_constructorSyncSkipped) {
+      _constructorSyncSkipped = true;
+      return;
+    }
+    return super.sync();
+  }
 }
 
 void main() {
@@ -158,15 +174,9 @@ void main() {
   }
 
   Future<OrderStateSnapshot> syncedState() async {
-    // The OrderNotifier constructor starts a sync() it does not await, and a
-    // second sync() while that one runs only requests a replay. Let the
-    // constructor's pass drain first, then run one of our own on a quiet
-    // notifier, so the state read below is always the hydrated one.
-    final notifier = container.read(orderNotifierProvider(orderId).notifier);
-    for (var i = 0; i < 10; i++) {
-      await Future<void>.delayed(Duration.zero);
-    }
-    await notifier.sync();
+    // _SyncOnlyOrderNotifier swallows the constructor's unawaited sync(), so
+    // this is the only pass and awaiting it is enough.
+    await container.read(orderNotifierProvider(orderId).notifier).sync();
     final state = container.read(orderNotifierProvider(orderId));
     return OrderStateSnapshot(
       status: state.status,
