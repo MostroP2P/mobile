@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/data/enums.dart' as enums;
+import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -144,40 +145,47 @@ class PayBondInvoiceScreen extends ConsumerWidget {
     final explanation = isMakerBond ? s.bondExplanationMaker : s.bondExplanation;
 
     if (lnInvoice.isEmpty) {
-      return Scaffold(
-        backgroundColor: AppTheme.dark1,
-        appBar: OrderAppBar(title: s.bondScreenTitle),
-        body: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.hourglass_disabled,
-                color: AppTheme.textSecondary,
-                size: 48,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                s.bondInvoiceUnavailable,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppTheme.cream1,
-                  fontSize: 15,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => context.go('/'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.mostroGreen,
-                ),
-                child: Text(s.close),
-              ),
-            ],
-          ),
-        ),
+      // No invoice to show — and the reason decides what to tell the user.
+      // Saying "expired, take the order again" in all three cases is what
+      // could make a maker abandon a bond that was merely still loading.
+      final cycleEnded =
+          OrderState.endsTradeCycle(orderState.status) &&
+              orderState.status != enums.Status.pending;
+      // `pending` here is the notifier's initial state as well: the maker bond
+      // arrives on AddOrderNotifier and only reaches this provider once its
+      // sync() has read the message, so the first frames legitimately have
+      // nothing to render.
+      final stillLoading = !cycleEnded &&
+          (orderState.status == enums.Status.pending ||
+              orderState.status == enums.Status.waitingTakerBond);
+
+      if (stillLoading) {
+        return _EmptyBondState(
+          title: s.bondScreenTitle,
+          icon: null,
+          message: s.bondInvoicePending,
+        );
+      }
+
+      if (cycleEnded) {
+        return _EmptyBondState(
+          title: s.bondScreenTitle,
+          icon: Icons.hourglass_disabled,
+          message: s.bondInvoiceUnavailable,
+          // The copy says "go back", so go back when there is a stack to pop.
+          actionLabel: s.close,
+          onAction: (context) =>
+              context.canPop() ? context.pop() : context.go('/'),
+        );
+      }
+
+      // Past the bond phase: the bond is paid and the trade moved on.
+      return _EmptyBondState(
+        title: s.bondScreenTitle,
+        icon: Icons.check_circle_outline,
+        message: s.bondAlreadyPaid,
+        actionLabel: s.goToTrade,
+        onAction: (context) => context.go('/trade_detail/$orderId'),
       );
     }
 
@@ -283,6 +291,63 @@ class PayBondInvoiceScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The bond screen with no invoice to show: one message, at most one action.
+class _EmptyBondState extends StatelessWidget {
+  final String title;
+  final IconData? icon;
+  final String message;
+  final String? actionLabel;
+  final void Function(BuildContext context)? onAction;
+
+  const _EmptyBondState({
+    required this.title,
+    required this.icon,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.dark1,
+      appBar: OrderAppBar(title: title),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon != null)
+              Icon(icon, color: AppTheme.textSecondary, size: 48)
+            else
+              const CircularProgressIndicator(color: AppTheme.mostroGreen),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppTheme.cream1,
+                fontSize: 15,
+                height: 1.4,
+              ),
+            ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => onAction!(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.mostroGreen,
+                ),
+                child: Text(actionLabel!),
+              ),
+            ],
           ],
         ),
       ),
