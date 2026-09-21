@@ -981,7 +981,7 @@
     },
     "orderId": "Order-ID:",
     "paymentMethod": "Betaalmethode:",
-    "sellingSats": "Verkoopt {amount} sats",
+    "sellingSats": "Je verkoopt {amount} sats",
     "@sellingSats": {
         "placeholders": {
             "amount": {
@@ -989,7 +989,7 @@
             }
         }
     },
-    "buyingSats": "Koopt {amount} sats",
+    "buyingSats": "Je koopt {amount} sats",
     "@buyingSats": {
         "placeholders": {
             "amount": {
