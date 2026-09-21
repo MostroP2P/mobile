@@ -165,6 +165,9 @@ void _initializeTimeAgoLocalization() {
   // Set Portuguese locale for timeago
   timeago.setLocaleMessages('pt', timeago.PtBrMessages());
 
+  // Set Dutch locale for timeago
+  timeago.setLocaleMessages('nl', timeago.NlMessages());
+
   // English is already the default, no need to set it
 }
 

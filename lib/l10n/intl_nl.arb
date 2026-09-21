@@ -1,0 +1,1833 @@
+{
+    "@@locale": "nl",
+    "backToHome": "Terug naar start",
+    "newOrder": "Je aanbod is gepubliceerd! Wacht tot een andere gebruiker je order neemt. Hij blijft {expiration_hours} uur beschikbaar. Je kunt deze order annuleren voordat iemand hem neemt, met: cancel.",
+    "@newOrder": {
+        "placeholders": {
+            "expiration_hours": {
+                "type": "String",
+                "description": "The expiration time in hours"
+            }
+        }
+    },
+    "canceled": "Je hebt order-ID {id} geannuleerd.",
+    "payInvoice": "Betaal deze hold invoice van {amount} sats voor {fiat_code} {fiat_amount} om te beginnen. Betaal je hem niet binnen {expiration_seconds} minuten, dan wordt de trade geannuleerd.",
+    "@payInvoice": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            },
+            "expiration_seconds": {
+                "type": "int",
+                "description": "The expiration time in minutes"
+            },
+            "fiat_amount": {
+                "type": "String",
+                "description": "The fiat amount"
+            },
+            "fiat_code": {
+                "type": "String",
+                "description": "The fiat currency code"
+            }
+        }
+    },
+    "addInvoice": "Stuur me een invoice voor {amount} satoshi, gelijk aan {fiat_code} {fiat_amount}. Daarheen stuur ik het geld zodra de trade klaar is. Lever je de invoice niet binnen {expiration_seconds} minuten, dan wordt de trade geannuleerd.",
+    "@addInvoice": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            },
+            "expiration_seconds": {
+                "type": "int",
+                "description": "The expiration time in minutes"
+            },
+            "fiat_amount": {
+                "type": "String",
+                "description": "The fiat amount"
+            },
+            "fiat_code": {
+                "type": "String",
+                "description": "The fiat currency code"
+            }
+        }
+    },
+    "addInvoicePaymentFailed": "De betaling van je vorige invoice kon niet worden voltooid. Stuur me een nieuwe invoice voor {amount} satoshi, gelijk aan {fiat_amount} {fiat_code}, om de betaling af te ronden.",
+    "@addInvoicePaymentFailed": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            },
+            "fiat_amount": {
+                "type": "String",
+                "description": "The fiat amount"
+            },
+            "fiat_code": {
+                "type": "String",
+                "description": "The fiat currency code"
+            }
+        }
+    },
+    "waitingSellerToPay": "Even geduld. Ik heb de verkoper gevraagd de sats voor order-ID {id} te sturen. Rondt de verkoper de betaling niet binnen {expiration_seconds} minuten af, dan wordt de trade geannuleerd.",
+    "@waitingSellerToPay": {
+        "placeholders": {
+            "expiration_seconds": {
+                "type": "int",
+                "description": "The expiration time in minutes"
+            },
+            "id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "orderTakenWaitingCounterpart": "Je order is geaccepteerd door een andere gebruiker. Wacht af of hij door wil gaan. Gaat hij akkoord, dan laat ik je weten wat jij moet doen. Voor nu hoef je niets te doen.\nReageert hij niet binnen {expiration_seconds} minuten, dan komt de order weer beschikbaar voor anderen.",
+    "@orderTakenWaitingCounterpart": {
+        "placeholders": {
+            "expiration_seconds": {
+                "type": "int",
+                "description": "The expiration time in minutes"
+            }
+        }
+    },
+    "waitingBuyerInvoice": "Betaling ontvangen! Je sats staan nu vast in je wallet. Ik heb de koper om een invoice gevraagd. Levert hij die niet binnen {expiration_seconds} minuten, dan komen je sats terug in je wallet en wordt de trade geannuleerd.",
+    "@waitingBuyerInvoice": {
+        "placeholders": {
+            "expiration_seconds": {
+                "type": "int",
+                "description": "The expiration time in minutes"
+            }
+        }
+    },
+    "buyerInvoiceAccepted": "De invoice is opgeslagen.",
+    "holdInvoicePaymentAccepted": "Neem contact op met verkoper {seller_name} om af te spreken hoe je {fiat_code} {fiat_amount} overmaakt met {payment_method}. Heb je de fiat verstuurd, meld het me dan met de knop Fiat verstuurd.",
+    "buyerTookOrder": "Neem contact op met koper {buyer_name} om door te geven hoe hij {fiat_code} {fiat_amount} kan overmaken via {payment_method}. Je krijgt bericht zodra de koper de fiatbetaling bevestigt. Controleer daarna of het geld binnen is. Reageert de koper niet, dan kun je annuleren of een dispuut openen. Let op: een beheerder neemt NOOIT contact met je op over je order, tenzij je eerst een dispuut opent.",
+    "fiatSentOkBuyer": "Ik heb {seller_name} laten weten dat je de fiat hebt overgemaakt. Bevestigt de verkoper de ontvangst, dan geeft hij het geld vrij. Weigert hij, dan kun je een dispuut openen.",
+    "fiatSentOkSeller": "{buyer_name} heeft me laten weten dat de fiat naar je is overgemaakt. Geef de satoshi vrij zodra je de ontvangst hebt gecontroleerd. Daarmee gaan ze naar de koper, en dat kan niet ongedaan worden gemaakt. Wil je doorgaan, druk dan op Vrijgeven.",
+    "released": "{seller_name} heeft de sats vrijgegeven! Je invoice wordt zo betaald. Zorg dat je wallet online is om via het Lightning Network te ontvangen.",
+    "purchaseCompleted": "Je aankoop van bitcoin is afgerond. Ik heb je invoice betaald; geniet van sound money!",
+    "holdInvoicePaymentSettled": "Je verkoop van sats is afgerond na bevestiging van de betaling door {buyer_name}.",
+    "rate": "BEOORDELEN",
+    "rateReceived": "Beoordeling opgeslagen!",
+    "cooperativeCancelInitiatedByYou": "Je hebt de annulering van order-ID {id} in gang gezet. Je tegenpartij moet akkoord gaan. Reageert hij niet, dan kun je een dispuut openen. Let op: geen enkele beheerder neemt over deze annulering contact met je op, tenzij je eerst een dispuut opent.",
+    "cooperativeCancelInitiatedByPeer": "Je tegenpartij wil order-ID {id} annuleren. Ga je akkoord, stuur me dan cancel-order-message. Let op: geen enkele beheerder neemt over deze annulering contact met je op, tenzij je eerst een dispuut opent.",
+    "cooperativeCancelAccepted": "Order {id} is geannuleerd!",
+    "disputeInitiatedByYou": "Je hebt een dispuut geopend voor order-ID {id}. Er wordt binnenkort een solver toegewezen. Zodra dat gebeurd is, deel ik zijn npub met je; alleen hij kan je helpen. Je dispuut-ID is: {dispute_id}.",
+    "@disputeInitiatedByYou": {
+        "placeholders": {
+            "id": {
+                "type": "String",
+                "example": "abc123"
+            },
+            "dispute_id": {
+                "type": "String",
+                "example": "dispute-456"
+            }
+        }
+    },
+    "disputeInitiatedByPeer": "Je tegenpartij heeft een dispuut geopend voor order-ID {id}. Er wordt binnenkort een solver toegewezen. Zodra dat gebeurd is, deel ik zijn npub met je; alleen hij kan je helpen. Je dispuut-ID is: {dispute_id}.",
+    "@disputeInitiatedByPeer": {
+        "placeholders": {
+            "id": {
+                "type": "String",
+                "example": "abc123"
+            },
+            "dispute_id": {
+                "type": "String",
+                "example": "dispute-456"
+            }
+        }
+    },
+    "adminTookDisputeAdmin": "Dit zijn de gegevens van het dispuut dat je hebt opgepakt: {details}. Bepaal welke gebruiker gelijk heeft en beslis of je de order annuleert of afrondt. Let op: je beslissing is definitief en kan niet worden teruggedraaid.",
+    "adminTookDisputeUsers": "Er is een solver toegewezen aan je dispuut. Hij neemt via de app contact met je op.",
+    "adminCanceledAdmin": "Je hebt order-ID {id} geannuleerd.",
+    "adminCanceledUsers": "De beheerder heeft order-ID {id} geannuleerd.",
+    "adminSettledAdmin": "Je hebt order-ID {id} afgerond.",
+    "adminSettledUsers": "De beheerder heeft order-ID {id} afgerond.",
+    "paymentFailed": "De betaling van je invoice is mislukt. Ik probeer het nog {payment_attempts} keer, met {payment_retries_interval} minuten tussen elke poging. Zorg dat je wallet online is om de betaling te ontvangen.",
+    "paymentFailedText": "Betaling mislukt",
+    "invoiceUpdated": "De invoice is bijgewerkt!",
+    "holdInvoicePaymentCanceled": "De invoice is geannuleerd; je sats staan weer in je wallet.",
+    "cantDo": "Je mag {action} niet voor deze order!",
+    "adminAddSolver": "Je hebt solver {npub} toegevoegd.",
+    "invalidSignature": "De actie kan niet worden uitgevoerd omdat de handtekening ongeldig is.",
+    "invalidTradeIndex": "De trade-index is ongeldig.",
+    "invalidAmount": "Het opgegeven bedrag is ongeldig. Controleer het en probeer opnieuw.",
+    "invalidInvoice": "De opgegeven Lightning-invoice is ongeldig. Controleer de gegevens en probeer opnieuw.",
+    "invalidPaymentRequest": "Het betaalverzoek is ongeldig of kan niet worden verwerkt.",
+    "invalidPeer": "Je bent niet gemachtigd voor deze actie.",
+    "invalidRating": "De beoordeling is ongeldig of valt buiten het bereik.",
+    "invalidTextMessage": "Het bericht is ongeldig of bevat verboden inhoud.",
+    "invalidOrderKind": "Het soort order is ongeldig.",
+    "invalidOrderStatus": "De actie kan niet worden uitgevoerd vanwege de huidige orderstatus.",
+    "invalidPubkey": "De actie kan niet worden uitgevoerd omdat de publieke sleutel ongeldig is.",
+    "invalidParameters": "De actie kan niet worden uitgevoerd vanwege ongeldige parameters. Controleer de opgegeven waarden en probeer opnieuw.",
+    "orderAlreadyCanceled": "De actie kan niet worden uitgevoerd omdat de order al geannuleerd is.",
+    "cantCreateUser": "Deze Mostro-instantie kon je nieuwe gebruiker niet aanmaken, probeer het later opnieuw.",
+    "isNotYourOrder": "Deze order is niet van jou.",
+    "notAllowedByStatus": "Deze actie is in de huidige staat niet toegestaan.",
+    "outOfRangeFiatAmount": "Het gevraagde fiatbedrag valt buiten het toegestane bereik.",
+    "outOfRangeSatsAmount": "Het sats-bedrag valt buiten het toegestane bereik.",
+    "isNotYourDispute": "Dit dispuut is niet aan jou toegewezen.",
+    "disputeCreationError": "Voor deze order kan geen dispuut worden geopend.",
+    "notFound": "Het gevraagde dispuut is niet gevonden.",
+    "invalidDisputeStatus": "De dispuutstatus is ongeldig.",
+    "invalidAction": "De gevraagde actie is ongeldig.",
+    "invalidFiatCurrency": "Deze Mostro-instantie accepteert de gekozen valuta niet, probeer een andere instantie",
+    "pendingOrderExists": "Je hebt al een order openstaan; rond hem af of annuleer hem voordat je een nieuwe accepteert.",
+    "login": "Inloggen",
+    "register": "Registreren",
+    "pin": "PIN",
+    "pleaseEnterPin": "Voer je pincode in",
+    "pleaseEnterPrivateKey": "Voer een privésleutel in",
+    "invalidPrivateKeyFormat": "Ongeldige indeling van de privésleutel",
+    "privateKeyLabel": "Privésleutel (nsec of hex)",
+    "pinMustBeAtLeast4Digits": "De pincode moet minstens 4 cijfers hebben",
+    "confirmPin": "Pincode bevestigen",
+    "pinsDoNotMatch": "De pincodes komen niet overeen",
+    "useBiometrics": "Biometrie gebruiken",
+    "generateNewKey": "Nieuwe sleutel aanmaken",
+    "welcomeHeading": "NO-KYC P2P\nLightning-exchange\nbovenop nostr",
+    "welcomeDescription": "Peer-to-peer Lightning Network-platform bovenop nostr",
+    "registerButton": "REGISTREREN",
+    "skipForNow": "Nu overslaan",
+    "noOrdersAvailable": "Geen orders beschikbaar",
+    "tryChangingFilters": "Pas de filters aan of kijk later nog eens",
+    "buyBtc": "BTC KOPEN",
+    "sellBtc": "BTC VERKOPEN",
+    "filter": "FILTER",
+    "statusFilter": "Status",
+    "allStatuses": "Alle",
+    "all": "Alle",
+    "statusPending": "In afwachting",
+    "statusWaitingPayment": "Wacht-op-betaling",
+    "statusWaitingBuyerInvoice": "Wacht-op-koper-invoice",
+    "statusActive": "Actief",
+    "statusFiatSent": "Fiat-verstuurd",
+    "statusSuccess": "Gelukt",
+    "statusCanceled": "Geannuleerd",
+    "statusSettledHoldInvoice": "Sats worden betaald",
+    "offersCount": "{count} aanbiedingen",
+    "@offersCount": {
+        "placeholders": {
+            "count": {
+                "type": "String"
+            }
+        }
+    },
+    "filterWithCount": "FILTER ({count})",
+    "@filterWithCount": {
+        "placeholders": {
+            "count": {
+                "type": "String"
+            }
+        }
+    },
+    "clearFilters": "Filters wissen",
+    "creatingNewOrder": "NIEUWE ORDER AANMAKEN",
+    "enterSatsAmountBuy": "Vul in hoeveel sats je wilt kopen",
+    "enterSatsAmountSell": "Vul in hoeveel sats je wilt verkopen",
+    "enterSatsAmount": "Vul een sats-bedrag in",
+    "pleaseEnterSatsAmount": "Vul een sats-bedrag in",
+    "pleaseEnterNumbersOnly": "Vul alleen cijfers in",
+    "pleaseSelectCurrency": "Kies een valuta",
+    "pleaseSelectPaymentMethod": "Kies minstens één betaalmethode",
+    "error": "Fout",
+    "ok": "OK",
+    "cancel": "Annuleren",
+    "canceledStatus": "Geannuleerd",
+    "cancelingStatus": "Bezig met annuleren",
+    "cooperativelyCanceledStatus": "Samen geannuleerd",
+    "canceledByAdminStatus": "Order geannuleerd door een beheerder",
+    "submit": "Versturen",
+    "settings": "Instellingen",
+    "currency": "Valuta",
+    "setDefaultFiatCurrency": "Stel je standaard fiatvaluta in",
+    "defaultFiatCurrency": "Standaard fiatvaluta",
+    "setDefaultLightningAddress": "Stel je standaard Lightning-adres in",
+    "defaultLightningAddress": "Standaard Lightning-adres",
+    "lightningAddressUsed": "Je ingestelde Lightning-adres wordt gebruikt",
+    "relays": "Relays",
+    "selectNostrRelays": "Kies de Nostr-relays waarmee je verbindt",
+    "addRelay": "Relay toevoegen",
+    "mostro": "Mostro",
+    "enterMostroPublicKey": "Vul de publieke sleutel in van de Mostro die je gebruikt",
+    "mostroPubkey": "Mostro-pubkey",
+    "orderBook": "Orderboek",
+    "myTrades": "Mijn trades",
+    "chat": "Chat",
+    "navigateToLabel": "Ga naar {label}",
+    "errorLoadingTrades": "Fout bij het laden van de trades",
+    "retry": "Opnieuw",
+    "noTradesAvailable": "Geen trades van dit soort",
+    "welcomeToMostroMobile": "Handel vrij in bitcoin, zonder KYC",
+    "discoverSecurePlatform": "Mostro is een peer-to-peer exchange waar je bitcoin verhandelt tegen elke valuta en betaalmethode, zonder KYC en zonder je gegevens aan iemand te geven.\n\nHij draait op Nostr, en is daarmee bestand tegen censuur. Niemand kan je tegenhouden om te handelen.",
+    "easyOnboarding": "Privacy vanaf het begin",
+    "guidedWalkthroughSimple": "Mostro maakt voor elke handel een nieuwe identiteit aan, zodat je trades niet aan elkaar te koppelen zijn.\n\nJe bepaalt zelf hoe privé je blijft:\n\n• Reputatiemodus: anderen zien je geslaagde trades en hoe betrouwbaar je bent.\n\n• Volledig privé: je bouwt geen reputatie op, maar wat je doet blijft volledig anoniem.\n\nJe kunt altijd wisselen in het scherm Account; sla daar ook je geheime woorden op, want dat is de enige manier om je account terug te krijgen.",
+    "tradeWithConfidence": "Zekerheid bij elke stap",
+    "seamlessPeerToPeer": "Mostro werkt met hold invoices: de sats blijven in de wallet van de verkoper tot het einde van de trade. Dat beschermt beide kanten.\n\nDe app is bovendien gemaakt om voor iedereen vanzelfsprekend te werken.",
+    "encryptedChat": "Volledig versleutelde chat",
+    "encryptedChatDescription": "Elke trade heeft een eigen privéchat, end-to-end versleuteld. Alleen de twee betrokken gebruikers kunnen hem lezen.\n\nBij een dispuut kun je de gedeelde sleutel aan een beheerder geven om de zaak op te lossen.",
+    "takeAnOffer": "Een aanbod accepteren",
+    "takeAnOfferDescription": "Blader door het orderboek, kies een aanbod dat je bevalt en loop de trade stap voor stap door.\n\nJe kunt het profiel van de ander bekijken, veilig chatten en de trade zonder gedoe afronden.",
+    "cantFindWhatYouNeed": "Niet gevonden wat je zoekt?",
+    "createYourOwnOffer": "Je kunt ook je eigen aanbod plaatsen en wachten tot iemand het accepteert.\n\nKies het bedrag en je betaalmethode; Mostro regelt de rest.",
+    "skip": "Overslaan",
+    "done": "Klaar",
+    "@_comment_trade_detail_screen_new": "New Trade Detail Screen Strings",
+    "orderDetailsTitle": "ORDERGEGEVENS",
+    "buyOrderDetailsTitle": "GEGEVENS KOOPORDER",
+    "sellOrderDetailsTitle": "GEGEVENS VERKOOPORDER",
+    "someoneIsSellingTitle": "Iemand verkoopt Sats",
+    "someoneIsBuyingTitle": "Iemand koopt Sats",
+    "someoneIsSellingFixedTitle": "Iemand verkoopt {sats} Sats",
+    "someoneIsBuyingFixedTitle": "Iemand koopt {sats} Sats",
+    "youCreatedOfferMessage": "Je hebt dit aanbod geplaatst. Hieronder staan de gegevens. Wacht tot een andere gebruiker het accepteert. Het blijft {expiration_hours} uur gepubliceerd. Je kunt het altijd intrekken met de knop 'Annuleren'.",
+    "@youCreatedOfferMessage": {
+        "placeholders": {
+            "expiration_hours": {
+                "type": "String",
+                "description": "The expiration time in hours"
+            }
+        }
+    },
+    "youAreSellingTitle": "Je verkoopt{sats} sats",
+    "youAreBuyingTitle": "Je koopt{sats} sats",
+    "canceledTradeTitle": "Trade van{sats} sats",
+    "forAmount": "voor {amount}",
+    "timeLeftLabel": "Resterende tijd: {time}",
+    "@timeLeftLabel": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "cancelPendingButton": "ANNULERING AANVRAGEN",
+    "acceptCancelButton": "ANNULEREN",
+    "disputeButton": "DISPUUT",
+    "fiatSentButton": "FIAT VERSTUURD",
+    "completePurchaseButton": "AANKOOP AFRONDEN",
+    "paymentMethodLabel": "Betaalmethode",
+    "createdOnLabel": "Aangemaakt op",
+    "orderIdLabel": "Order-ID",
+    "creatorReputationLabel": "Reputatie van de plaatser",
+    "buyerReputationLabel": "Reputatie van de koper",
+    "sellerReputationLabel": "Reputatie van de verkoper",
+    "buyerTookYourSellOrder": "Een koper heeft je verkooporder geaccepteerd.",
+    "sellerTookYourBuyOrder": "Een verkoper heeft je kooporder geaccepteerd.",
+    "payInvoiceExchangeInstruction": "Wil je doorgaan met de ruil, betaal dan deze Lightning-invoice van {sats} sats, gelijk aan {fiat_amount} {fiat_code}.",
+    "@payInvoiceExchangeInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "addInvoiceExchangeInstruction": "Wil je doorgaan met de ruil, voeg dan een Lightning-invoice toe voor {sats} sats, gelijk aan {fiat_amount} {fiat_code}.",
+    "@addInvoiceExchangeInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "payoutInvoiceInstruction": "Voeg een Lightning-invoice toe voor {sats} sats, gelijk aan {fiat_amount} {fiat_code}, om de betaling voor je aankoop te ontvangen.",
+    "@payoutInvoiceInstruction": {
+        "placeholders": {
+            "sats": {
+                "type": "String"
+            },
+            "fiat_amount": {
+                "type": "String"
+            },
+            "fiat_code": {
+                "type": "String"
+            }
+        }
+    },
+    "collectYourSats": "Haal je sats op",
+    "reputationReviewsCount": "{count, plural, =1{1 beoordeling} other{{count} beoordelingen}}",
+    "@reputationReviewsCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "reputationDaysCount": "{count, plural, =1{1 dag} other{{count} dagen}}",
+    "@reputationDaysCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "ratingTitleLabel": "Beoordeling",
+    "reviewsLabel": "Beoordelingen",
+    "daysLabel": "Dagen",
+    "cancelTradeDialogTitle": "Trade annuleren",
+    "cooperativeCancelDialogMessage": "Als je bevestigt, start je een annulering in overleg met je tegenpartij.",
+    "acceptCancelDialogMessage": "Als je bevestigt, ga je akkoord met de annulering die je tegenpartij heeft voorgesteld.",
+    "orderIdCopiedMessage": "Order-ID gekopieerd",
+    "disputeTradeDialogTitle": "Dispuut starten",
+    "disputeTradeDialogContent": "Je staat op het punt een dispuut te starten met je tegenpartij. Wil je doorgaan?",
+    "disputeCreatedSuccessfully": "Dispuut geopend",
+    "disputeCreationFailed": "Het dispuut kon niet worden geopend",
+    "disputeCreationErrorWithMessage": "Fout bij het openen van het dispuut: {error}",
+    "@disputeCreationErrorWithMessage": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "typeToAdd": "Typ om toe te voegen…",
+    "noneSelected": "Niets gekozen",
+    "fiatCurrencies": "Fiatvaluta",
+    "paymentMethods": "Betaalmethodes",
+    "invalidMessageMissingId": "Ongeldig bericht: ID ontbreekt",
+    "invalidImageMessageFormat": "Ongeldige opmaak van het afbeeldingsbericht",
+    "securityErrorInvalidChars": "Beveiligingsfout: ongeldige tekens in de opgeschoonde bestandsnaam",
+    "ratingLabel": "Beoordeling: {rating}",
+    "buyingBitcoin": "Bitcoin kopen",
+    "sellingBitcoin": "Bitcoin verkopen",
+    "bankTransfer": "Bankoverschrijving",
+    "cashInPerson": "Contant, persoonlijk",
+    "other": "Anders",
+    "createdByYou": "Door jou geplaatst",
+    "takenByYou": "Door jou geaccepteerd",
+    "active": "Actief",
+    "pending": "In afwachting",
+    "waitingPayment": "Wacht op betaling",
+    "waitingInvoice": "Wacht op invoice",
+    "fiatSent": "Fiat-verstuurd",
+    "settled": "Afgewikkeld",
+    "completed": "Afgerond",
+    "dispute": "Dispuut",
+    "expired": "Verlopen",
+    "success": "Gelukt",
+    "statusDetailActive": "Actieve order",
+    "statusDetailPending": "Order in afwachting",
+    "statusDetailWaitingPayment": "Wacht op betaling door de verkoper",
+    "statusDetailWaitingInvoice": "Wacht op invoice van de koper",
+    "statusDetailFiatSent": "Fiat verstuurd",
+    "statusDetailPaymentFailed": "Betaling mislukt",
+    "statusDetailCanceled": "Order geannuleerd",
+    "statusDetailCooperativelyCanceled": "Samen geannuleerd",
+    "statusDetailCanceledByAdmin": "Order geannuleerd door een beheerder",
+    "statusDetailSettled": "Sats vrijgegeven door een beheerder",
+    "statusDetailCompleted": "Sats vrijgegeven door een beheerder",
+    "statusDetailDispute": "Order in dispuut",
+    "statusDetailExpired": "Order verlopen",
+    "statusDetailSuccess": "Geslaagde order",
+    "statusDetailSettledHoldInvoice": "Sats worden betaald",
+    "orderIdCopied": "Order-ID gekopieerd",
+    "noPaymentMethod": "Geen betaalmethode",
+    "youAreSellingText": "Je verkoopt{sats} sats voor {amount} {price} {premium}",
+    "youAreBuyingText": "Je koopt{sats} sats voor {amount} {price} {premium}",
+    "withPremium": " met een premie van +{premium}%",
+    "withDiscount": " met een korting van {premium}%",
+    "createdOn": "Aangemaakt op:",
+    "paymentMethodsLabel": "Betaalmethodes",
+    "cancelTrade": "Trade annuleren",
+    "areYouSureCancel": "Weet je zeker dat je deze trade wilt annuleren?",
+    "cooperativeCancelMessage": "Als je bevestigt, start je een annulering in overleg met je tegenpartij.",
+    "acceptCancelMessage": "Als je bevestigt, ga je akkoord met de annulering die je tegenpartij heeft voorgesteld.",
+    "releaseTradeDialogTitle": "Bitcoin vrijgeven",
+    "areYouSureRelease": "Weet je zeker dat je de satoshi aan de koper wilt vrijgeven?",
+    "confirm": "Bevestigen",
+    "yes": "Ja",
+    "no": "Nee",
+    "buy": "KOOP",
+    "sell": "VERKOOP",
+    "buying": "KOOPT",
+    "selling": "VERKOOPT",
+    "youAreBuying": "JE KOOPT",
+    "youAreSelling": "JE VERKOOPT",
+    "marketPrice": "Marktprijs",
+    "forSats": "Voor {amount} sats",
+    "@forSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "hoursAgo": "{count} uur geleden",
+    "@hoursAgo": {
+        "placeholders": {
+            "count": {
+                "type": "String"
+            }
+        }
+    },
+    "reviews": "beoordelingen",
+    "daysOld": "dagen oud",
+    "reviewsAndDaysOld": "{reviews} beoordelingen • {days} dagen oud",
+    "@reviewsAndDaysOld": {
+        "placeholders": {
+            "reviews": {
+                "type": "String"
+            },
+            "days": {
+                "type": "String"
+            }
+        }
+    },
+    "account": "Account",
+    "about": "Over",
+    "walkthrough": "Rondleiding",
+    "version": "Versie",
+    "githubRepository": "GitHub-repository",
+    "commitHash": "Commit-hash",
+    "appInformation": "App-informatie",
+    "mostroNode": "Mostro-node",
+    "generalInfo": "Algemene informatie",
+    "pubkey": "Pubkey",
+    "mostroVersion": "Versie",
+    "expirationHours": "Verlooptijd in uren",
+    "expirationSeconds": "Verlooptijd in seconden",
+    "fee": "Kosten",
+    "proofOfWork": "Proof of work",
+    "holdInvoiceExpirationWindow": "Geldigheidsduur hold invoice",
+    "holdInvoiceCltvDelta": "CLTV-delta hold invoice",
+    "invoiceExpirationWindow": "Geldigheidsduur invoice",
+    "@_comment_order_creation": "Order Creation Form Strings",
+    "youWantToBuyBitcoin": "Je wilt bitcoin kopen",
+    "youWantToSellBitcoin": "Je wilt bitcoin verkopen",
+    "lightningAddressOptional": "Lightning-adres (optioneel)",
+    "enterLightningAddress": "Vul een Lightning-adres in",
+    "enterAmountHint": "Vul een bedrag in",
+    "pleaseEnterAmount": "Vul een bedrag in",
+    "pleaseEnterValidAmount": "Vul een geldig bedrag in",
+    "fiatAmountTooHigh": "Het fiatbedrag is te hoog. De Mostro-node die je gebruikt staat tussen {minAmount} en {maxAmount} sats toe.",
+    "@fiatAmountTooHigh": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed sats amount"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed sats amount"
+            }
+        }
+    },
+    "fiatAmountTooLow": "Het fiatbedrag is te laag. De Mostro-node die je gebruikt staat tussen {minAmount} en {maxAmount} sats toe.",
+    "@fiatAmountTooLow": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed sats amount"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed sats amount"
+            }
+        }
+    },
+    "fiatAmountTooLowRange": "Het bedrag is te laag. Deze Mostro-node staat tussen {minAmount} en {maxAmount} {fiatCode} toe ({minSats} - {maxSats} sats).",
+    "@fiatAmountTooLowRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
+            }
+        }
+    },
+    "fiatAmountTooHighRange": "Het bedrag is te hoog. Deze Mostro-node staat tussen {minAmount} en {maxAmount} {fiatCode} toe ({minSats} - {maxSats} sats).",
+    "@fiatAmountTooHighRange": {
+        "placeholders": {
+            "minAmount": {
+                "type": "String",
+                "description": "The minimum allowed amount in fiat"
+            },
+            "maxAmount": {
+                "type": "String",
+                "description": "The maximum allowed amount in fiat"
+            },
+            "fiatCode": {
+                "type": "String",
+                "description": "The selected fiat currency code"
+            },
+            "minSats": {
+                "type": "String",
+                "description": "The minimum allowed amount in sats"
+            },
+            "maxSats": {
+                "type": "String",
+                "description": "The maximum allowed amount in sats"
+            }
+        }
+    },
+    "exchangeRateNotAvailable": "Geen wisselkoers beschikbaar, wacht even of ververs",
+    "mostroInstanceNotAvailable": "Gegevens van de Mostro-instantie nog niet beschikbaar, even geduld",
+    "enterAmountYouWantToReceiveCurrency": "Vul in hoeveel {currency} je wilt ontvangen",
+    "@enterAmountYouWantToReceiveCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
+    "enterAmountYouWantToSendCurrency": "Vul in hoeveel {currency} je wilt overmaken",
+    "@enterAmountYouWantToSendCurrency": {
+        "placeholders": {
+            "currency": {
+                "type": "String",
+                "description": "The selected fiat code, or \"fiat\" when none is selected"
+            }
+        }
+    },
+    "creatingRangeOrder": "Je maakt een bandbreedte-order (je kunt tussen een minimum en een maximum ontvangen)",
+    "creatingRangeOrderBuySend": "Je maakt een bandbreedte-order (je kunt tussen een minimum en een maximum overmaken)",
+    "rangeOrder": "Bandbreedte-order",
+    "maxAmount": "Maximumbedrag",
+    "tapSecondFieldForRange": "💡 Tik op het tweede veld voor een bandbreedte-order",
+    "to": "tot",
+    "maxMustBeGreaterThanMin": "Het maximumbedrag moet hoger zijn dan het minimumbedrag",
+    "paymentMethodsForCurrency": "Betaalmethodes voor {currency}",
+    "enterCustomPaymentMethod": "Vul een eigen betaalmethode in",
+    "loadingPaymentMethods": "Betaalmethodes laden…",
+    "errorLoadingPaymentMethods": "Fout bij het laden van de betaalmethodes: {error}",
+    "selectPaymentMethods": "Kies betaalmethodes",
+    "selectPaymentMethodsTitle": "Betaalmethodes kiezen",
+    "premiumTitle": "Premie (%)",
+    "premiumTooltip": "Bepaal hoeveel boven of onder de marktprijs je aanbod staat. Standaard is dit 0%, zonder premie of korting; wil je de prijs niet aanpassen, dan laat je het zo staan.",
+    "premiumEditHint": "Wijzigen",
+    "secretWords": "Geheime woorden",
+    "toRestoreYourAccount": "Om je account terug te krijgen",
+    "privacy": "Privacy",
+    "controlPrivacySettings": "Bepaal je privacy-instellingen",
+    "currentTradeIndex": "Huidige trade-index",
+    "yourTradeCounter": "Je tradeteller",
+    "incrementsWithEachTrade": "Loopt op bij elke trade",
+    "generateNewUser": "Nieuwe gebruiker aanmaken",
+    "importMostroUser": "Gebruiker importeren",
+    "refreshUser": "Gebruiker verversen",
+    "keyImportedSuccessfully": "Sleutel geïmporteerd",
+    "importFailed": "Importeren mislukt: {error}",
+    "@importFailed": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "refreshSuccessful": "Gebruikersgegevens ververst",
+    "refreshFailed": "Verversen mislukt: {error}",
+    "@refreshFailed": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "noMnemonicFound": "Geen geheime woorden gevonden",
+    "errorLoadingMnemonic": "Fout: {error}",
+    "@errorLoadingMnemonic": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "noMessagesAvailable": "Geen berichten",
+    "back": "TERUG",
+    "typeAMessage": "Typ een bericht…",
+    "youAreChattingWith": "Je chat met {handle}",
+    "yourHandle": "Jouw naam:",
+    "yourSharedKey": "Je gedeelde sleutel:",
+    "payInvoiceButton": "INVOICE BETALEN",
+    "addInvoiceButton": "INVOICE TOEVOEGEN",
+    "collectSatsButton": "SATS OPHALEN",
+    "release": "VRIJGEVEN",
+    "takeSell": "VERKOOP ACCEPTEREN",
+    "takeBuy": "KOOP ACCEPTEREN",
+    "noExchangeDataAvailable": "Geen koersgegevens beschikbaar",
+    "errorFetchingCurrencies": "Fout bij het ophalen van de valuta",
+    "selectFiatCurrencyPay": "Kies de fiatvaluta waarmee je betaalt",
+    "selectFiatCurrencyReceive": "Kies de fiatvaluta die je wilt ontvangen",
+    "loadingCurrencies": "Valuta laden…",
+    "errorLoadingCurrencies": "Fout bij het laden van de valuta",
+    "usDollar": "Amerikaanse dollar",
+    "searchCurrencies": "Valuta zoeken…",
+    "noCurrenciesFound": "Geen valuta gevonden",
+    "priceType": "Prijssoort",
+    "fixedPrice": "Vaste prijs",
+    "market": "Markt",
+    "priceTypeTooltip": "• Kies Marktprijs als je de prijs wilt gebruiken die bitcoin heeft op het moment dat iemand je aanbod accepteert.\n\n• Kies Vaste prijs als je precies wilt vastleggen hoeveel bitcoin je verhandelt.",
+    "@_comment_take_order_screen": "Take Order Screen Strings",
+    "orderDetails": "ORDERGEGEVENS",
+    "atMarketPrice": "tegen marktprijs",
+    "withPremiumPercent": "met een premie van +{premium}%",
+    "@withPremiumPercent": {
+        "placeholders": {
+            "premium": {
+                "type": "String"
+            }
+        }
+    },
+    "withDiscountPercent": "met een korting van {premium}%",
+    "@withDiscountPercent": {
+        "placeholders": {
+            "premium": {
+                "type": "String"
+            }
+        }
+    },
+    "someoneIsSellingBuying": "Iemand {action}{satAmount} sats voor {amountString} {price} {premiumText}",
+    "@someoneIsSellingBuying": {
+        "placeholders": {
+            "action": {
+                "type": "String"
+            },
+            "satAmount": {
+                "type": "String"
+            },
+            "amountString": {
+                "type": "String"
+            },
+            "price": {
+                "type": "String"
+            },
+            "premiumText": {
+                "type": "String"
+            }
+        }
+    },
+    "createdOnDate": "Aangemaakt op: {date}",
+    "@createdOnDate": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "paymentMethodsAre": "De betaalmethodes zijn: {methods}",
+    "@paymentMethodsAre": {
+        "placeholders": {
+            "methods": {
+                "type": "String"
+            }
+        }
+    },
+    "timeLeft": "Resterende tijd: {time}",
+    "@timeLeft": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "close": "SLUITEN",
+    "take": "ACCEPTEREN",
+    "enterAmount": "Bedrag invullen",
+    "enterAmountBetween": "{min} - {max} {currency}",
+    "@enterAmountBetween": {
+        "placeholders": {
+            "min": {
+                "type": "String",
+                "description": "Minimum amount that can be entered"
+            },
+            "max": {
+                "type": "String",
+                "description": "Maximum amount that can be entered"
+            },
+            "currency": {
+                "type": "String",
+                "description": "Currency code or symbol shown after the range"
+            }
+        }
+    },
+    "pleaseEnterValidNumber": "Vul een geldig getal in.",
+    "amountMustBeBetween": "Het bedrag moet tussen {min} en {max} liggen.",
+    "@amountMustBeBetween": {
+        "placeholders": {
+            "min": {
+                "type": "String"
+            },
+            "max": {
+                "type": "String"
+            }
+        }
+    },
+    "@_comment_lightning_invoice": "Lightning Invoice Widget Strings",
+    "pleaseEnterLightningInvoiceFor": "Vul een Lightning-invoice in voor {sats} sats, gelijk aan {fiat_code} {fiat_amount}, om de ruil voor order-ID {order_id} voort te zetten",
+    "@pleaseEnterLightningInvoiceFor": {
+        "placeholders": {
+            "sats": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            },
+            "fiat_code": {
+                "type": "String",
+                "description": "The fiat currency code"
+            },
+            "fiat_amount": {
+                "type": "String",
+                "description": "The fiat amount"
+            },
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "sats": " sats",
+    "lightningInvoice": "Lightning-invoice",
+    "enterInvoiceHere": "Vul hier de invoice in",
+    "rateButton": "BEOORDELEN",
+    "contactButton": "CONTACT",
+    "viewDisputeButton": "DISPUUT BEKIJKEN",
+    "rateCounterpart": "Tegenpartij beoordelen",
+    "submitRating": "Beoordeling versturen",
+    "addLightningInvoice": "Lightning-invoice toevoegen",
+    "payLightningInvoice": "Lightning-invoice betalen",
+    "payInvoiceToContinue": "Betaal deze invoice van {sats} sats, gelijk aan {fiat_code} {fiat_amount}, om de ruil voor order {order_id} voort te zetten",
+    "@payInvoiceToContinue": {
+        "placeholders": {
+            "sats": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            },
+            "fiat_code": {
+                "type": "String",
+                "description": "The fiat currency code"
+            },
+            "fiat_amount": {
+                "type": "String",
+                "description": "The fiat amount"
+            },
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "failedToGenerateQR": "De QR-code kon niet worden gemaakt",
+    "invoiceCopiedToClipboard": "Invoice gekopieerd",
+    "copiedToClipboard": "Gekopieerd",
+    "copy": "Kopiëren",
+    "share": "Delen",
+    "failedToShareInvoice": "Delen van de invoice is mislukt. Probeer hem te kopiëren.",
+    "bondScreenTitle": "Borg tegen misbruik",
+    "bondExplanation": "Om deze order te accepteren moet je een borg tegen misbruik betalen. Zo werkt het:\n\n• Je sats blijven vast staan in je wallet, ze worden niet uitgegeven.\n• Verloopt de ruil goed, dan krijg je je borg automatisch terug.\n• Krijg je een dispuut over deze order en verlies je dat, dan ben je de borg kwijt.\n• Dit beschermt alle gebruikers tegen oplichters.",
+    "bondExplanationMaker": "Voordat je order kan worden aangemaakt, moet je een borg tegen misbruik betalen. Houd dit scherm open tot de betaling rond is; sluit je het of betaal je niet, dan wordt de order niet aangemaakt. Zo werkt het:\n\n• Je sats blijven vast staan in je wallet, ze worden niet uitgegeven.\n• Verloopt de ruil goed, dan krijg je je borg automatisch terug.\n• Krijg je een dispuut over deze order en verlies je dat, dan ben je de borg kwijt.\n• Dit beschermt alle gebruikers tegen oplichters.",
+    "bondPayInvoicePrompt": "Betaal de invoice hieronder van {amount} sats om door te gaan, of annuleer als je niet akkoord gaat.",
+    "statusWaitingTakerBond": "Wacht op betaling van de borg",
+    "payBondMessage": "Betaal de borg tegen misbruik om door te gaan met deze order.",
+    "payBondButton": "Borg betalen",
+    "failedToCancelOrder": "Annuleren van de order mislukt: {error}",
+    "@failedToCancelOrder": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "failedToUpdateInvoice": "Bijwerken van de invoice mislukt: {error}",
+    "@failedToUpdateInvoice": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "refreshingExchangeRate": "Wisselkoers verversen…",
+    "language": "Taal",
+    "systemDefault": "Systeemtaal",
+    "english": "Engels",
+    "spanish": "Spaans",
+    "italian": "Italiaans",
+    "french": "Frans",
+    "german": "Duits",
+    "portuguese": "Portugees",
+    "dutch": "Nederlands",
+    "loadingOrder": "Order laden…",
+    "chooseLanguageDescription": "Kies je taal of gebruik de taal van je systeem",
+    "unsupportedLinkFormat": "Niet-ondersteunde link",
+    "failedToOpenLink": "De link kon niet worden geopend",
+    "failedToLoadOrder": "De order kon niet worden geladen",
+    "failedToOpenOrder": "De order kon niet worden geopend",
+    "@_comment_chat": "Chat Section",
+    "messages": "Berichten",
+    "disputes": "Disputen",
+    "noDisputesAvailable": "Geen disputen",
+    "youAreChatting": "Je chat met {handle}",
+    "@youAreChatting": {
+        "placeholders": {
+            "handle": {
+                "type": "String"
+            }
+        }
+    },
+    "tradeInformation": "Tradegegevens",
+    "userInformation": "Gebruikersgegevens",
+    "youAreSellingTo": "Je verkoopt sats aan",
+    "youAreBuyingFrom": "Je koopt sats van",
+    "noMessagesYet": "Nog geen berichten",
+    "today": "Vandaag",
+    "yesterday": "Gisteren",
+    "youPrefix": "Jij: ",
+    "conversationsDescription": "Hier vind je je gesprekken met andere gebruikers tijdens trades.",
+    "disputesDescription": "Dit zijn je lopende disputen en de chats met de beheerder die helpt ze op te lossen.",
+    "disputeDetails": "Dispuutgegevens",
+    "disputeForOrder": "Dispuut over order",
+    "disputeStatusInitiated": "Geopend",
+    "disputeStatusInProgress": "In behandeling",
+    "disputeStatusResolved": "Opgelost",
+    "disputeStatusClosed": "Gesloten",
+    "disputeResolvedTitle": "Dispuut opgelost",
+    "disputeResolvedMessage": "Dit dispuut is opgelost. De solver heeft beslist op grond van het aangedragen bewijs. Kijk in je wallet of er iets terugbetaald of uitbetaald is.",
+    "disputeClosedUserCompleted": "Dispuut gesloten: de partijen hebben de order alsnog afgerond.",
+    "disputeClosedCooperativeCancel": "Dispuut gesloten: de partijen hebben de order samen geannuleerd.",
+    "disputeInProgress": "Dit dispuut is in behandeling. Een solver bekijkt je zaak.",
+    "disputeSellerRefunded": "De beheerder heeft dit dispuut in het voordeel van de verkoper beslist.",
+    "disputeUnknownStatus": "De status van dit dispuut is onbekend.",
+    "disputeChatClosed": "Dit dispuut is opgelost. De chat is gesloten.",
+    "@_comment_dispute_descriptions": "Dispute Description Messages",
+    "disputeDescriptionInitiatedByUser": "Jij hebt dit dispuut geopend",
+    "disputeDescriptionInitiatedByPeer": "Er is een dispuut tegen je geopend",
+    "disputeDescriptionInitiatedPendingAdmin": "Een beheerder pakt dit dispuut binnenkort op",
+    "disputeDescriptionInProgress": "Nog geen berichten",
+    "disputeDescriptionResolved": "Afgewikkeld door de beheerder, in het voordeel van de koper",
+    "disputeDescriptionSellerRefunded": "Geannuleerd door de beheerder, in het voordeel van de verkoper",
+    "disputeDescriptionUnknown": "Onbekende status",
+    "disputeAdminSettledMessage": "De beheerder heeft de order in het voordeel van één partij afgewikkeld. Kijk in je wallet of er een betaling binnen is.",
+    "disputeSellerRefundedMessage": "De beheerder heeft de order geannuleerd en het dispuut in het voordeel van de verkoper beslist. Het dispuut is nu gesloten.",
+    "disputeSettledBuyerMessage": "De beheerder heeft het dispuut in jouw voordeel beslist en de order afgewikkeld. Controleer in je wallet of de sats zijn aangekomen.",
+    "disputeSettledSellerMessage": "De beheerder heeft het dispuut in het voordeel van de koper beslist en de order afgewikkeld.",
+    "disputeCanceledBuyerMessage": "De beheerder heeft de order geannuleerd en het dispuut in het voordeel van de verkoper beslist. Deze order wordt niet afgerond.",
+    "disputeCanceledSellerMessage": "De beheerder heeft de order geannuleerd en het dispuut in jouw voordeel beslist. Controleer in je wallet of het bedrag is teruggekomen.",
+    "disputeOpenedByYou": "Jij hebt dit dispuut geopend tegen koper {counterparty}; lees hieronder aandachtig verder:",
+    "@disputeOpenedByYou": {
+        "placeholders": {
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "disputeOpenedByYouAgainstSeller": "Jij hebt dit dispuut geopend tegen verkoper {counterparty}; lees hieronder aandachtig verder:",
+    "@disputeOpenedByYouAgainstSeller": {
+        "placeholders": {
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "disputeOpenedByYouAgainstBuyer": "Jij hebt dit dispuut geopend tegen koper {counterparty}; lees hieronder aandachtig verder:",
+    "@disputeOpenedByYouAgainstBuyer": {
+        "placeholders": {
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "disputeOpenedAgainstYou": "Dit dispuut is tegen jou geopend door {counterparty}; lees hieronder aandachtig verder:",
+    "@disputeOpenedAgainstYou": {
+        "placeholders": {
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "disputeWaitingForAdmin": "Wacht op toewijzing van een beheerder",
+    "disputeYouOpened": "Jij hebt dit dispuut geopend",
+    "disputeOpenedAgainstUser": "Er is een dispuut tegen je geopend",
+    "disputeResolved": "Het dispuut is opgelost",
+    "disputeInstruction1": "Wacht tot een solver je dispuut oppakt. Deel daarna al het bewijs dat helpt om de situatie duidelijk te maken.",
+    "disputeInstruction2": "De uiteindelijke beslissing wordt genomen op grond van het aangedragen bewijs.",
+    "disputeInstruction3": "Reageer je niet, dan gaat het systeem ervan uit dat je niet wilt meewerken en kun je het dispuut verliezen.",
+    "disputeInstruction4": "Wil je je chatgeschiedenis met {counterparty} delen, geef de solver dan de gedeelde sleutel die je vindt onder Gebruikersgegevens in je gesprek met die gebruiker.",
+    "@disputeInstruction4": {
+        "placeholders": {
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "orderId": "Order-ID:",
+    "paymentMethod": "Betaalmethode:",
+    "sellingSats": "Verkoopt {amount} sats",
+    "@sellingSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "buyingSats": "Koopt {amount} sats",
+    "@buyingSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "forAmountWithCurrency": "voor {amount} {currency}",
+    "@forAmountWithCurrency": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "yourInformation": "Jouw gegevens",
+    "peerPublicKey": "Publieke sleutel van de ander:",
+    "notAvailable": "Niet beschikbaar",
+    "unknownDate": "Datum onbekend",
+    "messageCopiedToClipboard": "Bericht gekopieerd",
+    "textCopiedToClipboard": "{text} gekopieerd",
+    "@textCopiedToClipboard": {
+        "placeholders": {
+            "text": {
+                "type": "String"
+            }
+        }
+    },
+    "@_comment_deep_link_errors": "Deep Link Error Messages",
+    "deepLinkInvalidFormat": "Ongeldige mostro:-URL",
+    "deepLinkParseError": "De mostro:-URL kon niet worden gelezen",
+    "deepLinkInvalidOrderId": "Ongeldig order-ID",
+    "deepLinkNoRelays": "Geen relays in de URL",
+    "deepLinkOrderNotFound": "Order niet gevonden of ongeldig",
+    "deepLinkNavigationError": "Navigatiefout: {error}",
+    "@deepLinkNavigationError": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "deepLinkGoHome": "Naar start",
+    "@_comment_order_disabled_messages": "Order Disabled Messages",
+    "orderCompletedMessagingDisabled": "Order afgerond - berichten uitgeschakeld",
+    "orderCanceledMessagingDisabled": "Order geannuleerd - berichten uitgeschakeld",
+    "orderExpiredMessagingDisabled": "Order verlopen - berichten uitgeschakeld",
+    "orderSettledMessagingDisabled": "Order afgewikkeld - berichten uitgeschakeld",
+    "orderNotActiveMessagingDisabled": "Order is niet meer actief - berichten uitgeschakeld",
+    "@_comment_about_screen_new": "About Screen New Strings",
+    "documentation": "Documentatie",
+    "usersDocumentationEnglish": "Gebruikersdocumentatie (Engels)",
+    "usersDocumentationSpanish": "Gebruikersdocumentatie (Spaans)",
+    "technicalDocumentation": "Technische documentatie",
+    "read": "Lezen",
+    "technicalDetails": "Technische details",
+    "mostroDaemonVersion": "Mostro-versie",
+    "protocolVersion": "Protocolversie",
+    "protocolVersionExplanation": "Het transportprotocol dat deze node spreekt: 1 = NIP-59 gift wrap, 2 = NIP-44 directe berichten. De app merkt dit vanzelf op en gebruikt het bijbehorende transport.",
+    "mostroCommitId": "Mostro commit-ID",
+    "orderExpiration": "Verlooptijd van een order",
+    "holdInvoiceExpiration": "Verlooptijd hold invoice",
+    "lightningNetwork": "Lightning Network",
+    "lndDaemonVersion": "LND-versie",
+    "lndNodePublicKey": "Publieke sleutel LND-node",
+    "lndCommitId": "LND commit-ID",
+    "lndNodeAlias": "Naam van de LND-node",
+    "supportedChains": "Ondersteunde chains",
+    "supportedNetworks": "Ondersteunde netwerken",
+    "lndNodeUri": "URI van de LND-node",
+    "maxOrderAmount": "Maximaal orderbedrag",
+    "minOrderAmount": "Minimaal orderbedrag",
+    "orderLifespan": "Levensduur van een order",
+    "serviceFee": "Servicekosten",
+    "fiatCurrenciesAccepted": "Geaccepteerde fiatvaluta",
+    "maxOrdersPerResponse": "Maximaal aantal orders per antwoord",
+    "satoshis": "Satoshi",
+    "hour": "uur",
+    "hours": "uur",
+    "sec": "sec",
+    "blocks": "blokken",
+    "seconds": "seconden",
+    "mostroPublicKey": "Publieke sleutel van Mostro",
+    "license": "Licentie",
+    "@_comment_mostro_node_field_explanations": "Mostro Node Field Explanations",
+    "mostroPublicKeyExplanation": "De publieke sleutel van de Mostro-instantie die je gebruikt.",
+    "mostroVersionExplanation": "De versie van de Mostro-software die op deze node draait. Daaraan zie je welke functies beschikbaar zijn.",
+    "mostroCommitIdExplanation": "De precieze Git-commit-hash van de Mostro-software. Die geeft de exacte versie, handig bij het opsporen van fouten en het nagaan van compatibiliteit.",
+    "maxOrderAmountExplanation": "Het hoogste aantal satoshi dat in één order op deze Mostro-node verhandeld kan worden. Orders daarboven worden geweigerd.",
+    "minOrderAmountExplanation": "Het laagste aantal satoshi dat in één order op deze Mostro-node verhandeld kan worden. Orders daaronder worden geweigerd.",
+    "orderExpirationExplanation": "De tijd, in seconden, die een order maximaal in wachtstand mag staan voordat hij wordt geannuleerd of teruggezet naar 'in afwachting'.",
+    "holdInvoiceExpirationExplanation": "De tijd (in seconden) waarna hold invoices verlopen. Hold invoices houden het geld vast tijdens de trade.",
+    "holdInvoiceCltvDeltaExplanation": "Het aantal blokken dat bij de huidige blokhoogte wordt opgeteld voor het verlopen van een hold invoice. Dat geeft het Lightning Network tijd om de betaling te verwerken.",
+    "serviceFeeExplanation": "De kosten die deze Mostro-node rekent voor het mogelijk maken van trades. Meestal een klein percentage van het handelsbedrag, dat koper en verkoper samen dragen.",
+    "fiatCurrenciesAcceptedExplanation": "De fiatvaluta waarin deze Mostro-node handel toestaat.",
+    "maxOrdersPerResponseExplanation": "Het maximale aantal orders per antwoord bij de actie orders.",
+    "invoiceExpirationWindowExplanation": "De tijd (in seconden) waarna gewone Lightning-invoices verlopen. Zo blijven invoices niet eindeloos geldig.",
+    "proofOfWorkExplanation": "De moeilijkheidsgraad die voor proof-of-work in Nostr-events wordt gevraagd. Dat weert spam en houdt de dienst bruikbaar.",
+    "lndDaemonVersionExplanation": "De versie van de Lightning Network Daemon (LND) waarmee deze Mostro-node Lightning-betalingen verwerkt.",
+    "lndNodePublicKeyExplanation": "De publieke sleutel van de Lightning-node die de betalingen voor deze Mostro-instantie afhandelt. Die wordt gebruikt voor routering over het Lightning Network.",
+    "lndCommitIdExplanation": "De precieze Git-commit-hash van de LND-software. Die geeft de exacte versie van de Lightning-implementatie.",
+    "lndNodeAliasExplanation": "De leesbare naam van de Lightning-node. Daarmee is de node makkelijker te herkennen in het Lightning Network.",
+    "supportedChainsExplanation": "De chains die de LND-node ondersteunt.",
+    "supportedNetworksExplanation": "De netwerken waarop deze Mostro-node draait (mainnet voor echte bitcoin, testnet om te testen).",
+    "lndNodeUriExplanation": "Het volledige netwerkadres van de Lightning-node, met publieke sleutel en verbindingsgegevens voor een rechtstreekse verbinding.",
+    "@_comment_license_text": "MIT License Text",
+    "mitLicenseText": "MIT-licentie\\n\\nCopyright (c) 2025 Mostro team\\n\\nHierbij wordt gratis toestemming verleend aan iedereen die een kopie van deze software en de bijbehorende documentatiebestanden (de \\\"Software\\\") verkrijgt, om zonder beperking met de Software te handelen, met inbegrip van het recht om de Software te gebruiken, te kopiëren, te wijzigen, samen te voegen, te publiceren, te verspreiden, in sublicentie te geven en/of kopieën van de Software te verkopen, en om personen aan wie de Software wordt verstrekt daartoe in staat te stellen, onder de volgende voorwaarden:\\n\\nDe bovenstaande copyrightvermelding en deze toestemmingsvermelding moeten in alle kopieën of substantiële delen van de Software worden opgenomen.\\n\\nDE SOFTWARE WORDT GELEVERD \\\"ZOALS HIJ IS\\\", ZONDER ENIGE GARANTIE, UITDRUKKELIJK OF STILZWIJGEND, MET INBEGRIP VAN MAAR NIET BEPERKT TOT DE GARANTIES VAN VERKOOPBAARHEID, GESCHIKTHEID VOOR EEN BEPAALD DOEL EN NIET-INBREUKMAKENDHEID. IN GEEN GEVAL ZIJN DE AUTEURS OF RECHTHEBBENDEN AANSPRAKELIJK VOOR ENIGE CLAIM, SCHADE OF ANDERE AANSPRAKELIJKHEID, HETZIJ UIT CONTRACT, ONRECHTMATIGE DAAD OF ANDERSZINS, VOORTVLOEIEND UIT OF IN VERBAND MET DE SOFTWARE OF HET GEBRUIK VAN OF ANDERE HANDELINGEN MET DE SOFTWARE.",
+    "@_comment_url_launch_errors": "URL Launch Error Messages",
+    "cannotOpenLink": "Kan de link niet openen - geen app beschikbaar",
+    "@_comment_settings_info_dialogs": "Settings Info Dialog Text",
+    "languageInfoText": "Kies de taal waarin je de app wilt gebruiken.",
+    "currencyInfoText": "Kies de standaardvaluta voor je orders.",
+    "lightningAddressInfoText": "Een Lightning-adres is een aanduiding in de vorm van een e-mailadres (bijvoorbeeld gebruiker@domein.nl) waarmee je makkelijker bitcoin ontvangt. Stel je er hier een in, dan wordt hij automatisch ingevuld bij het plaatsen van kooporders. Dat scheelt tijd.",
+    "relaysInfoText": "• Relays zijn servers die je berichten over het Nostr-netwerk verspreiden.\n\n• Meer relays betekent doorgaans een betere en betrouwbaardere verbinding.\n\n• Relays synchroniseren niet met elkaar: alleen de relays waarmee jij verbonden bent, krijgen je berichten.",
+    "mostroInfoText": "• Werkt met hex en npub (wordt als hex getoond).\n\n• De Mostro die je kiest, is de Mostro waar je je aanbod plaatst.\n\n• Bij een dispuut is het een mens van die Mostro die de zaak beslist.",
+    "@_comment_account_info_dialogs": "Account Screen Info Dialog Text",
+    "secretWordsInfoText": "• Dit zijn je geheime woorden: de enige manier om je account terug te krijgen als je deze app kwijtraakt of je identiteit in een andere app wilt gebruiken.\n\n• Schrijf ze zorgvuldig over en bewaar ze op een veilige, privé plek. Deel ze met niemand.\n\n• Ben je deze woorden kwijt, dan kun je nooit meer bij je account.",
+    "privacyInfoText": "• In de reputatiemodus blijft je privacy tegenover derden beschermd, terwijl je met elke afgeronde trade reputatie opbouwt.\n\n• Volledig privé geeft de grootst mogelijke anonimiteit, maar dan bouw je geen reputatie op.",
+    "currentTradeIndexInfoText": "Bij elke nieuwe trade wordt een eigen tradesleutel aangemaakt, zodat je transacties privé blijven. De trade-index laat zien hoeveel sleutels je hebt gebruikt. Sta je in de reputatiemodus, dan mag Mostro al je tradesleutels aan elkaar koppelen om je reputatie bij te houden.",
+    "generateNewUserDialogTitle": "Een nieuwe gebruiker aanmaken?",
+    "generateNewUserDialogContent": "Ga je door, dan worden er 12 nieuwe woorden aangemaakt voor je nieuwe gebruiker. Die gebruiker heeft geen reputatie: je begint weer bij nul.",
+    "refreshUserDialogTitle": "Gebruikersgegevens verversen?",
+    "refreshUserDialogContent": "Hiermee worden je trades en orders opnieuw bij de Mostro-instantie opgehaald. Doe dit als je vermoedt dat je gegevens niet kloppen of er orders ontbreken.",
+    "refresh": "Verversen",
+    "continueButton": "Doorgaan",
+    "show": "Tonen",
+    "hide": "Verbergen",
+    "reputationMode": "Reputatiemodus",
+    "fullPrivacyMode": "Volledig privé",
+    "maximumAnonymity": "Maximale anonimiteit",
+    "standardPrivacyWithReputation": "Gewone privacy, met reputatie",
+    "@_comment_relay_dialogs": "Relay Dialog Text",
+    "editRelay": "Relay bewerken",
+    "relayUrl": "Relay-URL",
+    "relayErrorNotValid": "Geen geldige Nostr-relay - geen antwoord op de protocoltest",
+    "relayErrorOnlySecure": "Alleen beveiligde websockets (wss://) zijn toegestaan",
+    "relayErrorNoHttp": "HTTP-URL's worden niet ondersteund. Gebruik een websocket-URL (wss://)",
+    "relayErrorInvalidDomain": "Ongeldig domein. Gebruik de vorm relay.voorbeeld.nl",
+    "relayErrorAlreadyExists": "Deze relay staat al in je lijst",
+    "@_comment_dispute_communication": "Dispute Communication Text",
+    "disputeCommunication": "Contact",
+    "waitingAdminAssignment": "Wacht op toewijzing van een beheerder",
+    "waitingAdminDescription": "Je dispuut is ingediend. Er wordt een beheerder toegewezen om het op te lossen.",
+    "adminAssignmentDescription": "Er wordt binnenkort een beheerder aan je dispuut toegewezen. Zodra dat gebeurd is, kun je hier rechtstreeks met hem praten.",
+    "adminAssigned": "Beheerder toegewezen",
+    "adminAssignedDescription": "Je kunt nu met de beheerder praten. Begin het gesprek met een bericht hieronder.",
+    "admin": "Beheerder",
+    "you": "Jij",
+    "errorLoadingChat": "Fout bij het laden van de chat",
+    "adminPubkey": "Pubkey van de beheerder",
+    "@_comment_dispute_input": "Dispute Input Text",
+    "failedSendMessage": "Versturen mislukt: {error}",
+    "@failedSendMessage": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "messageSent": "Bericht verstuurd: {message}",
+    "@messageSent": {
+        "placeholders": {
+            "message": {
+                "type": "String"
+            }
+        }
+    },
+    "waitingAdminAssignmentInput": "Wacht op toewijzing van een beheerder…",
+    "typeYourMessage": "Typ je bericht…",
+    "@_comment_dispute_list": "Dispute List Text",
+    "disputesWillAppear": "Disputen verschijnen hier zodra je ze vanuit je trades opent",
+    "failedLoadDisputes": "De disputen konden niet worden geladen",
+    "disputesNotAvailable": "Disputen niet beschikbaar",
+    "disputesComingSoon": "Deze functie komt binnenkort",
+    "@_comment_dispute_info": "Dispute Info Text",
+    "unknown": "Onbekend",
+    "disputeWith": "Dispuut met {role}: {counterparty}",
+    "@disputeWith": {
+        "placeholders": {
+            "role": {
+                "type": "String"
+            },
+            "counterparty": {
+                "type": "String"
+            }
+        }
+    },
+    "disputeIdLabel": "Dispuut-ID",
+    "seller": "Verkoper",
+    "buyer": "Koper",
+    "@_comment_dispute_screen": "Dispute Screen Text",
+    "disputeNotFound": "Dispuut niet gevonden",
+    "errorLoadingDispute": "Fout bij het laden van het dispuut: {error}",
+    "@errorLoadingDispute": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "relayErrorConnectionTimeout": "Relay niet bereikbaar - verbinding verlopen",
+    "relayTestingMessage": "Relay testen…",
+    "relayAddedSuccessfully": "Relay toegevoegd: {url}",
+    "@relayAddedSuccessfully": {
+        "description": "Message shown when a relay is successfully added",
+        "placeholders": {
+            "url": {
+                "type": "String",
+                "description": "The relay URL that was added"
+            }
+        }
+    },
+    "relayAddedUnreachable": "Relay toegevoegd, maar lijkt onbereikbaar: {url}",
+    "addRelayDialogTitle": "Relay toevoegen",
+    "addRelayDialogDescription": "Vul een relay-URL in om hem aan je lijst toe te voegen. De relay wordt getest op bereikbaarheid.",
+    "addRelayDialogPlaceholder": "Relay-URL",
+    "addRelayDialogTesting": "Bereikbaarheid testen…",
+    "addRelayDialogCancel": "Annuleren",
+    "addRelayDialogAdd": "Toevoegen",
+    "addRelayErrorOnlySecure": "Alleen beveiligde websockets (wss://) zijn toegestaan",
+    "addRelayErrorNoHttp": "HTTP-URL's worden niet ondersteund. Gebruik een websocket-URL (wss://)",
+    "addRelayErrorInvalidDomain": "Ongeldig domein. Gebruik de vorm relay.voorbeeld.nl",
+    "addRelayErrorAlreadyExists": "Deze relay staat al in je lijst",
+    "addRelayErrorNotValid": "Geen geldige Nostr-relay - geen antwoord op de protocoltest",
+    "addRelayErrorGeneric": "De relay kon niet worden toegevoegd. Probeer het opnieuw.",
+    "addRelaySuccessMessage": "Relay toegevoegd: {url}",
+    "@addRelaySuccessMessage": {
+        "placeholders": {
+            "url": {
+                "type": "String"
+            }
+        }
+    },
+    "mostroChangedResetMessage": "Je bent van Mostro-instantie gewisseld. De relay-instellingen zijn voor de nieuwe instantie opnieuw ingesteld.",
+    "@relayAddedUnreachable": {
+        "description": "Message shown when a relay is added but not responding",
+        "placeholders": {
+            "url": {
+                "type": "String",
+                "description": "The relay URL that was added"
+            }
+        }
+    },
+    "invalidRelayTitle": "Ongeldige relay",
+    "relayUrlHint": "relay.voorbeeld.nl of wss://relay.voorbeeld.nl",
+    "add": "Toevoegen",
+    "save": "Opslaan",
+    "apply": "Toepassen",
+    "selectCurrency": "Valuta kiezen",
+    "noCurrencySelected": "Geen valuta gekozen",
+    "@_comment_filter_section": "Filter section strings",
+    "rating": "Beoordeling",
+    "reputation": "Reputatie",
+    "premiumRange": "Premie/korting",
+    "discount": "Korting",
+    "premium": "Premie",
+    "clear": "Wissen",
+    "min": "Min",
+    "max": "Max",
+    "daysOfUse": "Dagen in gebruik",
+    "days": "Dagen",
+    "@_comment_timeout_messages": "Timeout notification messages",
+    "orderTimeoutTaker": "Je hebt niet op tijd gereageerd. De order wordt opnieuw gepubliceerd",
+    "orderTimeoutMaker": "Je tegenpartij heeft niet op tijd gereageerd. De order wordt opnieuw gepubliceerd",
+    "orderTimeout": "De tijd voor deze order is verstreken",
+    "orderCanceled": "De order is geannuleerd",
+    "@_comment_notifications": "Notifications Screen Text",
+    "notifications": "Meldingen",
+    "noNotifications": "Geen meldingen",
+    "noNotificationsDescription": "Je hebt nog geen meldingen. Nieuwe trades en veranderingen verschijnen hier.",
+    "errorLoadingNotifications": "Fout bij het laden van de meldingen",
+    "markAsRead": "Markeren als gelezen",
+    "markAllAsRead": "Alles markeren als gelezen",
+    "clearAll": "Alles wissen",
+    "notification_new_order_title": "Nieuwe order beschikbaar",
+    "notification_new_order_message": "Er staat een nieuwe order in het orderboek",
+    "notAvailableShort": "n.v.t.",
+    "notificationGenericTitle": "Melding",
+    "notification_order_taken_title": "Order geaccepteerd",
+    "notification_sell_order_taken_message": "Je verkooporder is geaccepteerd",
+    "notification_buy_order_taken_message": "Je kooporder is geaccepteerd",
+    "notification_payment_required_title": "Betaling nodig",
+    "notification_payment_required_message": "De invoice moet betaald worden",
+    "notification_fiat_sent_title": "Fiat verstuurd",
+    "notification_fiat_sent_message": "De tegenpartij heeft de fiat als verstuurd gemeld",
+    "notification_bitcoin_released_title": "Bitcoin vrijgegeven",
+    "notification_bitcoin_released_message": "De sats zijn vrijgegeven",
+    "notification_dispute_started_title": "Dispuut gestart",
+    "notification_dispute_started_message": "Er is een dispuut geopend",
+    "notification_order_canceled_title": "Order geannuleerd",
+    "notification_order_canceled_message": "De order is geannuleerd",
+    "notification_order_canceled_by_seller_inactivity_message": "De verkoper is niet doorgegaan met de order. De order is geannuleerd.",
+    "notification_order_canceled_by_buyer_inactivity_message": "De koper is niet doorgegaan met de order. De order is geannuleerd.",
+    "notification_cooperative_cancel_initiated_by_you_title": "Annulering aangevraagd",
+    "notification_cooperative_cancel_initiated_by_you_message": "Je hebt de order willen annuleren; je tegenpartij moet nog bevestigen",
+    "notification_cooperative_cancel_initiated_by_peer_title": "Verzoek tot annulering",
+    "notification_cooperative_cancel_initiated_by_peer_message": "Je tegenpartij wil de order annuleren",
+    "notification_cooperative_cancel_accepted_title": "Annulering geaccepteerd",
+    "notification_cooperative_cancel_accepted_message": "De annulering in overleg is geaccepteerd",
+    "notification_fiat_sent_ok_title": "Fiatbetaling bevestigd",
+    "notification_fiat_sent_ok_message": "Je tegenpartij heeft de fiatbetaling bevestigd",
+    "notification_release_title": "Vrijgave gevraagd",
+    "notification_release_message": "Er is om vrijgave van de bitcoin gevraagd",
+    "notification_buyer_invoice_accepted_title": "Invoice geaccepteerd",
+    "notification_buyer_invoice_accepted_message": "Je invoice is geaccepteerd",
+    "notification_purchase_completed_title": "Betaling ontvangen!",
+    "notification_purchase_completed_message": "Je bitcoinbetaling is afgerond en ontvangen",
+    "notification_hold_invoice_payment_accepted_title": "Betaling geaccepteerd",
+    "notification_hold_invoice_payment_accepted_message": "De betaling van de hold invoice is geaccepteerd",
+    "notification_hold_invoice_payment_settled_title": "Betaling afgewikkeld",
+    "notification_hold_invoice_payment_settled_message": "De betaling van de hold invoice is afgewikkeld",
+    "notification_hold_invoice_payment_canceled_title": "Betaling geannuleerd",
+    "notification_hold_invoice_payment_canceled_message": "De betaling van de hold invoice is geannuleerd",
+    "notification_waiting_seller_to_pay_title": "Wacht op de verkoper",
+    "notification_waiting_seller_to_pay_message": "Wacht tot de verkoper betaalt",
+    "notification_waiting_buyer_invoice_title": "Wacht op invoice",
+    "notification_waiting_buyer_invoice_message": "Wacht tot de koper een invoice aanlevert",
+    "notification_add_invoice_title": "Invoice nodig",
+    "notification_add_invoice_message": "Voeg je Lightning-invoice toe",
+    "notification_add_invoice_after_failure_message": "De vorige invoice kon niet betaald worden. Voeg een nieuwe Lightning-invoice toe",
+    "notification_buyer_took_order_title": "Contact met de koper",
+    "notification_buyer_took_order_message": "Een koper heeft je order geaccepteerd",
+    "notification_rate_title": "Beoordeling gevraagd",
+    "notification_rate_message": "Beoordeel je tegenpartij",
+    "notification_rate_received_title": "Beoordeling ontvangen",
+    "notification_rate_received_message": "Je tegenpartij heeft je beoordeeld",
+    "notification_dispute_initiated_by_you_title": "Dispuut gestart",
+    "notification_dispute_initiated_by_you_message": "Je hebt een dispuut geopend over deze order",
+    "notification_dispute_initiated_by_peer_title": "Dispuut gestart",
+    "notification_dispute_initiated_by_peer_message": "Je tegenpartij heeft een dispuut geopend",
+    "notification_payment_failed_title": "Betaling mislukt",
+    "notification_payment_failed_message": "De betaalpoging is mislukt",
+    "notification_invoice_updated_title": "Invoice bijgewerkt",
+    "notification_invoice_updated_message": "De Lightning-invoice is bijgewerkt",
+    "notification_cant_do_title": "Actie niet toegestaan",
+    "notification_cant_do_message": "De gevraagde actie kan niet worden uitgevoerd",
+    "notification_new_message_title": "Nieuw bericht",
+    "notification_new_message_message": "Je hebt een nieuw bericht",
+    "notification_admin_message_title": "Bericht van de beheerder",
+    "notification_admin_message_message": "Je hebt een bericht van de dispuutbeheerder",
+    "notification_order_update_title": "Order bijgewerkt",
+    "notification_order_update_message": "Je order is bijgewerkt",
+    "@_comment_notification_details": "Notification details labels",
+    "notificationBuyer": "Koper",
+    "notificationSeller": "Verkoper",
+    "notificationAmount": "Bedrag",
+    "notificationPaymentMethod": "Betaalmethode",
+    "notificationTimeout": "Tijdslimiet",
+    "notificationMinutes": "minuten",
+    "notificationDisputeId": "Dispuut-ID",
+    "notificationAttempts": "Pogingen over",
+    "notificationRetryInterval": "Tijd tussen pogingen",
+    "notificationFailedAt": "Mislukt om",
+    "notificationReason": "Reden",
+    "notificationToken": "Token",
+    "notificationExpiresIn": "Verloopt over",
+    "notificationRate": "Beoordelen",
+    "notificationOrderId": "Order-ID",
+    "notification_bond_slashed_title": "Borg tegen misbruik kwijt",
+    "notification_bond_slashed_message": "Je bent je borg tegen misbruik kwijt omdat je niet op tijd hebt gereageerd.",
+    "notification_bond_slashed_detail": "Je bent je borg tegen misbruik van {amount} sats kwijt voor order {orderId}, voor {fiatAmount} {fiatCode} met betaalmethode {paymentMethod}, omdat je niet op tijd hebt gereageerd.",
+    "@notification_bond_slashed_detail": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "orderId": {
+                "type": "String"
+            },
+            "fiatAmount": {
+                "type": "String"
+            },
+            "fiatCode": {
+                "type": "String"
+            },
+            "paymentMethod": {
+                "type": "String"
+            }
+        }
+    },
+    "notification_bond_slashed_dispute_message": "Je bent je borg tegen misbruik kwijt door de uitkomst van het dispuut over deze order.",
+    "notification_bond_slashed_dispute_detail": "Je bent je borg tegen misbruik van {amount} sats kwijt voor order {orderId}, voor {fiatAmount} {fiatCode} met betaalmethode {paymentMethod}, door de uitkomst van het dispuut.",
+    "@notification_bond_slashed_dispute_detail": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            },
+            "orderId": {
+                "type": "String"
+            },
+            "fiatAmount": {
+                "type": "String"
+            },
+            "fiatCode": {
+                "type": "String"
+            },
+            "paymentMethod": {
+                "type": "String"
+            }
+        }
+    },
+    "bondLostByDisputeNotice": "Je bent de borg tegen misbruik van {amount} sats voor deze order kwijt door de uitkomst van het dispuut.",
+    "@bondLostByDisputeNotice": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "notificationDelete": "Verwijderen",
+    "confirmDeleteNotification": "Weet je zeker dat je deze melding wilt verwijderen?",
+    "confirmClearAll": "Hiermee verwijder je alle meldingen definitief. Dit kan niet ongedaan worden gemaakt.",
+    "@_comment_notification_units": "Notification time units",
+    "notificationSeconds": "seconden",
+    "@_comment_relay_status": "Relay status messages",
+    "inUse": "In gebruik",
+    "notInUse": "Niet in gebruik",
+    "noMostroRelaysAvailable": "Geen relays beschikbaar van de ingestelde Mostro-instantie. Controleer je Mostro-instellingen.",
+    "relaysDescription": "Zet ze aan of uit zoals je wilt, of voeg er nieuwe toe.",
+    "activated": "Verbonden",
+    "deactivated": "Niet verbonden",
+    "@_comment_blacklist_dialog": "Blacklist default relay dialog strings",
+    "blacklistDefaultRelayTitle": "Verbinding met de standaardrelay verbreken?",
+    "blacklistDefaultRelayMessage": "Weet je zeker dat je de verbinding met de standaardrelay wilt verbreken? Dat kan de verbinding met de Mostro-instantie beïnvloeden.",
+    "blacklistDefaultRelayConfirm": "Verbreken",
+    "blacklistDefaultRelayCancel": "Annuleren",
+    "@_comment_last_relay_dialog": "Last relay protection dialog strings",
+    "cannotBlacklistLastRelayTitle": "Laatste relay kan niet worden verbroken",
+    "cannotBlacklistLastRelayMessage": "Je kunt deze relay niet verbreken, want het is de laatste waarmee je verbonden bent. De app heeft minstens één relay nodig om te werken.",
+    "cannotBlacklistLastRelayOk": "OK",
+    "@_comment_delete_user_relay_dialog": "Delete user relay confirmation dialog strings",
+    "deleteUserRelayTitle": "Verbinding met deze relay verbreken?",
+    "deleteUserRelayMessage": "Wil je hem later weer gebruiken, dan moet je hem opnieuw toevoegen.",
+    "deleteUserRelayConfirm": "Ja",
+    "deleteUserRelayCancel": "Nee",
+    "@_comment_session_timeout": "Session timeout message",
+    "sessionTimeoutMessage": "Geen antwoord ontvangen, controleer je verbinding en probeer het later opnieuw",
+    "@_comment_import_mnemonic_dialog": "Import Mnemonic Dialog strings",
+    "importMostroUserDialogTitle": "Gebruiker importeren",
+    "importMostroUserInfo1": "Dit zijn je geheime woorden: de enige manier om je account terug te krijgen als je deze app kwijtraakt of je identiteit in een andere app wilt gebruiken.",
+    "importMostroUserInfo2": "Schrijf ze zorgvuldig over en bewaar ze op een veilige, privé plek. Deel ze met niemand.",
+    "importMostroUserInfo3": "Ben je deze woorden kwijt, dan kun je nooit meer bij je account.",
+    "secretWordsLabel": "Geheime woorden",
+    "secretWordsPlaceholder": "Vul je 12 geheime woorden in, gescheiden door spaties",
+    "invalidMnemonic": "Ongeldige woordenreeks. Controleer je woorden",
+    "@_comment_restore_overlay": "Restore overlay messages",
+    "restoringOrders": "Orders herstellen",
+    "restoreRequestingData": "Herstelgegevens opvragen…",
+    "restoreReceivingOrders": "Orders ontvangen…",
+    "restoreLoadingDetails": "Ordergegevens laden…",
+    "restoreProcessingRoles": "Rollen verwerken…",
+    "restoreFinalizing": "Herstel afronden…",
+    "restoreCompleted": "Herstel voltooid!",
+    "restoreNoPreviousData": "Geen eerdere gegevens voor deze gebruiker op deze Mostro",
+    "restoreError": "Fout bij herstellen",
+    "restoreErrorMessage": "Fout bij het herstellen van je gegevens. Controleer je verbinding en probeer het opnieuw.",
+    "restoreInvalidTradeIndex": "Ongeldige trade-index",
+    "@_comment_file_messaging": "File messaging strings",
+    "download": "Downloaden",
+    "openFile": "Bestand openen",
+    "encrypted": "Versleuteld",
+    "downloadingFile": "Bestand downloaden…",
+    "@_comment_file_confirmation": "File confirmation dialog strings",
+    "confirmFileUpload": "Versturen bevestigen",
+    "sendThisFile": "Dit bestand versturen?",
+    "send": "Versturen",
+    "@_comment_image_decryption": "Image decryption status strings",
+    "decryptingImage": "Afbeelding ontsleutelen…",
+    "failedToLoadImage": "De afbeelding kon niet worden geladen",
+    "imageDecryptionError": "Fout bij het ontsleutelen van de afbeelding",
+    "imageNotAvailable": "Afbeelding niet beschikbaar",
+    "couldNotOpenFile": "Het bestand kon niet worden geopend",
+    "couldNotOpenFileWithMessage": "Het bestand kon niet worden geopend: {message}",
+    "@couldNotOpenFileWithMessage": {
+        "placeholders": {
+            "message": {
+                "type": "String"
+            }
+        }
+    },
+    "errorOpeningFile": "Fout bij het openen van het bestand",
+    "errorOpeningFileWithMessage": "Fout bij het openen van het bestand: {error}",
+    "@errorOpeningFileWithMessage": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "errorUploadingFile": "Fout bij het versturen van het bestand: {error}",
+    "@errorUploadingFile": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "fileTooLarge": "Bestand te groot: {currentSize} MB. Maximum: {maxSize} MB",
+    "@fileTooLarge": {
+        "placeholders": {
+            "currentSize": {
+                "type": "String"
+            },
+            "maxSize": {
+                "type": "String"
+            }
+        }
+    },
+    "@_comment_backup_reminder": "Backup reminder notification",
+    "backupAccountReminder": "Maak een back-up van je account",
+    "backupAccountReminderMessage": "Bewaar je geheime woorden om je account terug te kunnen krijgen",
+    "@_comment_validation": "Input validation messages",
+    "invalidKeyFormat": "Ongeldige sleutelindeling",
+    "@_comment_logging_ui": "Logging UI strings",
+    "logCapture": "Logboek vastleggen",
+    "capturingLogs": "Logboek wordt vastgelegd",
+    "captureDisabled": "Vastleggen uitgeschakeld",
+    "performanceWarning": "Let op de prestaties",
+    "performanceWarningMessage": "Het vastleggen van het logboek kan de app trager maken. Zet dit alleen aan als je een probleem onderzoekt.",
+    "enable": "Aanzetten",
+    "logsReport": "Logboekrapport",
+    "clearLogs": "Logboek wissen",
+    "totalLogs": "{count} regels",
+    "@totalLogs": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "maxEntries": "Maximaal {count} regels",
+    "@maxEntries": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "searchLogs": "Logboek doorzoeken…",
+    "allLevels": "Alle",
+    "errors": "Fouten",
+    "warnings": "Waarschuwingen",
+    "info": "Info",
+    "debug": "Debug",
+    "noLogsAvailable": "Geen logregels",
+    "logsWillAppearHere": "Logregels verschijnen hier zodra het vastleggen aan staat",
+    "copyLog": "Logregel kopiëren",
+    "logCopied": "Logregel gekopieerd",
+    "saveToDevice": "Opslaan op dit apparaat",
+    "saveFile": "Bestand opslaan",
+    "shareReport": "Rapport delen",
+    "shareLogs": "Logboek delen",
+    "logsExportTitle": "Logboek exporteren",
+    "exportFailed": "Exporteren mislukt",
+    "logsSavedTo": "Logboek opgeslagen in {path}",
+    "@logsSavedTo": {
+        "placeholders": {
+            "path": {
+                "type": "String"
+            }
+        }
+    },
+    "saveFailed": "Opslaan mislukt",
+    "clearLogsConfirmation": "Hiermee verwijder je alle vastgelegde logregels definitief. Dit kan niet ongedaan worden gemaakt.",
+    "logsCleared": "Logboek gewist",
+    "shareFeatureComingSoon": "Delen komt in fase 2",
+    "devTools": "Ontwikkelaarsgereedschap",
+    "devToolsWarning": "Alleen om problemen te onderzoeken",
+    "viewAndExportLogs": "Het logboek van de app bekijken en exporteren",
+    "saveLogs": "Logboek opslaan",
+    "logsExportSuccess": "Logboek geëxporteerd",
+    "logsExportError": "Het logboek kon niet worden geëxporteerd",
+    "shareLogsError": "Het logboek kon niet worden gedeeld",
+    "exportSettings": "Exportinstellingen",
+    "logsHeaderTitle": "Logboek van de Mostro P2P-app",
+    "logsGeneratedLabel": "Gemaakt op",
+    "logsTotalLabel": "Aantal regels",
+    "logsShareSubject": "Mostro P2P-logboek",
+    "logsShareText": "Logboek van de Mostro P2P-app",
+    "pushNotifications": "Pushmeldingen",
+    "pushNotificationsDescription": "Krijg een melding als er iets verandert aan je trades, ook als de app gesloten is.",
+    "pushNotificationsNotSupported": "Pushmeldingen worden op dit platform niet ondersteund.",
+    "notificationPreferences": "Voorkeuren",
+    "notificationSound": "Geluid",
+    "notificationSoundDescription": "Speel een geluid af bij een melding",
+    "notificationVibration": "Trillen",
+    "notificationVibrationDescription": "Laat het apparaat trillen bij een melding",
+    "privacyInfo": "Over je privacy",
+    "pushNotificationsPrivacyInfo": "MostroP2P gebruikt pushmeldingen die je privacy beschermen. De inhoud van je berichten wordt nooit met derden gedeeld.",
+    "privacyBulletSilentPush": "Stille pushmeldingen - er gaat geen berichtinhoud via Firebase",
+    "privacyBulletEncryptedTokens": "Apparaattokens worden versleuteld voordat ze worden geregistreerd",
+    "privacyBulletLocalDecryption": "Alle berichten worden op je eigen apparaat ontsleuteld",
+    "notificationSettings": "Meldingsinstellingen",
+    "notificationSettingsDescription": "Stel je pushmeldingen in",
+    "fixedPriceDisabledForRange": "Een vaste prijs kan niet bij een bandbreedte-order. Haal het maximumbedrag weg om een vaste prijs te gebruiken.",
+    "@_comment_chat_error_screens": "Chat Error Screen Strings",
+    "sessionNotFound": "Sessie niet gevonden",
+    "unableToLoadChatSession": "De chatsessie voor deze order kan niet worden geladen",
+    "peerInformationUnavailable": "Geen gegevens over de tegenpartij",
+    "chatPartnerCouldNotBeLoaded": "De gegevens van je chatpartner konden niet worden geladen",
+    "selectMostroNode": "Mostro-node kiezen",
+    "mostroNodeDescription": "Kies de Mostro-node waarop je wilt handelen",
+    "trustedNodesSection": "Vertrouwde nodes",
+    "customNodesSection": "Eigen nodes",
+    "addCustomNode": "Eigen node toevoegen",
+    "addCustomNodeTitle": "Eigen node toevoegen",
+    "enterNodePubkey": "Publieke sleutel",
+    "enterNodeName": "Naam (optioneel)",
+    "pubkeyHint": "Hex of npub",
+    "nodeNameHint": "Herkenbare naam voor deze node",
+    "nodeAlreadyExists": "Deze node staat er al",
+    "invalidPubkeyFormat": "Ongeldige publieke sleutel. Vul 64 tekens hex of een npub in",
+    "nodeAddedSuccess": "Node toegevoegd",
+    "nodeRemovedSuccess": "Node verwijderd",
+    "nodeRemoveFailed": "De node kon niet worden verwijderd, probeer het opnieuw",
+    "cannotRemoveActiveNode": "De node die je nu gebruikt kun je niet verwijderen",
+    "deleteCustomNodeTitle": "Eigen node verwijderen",
+    "deleteCustomNodeMessage": "Weet je zeker dat je deze eigen node wilt verwijderen?",
+    "deleteCustomNodeConfirm": "Verwijderen",
+    "deleteCustomNodeCancel": "Annuleren",
+    "switchingToNode": "Overschakelen naar {nodeName}…",
+    "@switchingToNode": {
+        "placeholders": {
+            "nodeName": {
+                "type": "String"
+            }
+        }
+    },
+    "nodeSwitchedSuccess": "Overgeschakeld naar {nodeName}",
+    "@nodeSwitchedSuccess": {
+        "placeholders": {
+            "nodeName": {
+                "type": "String"
+            }
+        }
+    },
+    "errorSwitchingNode": "Overschakelen mislukt, probeer het opnieuw",
+    "trusted": "Vertrouwd",
+    "noCustomNodesYet": "Nog geen eigen nodes toegevoegd",
+    "pubkeyRequired": "Een publieke sleutel is verplicht",
+    "tapToSelectNode": "Tik om te wisselen",
+    "nodeNotRespondingReverted": "De node reageert niet; teruggezet naar de vorige node",
+    "wallet": "Wallet",
+    "walletDescription": "Verbind je Lightning-wallet via NWC",
+    "connectWallet": "Wallet verbinden",
+    "disconnectWallet": "Wallet loskoppelen",
+    "walletConnected": "Verbonden",
+    "walletDisconnected": "Niet verbonden",
+    "walletBalance": "Saldo",
+    "pasteNwcUri": "NWC-URI plakken",
+    "scanQrCode": "QR-code scannen",
+    "scanQrCodeComingSoon": "De QR-scanner komt binnenkort",
+    "connecting": "Verbinden…",
+    "walletInfo": "Walletgegevens",
+    "walletSettings": "Walletinstellingen",
+    "nwcConnectionError": "Verbindingsfout",
+    "invalidNwcUri": "Ongeldige NWC-URI",
+    "walletDisconnectConfirm": "Weet je zeker dat je je wallet wilt loskoppelen?",
+    "connectWalletDescription": "Verbind je Lightning-wallet met een Nostr Wallet Connect (NWC) URI om je saldo te zien en betalingen te doen.",
+    "refreshBalance": "Saldo verversen",
+    "payWithWallet": "Betalen met wallet",
+    "nwcPaymentSending": "Betaling versturen…",
+    "nwcPaymentSuccess": "Betaling geslaagd!",
+    "nwcPaymentFailed": "Betaling mislukt. Probeer het opnieuw.",
+    "nwcPaymentTimeout": "De betaling duurde te lang. Probeer het opnieuw of betaal handmatig.",
+    "nwcInsufficientBalance": "Onvoldoende saldo in je wallet",
+    "nwcRateLimited": "De wallet beperkt het aantal verzoeken. Wacht even.",
+    "nwcQuotaExceeded": "Je bestedingslimiet in de wallet is bereikt",
+    "nwcRetryPayment": "Opnieuw betalen",
+    "nwcPayManually": "Toch handmatig betalen",
+    "nwcShowInvoice": "Invoice tonen",
+    "nwcPreimageLabel": "Preimage",
+    "nwcGenerateWithWallet": "Met wallet aanmaken",
+    "nwcInvoiceGenerating": "Invoice aanmaken…",
+    "nwcInvoiceGenerated": "Invoice aangemaakt!",
+    "nwcInvoiceFailed": "De invoice kon niet worden aangemaakt. Probeer het opnieuw.",
+    "nwcInvoiceTimeout": "Het aanmaken van de invoice duurde te lang. Probeer het opnieuw of vul hem handmatig in.",
+    "nwcConfirmInvoice": "Bevestigen en versturen",
+    "nwcRetryInvoice": "Opnieuw",
+    "nwcEnterManually": "Toch handmatig invullen",
+    "nwcConnectionUnstable": "Verbinding is onstabiel",
+    "nwcReconnecting": "Opnieuw verbinden…",
+    "nwcBalanceTooLow": "Je walletsaldo is lager dan het te betalen bedrag",
+    "nwcCheckingBalance": "Saldo controleren…",
+    "nwcReceiptAmount": "Bedrag",
+    "nwcReceiptFees": "Routeringskosten",
+    "nwcReceiptTotal": "Totaal",
+    "nwcReceiptTimestamp": "Tijd",
+    "nwcReceiptDone": "Klaar",
+    "nwcPreimageCopied": "Preimage gekopieerd",
+    "nwcPaymentReceived": "Betaling ontvangen!",
+    "nwcPaymentSent": "Betaling verstuurd!",
+    "nwcNotificationPaymentReceived": "{amount} sats ontvangen",
+    "@nwcNotificationPaymentReceived": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "nwcNotificationPaymentSent": "{amount} sats verstuurd",
+    "@nwcNotificationPaymentSent": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "lnAddressConfirmTitle": "Sats ontvangen via je Lightning-adres",
+    "lnAddressConfirmDescription": "Je Lightning-adres wordt gebruikt om de sats voor deze trade te ontvangen.",
+    "lnAddressConfirmButton": "Dit adres gebruiken",
+    "lnAddressEnterManually": "Invoice handmatig invullen",
+    "lnAddressConfirmHeader": "Je Lightning-adres wordt gebruikt om de betaling voor order {orderId} te ontvangen.",
+    "@lnAddressConfirmHeader": {
+        "placeholders": {
+            "orderId": {
+                "type": "String"
+            }
+        }
+    },
+    "cameraPermissionDenied": "Toegang tot de camera is nodig om QR-codes te scannen",
+    "toggleTorch": "Zaklamp aan of uit",
+    "switchCamera": "Andere camera",
+    "deepLinkDifferentMostroTitle": "Andere Mostro-instantie",
+    "deepLinkDifferentMostroBody": "Deze order is op een andere Mostro-node geplaatst. Wil je naar die Mostro overschakelen en de order bekijken?",
+    "deepLinkDifferentMostroFrom": "Order van:",
+    "deepLinkDifferentMostroCurrent": "Nu verbonden met:",
+    "deepLinkSwitchAndView": "Wisselen en bekijken",
+    "chooseYourCommunity": "Kies je community",
+    "communitySearchHint": "Communities zoeken…",
+    "communityFee": "Kosten",
+    "communityRange": "Bandbreedte",
+    "useCustomNode": "Een eigen node gebruiken",
+    "communityLoadingError": "De communitygegevens konden niet worden geladen",
+    "communityRetry": "Opnieuw",
+    "noCommunityResults": "Geen communities gevonden",
+    "communityFormatSats": "{amount} sats",
+    "@communityFormatSats": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "communityAllCurrencies": "Alle valuta",
+    "communityDisclaimerTitle": "Belangrijk",
+    "communityDisclaimerBody": "Het ontwikkelteam van Mostro is niet verantwoordelijk voor wat node-beheerders met het platform doen. Elke beheerder bestuurt zijn eigen Mostro-node en is als enige verantwoordelijk voor zijn handelen. Door Mostro te gebruiken neem je de volledige verantwoordelijkheid voor je eigen trades, en erken je dat het ontwikkelteam geen zeggenschap heeft over afzonderlijke node-beheerders.",
+    "communityDisclaimerAccept": "Akkoord",
+    "tooManyRequests": "Te veel verzoeken, probeer het later opnieuw.",
+    "tradeHistory": "Tradehistorie",
+    "tradeHistoryDescription": "Kies hoe lang je afgeronde trades bewaard blijven. Oudere trades worden vanzelf verwijderd.",
+    "tradeHistoryInfoText": "Deze instelling bepaalt hoe lang je tradesessies en chatberichten op je apparaat blijven staan. Na de gekozen periode worden ze vanzelf verwijderd.",
+    "oneWeek": "1 week",
+    "oneMonth": "1 maand",
+    "threeMonths": "3 maanden",
+    "sixMonths": "6 maanden",
+    "oneYear": "1 jaar",
+    "never": "Nooit",
+    "addBondInvoiceTitle": "Haal je deel op",
+    "addBondInvoiceMessage": "Je hebt het dispuut gewonnen. Stuur een Lightning-invoice om je deel van de ingehouden borg tegen misbruik op te halen.",
+    "addBondInvoiceWonLine": "Je hebt het dispuut over order {order_id} gewonnen.",
+    "@addBondInvoiceWonLine": {
+        "placeholders": {
+            "order_id": {
+                "type": "String",
+                "description": "The order ID"
+            }
+        }
+    },
+    "addBondInvoiceSubmitLine": "Stuur een Lightning-invoice voor {amount} sats om je deel van de borg tegen misbruik op te halen.",
+    "@addBondInvoiceSubmitLine": {
+        "placeholders": {
+            "amount": {
+                "type": "String",
+                "description": "The amount of satoshis"
+            }
+        }
+    },
+    "addBondInvoiceDeadline": "Je moet dit vóór {date} doen.",
+    "@addBondInvoiceDeadline": {
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "description": "The claim deadline"
+            }
+        }
+    },
+    "addBondInvoiceInputLabel": "Lightning-invoice",
+    "addBondInvoiceInputHint": "Plak hier je bolt11-invoice",
+    "addBondInvoiceButton": "OPHALEN",
+    "addBondInvoiceSubmitButton": "INVOICE VERSTUREN",
+    "addBondInvoiceFailedToSubmit": "De invoice kon niet worden verstuurd. Probeer het opnieuw.",
+    "bondPayoutBadge": "UITBETALING WACHT",
+    "bondPayoutInProgressBadge": "UITBETALING ONDERWEG",
+    "bondInvoiceAcceptedMessage": "Mostro heeft de Lightning-invoice aangenomen waarmee je je deel van de borg tegen misbruik ontvangt. Wacht tot de betaling rond is.",
+    "bondPayoutCompletedMessage": "Je hebt je deel van de borg tegen misbruik uitbetaald gekregen.",
+    "bondPayoutCompletedWithRating": "Je hebt je deel van de borg tegen misbruik uitbetaald gekregen. Je kunt je tegenpartij nu beoordelen.",
+    "bondPayoutCloseButton": "SLUITEN",
+    "errorLoadingBondPayout": "Fout bij het laden van de uitbetalingsgegevens",
+    "antiAbuseBond": "Borg tegen misbruik",
+    "antiAbuseBondExplanation": "De borg tegen misbruik is een optionele voorziening die sommige Mostro-nodes gebruiken om handel veiliger te maken. Ga je een trade aan, dan zet je een klein bedrag aan sats als onderpand vast. Je krijgt het volledig terug als je te goeder trouw handelt, maar je bent het kwijt als je je tegenpartij probeert op te lichten. Zo staat het geld van de oplichter zelf op het spel, wat misbruik ontmoedigt.",
+    "bondStatusLabel": "Status",
+    "bondStatusExplanation": "Of deze node een borg tegen misbruik vraagt om te handelen. 'Uit' betekent dat er geen borg nodig is.",
+    "bondEnabled": "Aan",
+    "bondDisabled": "Uit",
+    "bondAppliesToLabel": "Geldt voor",
+    "bondAppliesToExplanation": "Welke kant een borg moet vastzetten: wie accepteert, wie plaatst, of allebei.",
+    "bondAppliesToTakers": "Wie accepteert",
+    "bondAppliesToMakers": "Wie plaatst",
+    "bondAppliesToBoth": "Beide partijen",
+    "bondAmountLabel": "Hoogte van de borg",
+    "bondAmountExplanation": "De hoogte van de borg: een percentage van het orderbedrag, met een ondergrens in sats. Het hoogste van de twee geldt.",
+    "bondAmountValue": "{percent}% van het orderbedrag (min. {min} sats)",
+    "@bondAmountValue": {
+        "placeholders": {
+            "percent": {
+                "type": "String"
+            },
+            "min": {
+                "type": "String"
+            }
+        }
+    },
+    "bondSlashOnTimeoutLabel": "Inhouden bij verzuim",
+    "bondSlashOnTimeoutExplanation": "Of je borg ingehouden kan worden als je een termijn laat verlopen (bijvoorbeeld niet op tijd betalen of geen invoice aanleveren). Staat dit op 'Nee', dan wordt een borg alleen ingehouden na de beslissing van een solver.",
+    "bondNodeShareLabel": "Deel voor de node",
+    "bondNodeShareExplanation": "Wordt een borg ingehouden, dan is dit het deel dat de node houdt. De rest gaat naar de eerlijke tegenpartij.",
+    "bondClaimWindowLabel": "Ophaaltermijn",
+    "bondClaimWindowExplanation": "Ben jij de eerlijke partij als een borg wordt ingehouden, dan is dit het aantal dagen dat je hebt om je deel op te halen voordat het vervalt.",
+    "bondClaimWindowValue": "{days, plural, =1{1 dag} other{{days} dagen}}",
+    "@bondClaimWindowValue": {
+        "placeholders": {
+            "days": {
+                "type": "int"
+            }
+        }
+    }
+}

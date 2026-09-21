@@ -34,6 +34,7 @@ import 'package:mostro_mobile/generated/l10n_en.dart';
 import 'package:mostro_mobile/generated/l10n_es.dart';
 import 'package:mostro_mobile/generated/l10n_fr.dart';
 import 'package:mostro_mobile/generated/l10n_it.dart';
+import 'package:mostro_mobile/generated/l10n_nl.dart';
 import 'package:mostro_mobile/generated/l10n_pt.dart';
 import 'package:mostro_mobile/background/background.dart' as bg;
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
@@ -636,6 +637,7 @@ Future<NotificationText> _getLocalizedNotificationText(mostro_action.Action acti
       'de' => SDe(),
       'fr' => SFr(),
       'pt' => SPt(),
+      'nl' => SNl(),
       _ => SEn(),
     };
 
@@ -667,6 +669,7 @@ String? _getExpandedText(Map<String, dynamic> values) {
     'de' => SDe(),
     'fr' => SFr(),
     'pt' => SPt(),
+    'nl' => SNl(),
     _ => SEn(),
   };
 
