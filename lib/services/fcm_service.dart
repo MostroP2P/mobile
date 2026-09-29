@@ -301,15 +301,15 @@ class FCMService {
   }
 
   Future<String?> getToken() async {
-    try {
-      // Try to get from storage first
-      final storedToken = await _prefs.getString(_fcmTokenKey);
-      if (storedToken != null) {
-        return storedToken;
-      }
+    // Firebase first: it can rotate the token while the app is closed, and
+    // registering the stored one would point the server at a dead token.
+    if (_isInitialized) {
+      final token = await _getAndStoreToken();
+      if (token != null) return token;
+    }
 
-      // If not in storage, get from Firebase
-      return await _getAndStoreToken();
+    try {
+      return await _prefs.getString(_fcmTokenKey);
     } catch (e) {
       logger.e('Error getting token: $e');
       return null;

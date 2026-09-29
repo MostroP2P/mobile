@@ -266,6 +266,65 @@ void main() {
       expect(body.containsKey('mostro_pubkey'), isFalse);
     });
   });
+
+  group('PushNotificationService.registerTokens', () {
+    const otherPubkey =
+        'b1b2c3d4e5f67890123456789012345678901234567890123456789012345abc';
+
+    test('registers each distinct pubkey once and counts successes', () async {
+      final registered = <String>[];
+      final mockClient = MockClient((request) async {
+        if (request.url.path == '/api/health') {
+          return http.Response('{"status":"ok"}', 200);
+        }
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        final pubkey = body['trade_pubkey'] as String;
+        registered.add(pubkey);
+        return pubkey == otherPubkey
+            ? http.Response('{"success":false}', 500)
+            : http.Response('{"success":true}', 200);
+      });
+
+      final count = await _buildService(httpClient: mockClient)
+          .registerTokens([_validPubkey, otherPubkey, _validPubkey]);
+
+      expect(registered, [_validPubkey, otherPubkey]);
+      expect(count, 1);
+    });
+
+    test('registers nothing while push is disabled in settings', () async {
+      var called = false;
+      final mockClient = MockClient((_) async {
+        called = true;
+        return http.Response('{"success":true}', 200);
+      });
+
+      final count = await _buildService(
+        httpClient: mockClient,
+        isPushEnabled: false,
+      ).registerTokens([_validPubkey]);
+
+      expect(count, 0);
+      expect(called, isFalse);
+    });
+  });
+
+  group('PushNotificationService.unregisterTokens', () {
+    test('POSTs /api/unregister for each pubkey', () async {
+      final unregistered = <String>[];
+      final mockClient = MockClient((request) async {
+        expect(request.url.path, '/api/unregister');
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        unregistered.add(body['trade_pubkey'] as String);
+        return http.Response('{"success":true}', 200);
+      });
+
+      await _buildService(httpClient: mockClient)
+          .unregisterTokens([_validPubkey, _validPubkey]);
+
+      expect(unregistered, [_validPubkey]);
+    });
+  });
 }
 
 // Used to simulate a transport failure inside MockClient without importing dart:io.

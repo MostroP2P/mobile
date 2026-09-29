@@ -32,9 +32,6 @@ class PushNotificationService {
 
   bool _isInitialized = false;
 
-  /// Track registered trade pubkeys for re-registration on token refresh
-  final Set<String> _registeredTradePubkeys = {};
-
   /// Callback to check if push notifications are enabled in settings
   /// Set this from the app to integrate with user preferences
   bool Function()? isPushEnabledInSettings;
@@ -158,7 +155,6 @@ class PushNotificationService {
       if (response.statusCode == 202) {
         debugPrint(
             'PushService: Token registered for trade ${_shortenPubkey(tradePubkey)}');
-        _registeredTradePubkeys.add(tradePubkey);
         return true;
       }
 
@@ -167,7 +163,6 @@ class PushNotificationService {
         if (data['success'] == true) {
           debugPrint(
               'PushService: Token registered for trade ${_shortenPubkey(tradePubkey)}');
-          _registeredTradePubkeys.add(tradePubkey);
           return true;
         }
       }
@@ -180,46 +175,25 @@ class PushNotificationService {
     }
   }
 
-  /// Re-register all known trade pubkeys with the new FCM token.
-  /// Called when FCM token is refreshed.
-  Future<void> reRegisterAllTokens() async {
-    if (_registeredTradePubkeys.isEmpty) {
-      debugPrint('PushService: No trade pubkeys to re-register');
-      return;
+  /// Registers every trade pubkey in [tradePubkeys], one request at a time.
+  ///
+  /// The server keeps registrations in memory only and expires them after a
+  /// TTL, so callers pass the full set of live trades each time rather than
+  /// relying on anything registered earlier. Returns how many succeeded.
+  Future<int> registerTokens(Iterable<String> tradePubkeys) async {
+    var registered = 0;
+    for (final tradePubkey in tradePubkeys.toSet()) {
+      if (await registerToken(tradePubkey)) registered++;
     }
-
-    debugPrint(
-        'PushService: Re-registering ${_registeredTradePubkeys.length} trade pubkeys...');
-
-    // Copy the set to avoid modification during iteration
-    final pubkeys = Set<String>.from(_registeredTradePubkeys);
-    for (final tradePubkey in pubkeys) {
-      try {
-        await registerToken(tradePubkey);
-      } catch (e) {
-        logger.e('Error re-registering token for $tradePubkey: $e');
-      }
-    }
+    return registered;
   }
 
-  /// Unregister all registered tokens
-  /// Called when user disables push notifications in settings
-  Future<void> unregisterAllTokens() async {
-    if (!isSupported || _registeredTradePubkeys.isEmpty) {
-      return;
-    }
-
-    debugPrint(
-        'PushService: Unregistering all ${_registeredTradePubkeys.length} tokens...');
-
-    // Copy the set to avoid modification during iteration
-    final pubkeys = Set<String>.from(_registeredTradePubkeys);
-    for (final tradePubkey in pubkeys) {
-      try {
-        await unregisterToken(tradePubkey);
-      } catch (e) {
-        logger.e('Error unregistering token for $tradePubkey: $e');
-      }
+  /// Unregisters every trade pubkey in [tradePubkeys].
+  /// Called when the user disables push notifications in settings.
+  Future<void> unregisterTokens(Iterable<String> tradePubkeys) async {
+    if (!isSupported) return;
+    for (final tradePubkey in tradePubkeys.toSet()) {
+      await unregisterToken(tradePubkey);
     }
   }
 
@@ -291,7 +265,6 @@ class PushNotificationService {
       if (response.statusCode == 200) {
         debugPrint(
             'PushService: Token unregistered for trade ${_shortenPubkey(tradePubkey)}');
-        _registeredTradePubkeys.remove(tradePubkey);
         return true;
       }
 

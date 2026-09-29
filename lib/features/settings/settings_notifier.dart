@@ -1,10 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/storage_keys.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
-import 'package:mostro_mobile/services/push_notification_service.dart';
 import 'package:mostro_mobile/services/fcm_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,15 +13,20 @@ class SettingsNotifier extends StateNotifier<Settings> {
   final Ref? ref;
   static final String _storageKey = SharedPreferencesKeys.appSettings.value;
 
-  /// Push notification service for unregistering tokens when disabled
-  PushNotificationService? _pushService;
   FCMService? _fcmService;
+  Future<void> Function()? _registerPushTokens;
+  Future<void> Function()? _unregisterPushTokens;
 
-  /// Set push notification services for integration
+  /// Wires the push toggle to the trades' push registrations. The callbacks
+  /// act on the sessions, which this notifier does not own.
   void setPushServices(
-      PushNotificationService? pushService, FCMService? fcmService) {
-    _pushService = pushService;
+    FCMService? fcmService, {
+    required Future<void> Function() registerTokens,
+    required Future<void> Function() unregisterTokens,
+  }) {
     _fcmService = fcmService;
+    _registerPushTokens = registerTokens;
+    _unregisterPushTokens = unregisterTokens;
   }
 
   SettingsNotifier(this._prefs, {this.ref}) : super(_defaultSettings());
@@ -179,28 +184,28 @@ class SettingsNotifier extends StateNotifier<Settings> {
     await _saveToPrefs();
     logger.i('Push notifications ${newValue ? 'enabled' : 'disabled'}');
 
-    // When disabling, unregister all tokens and delete FCM token
-    if (!newValue) {
-      _unregisterPushTokens();
+    if (newValue) {
+      // Disabling dropped every registration, so re-enabling must restore them.
+      unawaited(_registerPushTokens?.call());
+    } else {
+      unawaited(_disablePush());
     }
   }
 
-  /// Unregister all push tokens when user disables notifications
-  void _unregisterPushTokens() {
-    if (_pushService != null) {
-      _pushService!.unregisterAllTokens().then((_) {
-        logger.i('All push tokens unregistered');
-      }).catchError((e) {
-        logger.w('Failed to unregister push tokens: $e');
-      });
+  /// Unregisters every trade, then deletes the FCM token.
+  Future<void> _disablePush() async {
+    try {
+      await _unregisterPushTokens?.call();
+      logger.i('All push tokens unregistered');
+    } catch (e) {
+      logger.w('Failed to unregister push tokens: $e');
     }
 
-    if (_fcmService != null) {
-      _fcmService!.deleteToken().then((_) {
-        logger.i('FCM token deleted');
-      }).catchError((e) {
-        logger.w('Failed to delete FCM token: $e');
-      });
+    try {
+      await _fcmService?.deleteToken();
+      logger.i('FCM token deleted');
+    } catch (e) {
+      logger.w('Failed to delete FCM token: $e');
     }
   }
 

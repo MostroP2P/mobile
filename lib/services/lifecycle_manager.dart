@@ -14,6 +14,7 @@ import 'package:mostro_mobile/features/subscriptions/subscription_type.dart';
 import 'package:mostro_mobile/shared/providers/background_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
 import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -85,6 +86,9 @@ class LifecycleManager extends WidgetsBindingObserver {
       _isInBackground = false;
       logger.i("Switching to foreground");
 
+      // The push server may have dropped registrations while the app was away
+      _refreshPushRegistrations();
+
       // Clear persisted background filters since foreground takes over
       final prefs = SharedPreferencesAsync();
       await prefs.remove(SharedPreferencesKeys.backgroundFilters.value);
@@ -139,6 +143,9 @@ class LifecycleManager extends WidgetsBindingObserver {
   }
 
   Future<void> _switchToBackground() async {
+    // Refresh push registrations right before the user relies on them
+    _refreshPushRegistrations();
+
     try {
       // Get the subscription manager
       final subscriptionManager = ref.read(subscriptionManagerProvider);
@@ -193,6 +200,17 @@ class LifecycleManager extends WidgetsBindingObserver {
       logger.i("Background transition complete");
     } catch (e) {
       logger.e("Error during background transition: $e");
+    }
+  }
+
+  /// Fire-and-forget: a push failure must never break a lifecycle switch.
+  void _refreshPushRegistrations() {
+    try {
+      unawaited(
+        ref.read(sessionNotifierProvider.notifier).syncPushRegistrations(),
+      );
+    } catch (e) {
+      logger.w('Could not refresh push registrations: $e');
     }
   }
 

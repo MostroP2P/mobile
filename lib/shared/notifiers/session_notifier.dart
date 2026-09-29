@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
@@ -41,6 +43,125 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   /// Set the push notification service for automatic token registration
   void setPushNotificationService(PushNotificationService? service) {
     _pushService = service;
+  }
+
+  /// Minimum spacing between unforced push re-registrations. The push server
+  /// rate-limits /api/register per IP and many users share one behind carrier
+  /// NAT, so lifecycle events must not trigger a sweep every time.
+  static const Duration pushResyncInterval = Duration(minutes: 30);
+
+  /// How long a finished trade keeps its push registration, so trailing
+  /// messages (rating, bond notices) still wake the device.
+  static const Duration finishedTradePushGrace = Duration(hours: 24);
+
+  /// Actions after which Mostro only sends trailing notices for the trade.
+  static const Set<Action> _finishedTradeActions = {
+    Action.purchaseCompleted,
+    Action.rate,
+    Action.rateReceived,
+    Action.holdInvoicePaymentSettled,
+    Action.canceled,
+    Action.cancel,
+    Action.cooperativeCancelAccepted,
+    Action.holdInvoicePaymentCanceled,
+    Action.adminCanceled,
+    Action.adminCancel,
+    Action.adminSettle,
+    Action.adminSettled,
+  };
+
+  DateTime? _lastPushResync;
+  Future<void>? _pushResyncInFlight;
+
+  /// Re-registers the push token for every trade that can still receive
+  /// Mostro messages.
+  ///
+  /// The push server keeps registrations in memory with a TTL, so a restart
+  /// or expiry silently drops them; the app re-asserts them on start, on
+  /// lifecycle changes and when the FCM token or the push setting changes.
+  /// Unforced calls are throttled by [pushResyncInterval].
+  Future<void> syncPushRegistrations({bool force = false}) {
+    final pushService = _pushService;
+    if (pushService == null) return Future.value();
+    if (pushService.isPushEnabledInSettings?.call() == false) {
+      return Future.value();
+    }
+
+    final inFlight = _pushResyncInFlight;
+    if (inFlight != null) {
+      // A forced sync (e.g. new FCM token) must not be absorbed by a sweep
+      // that may still be sending the old token.
+      return force
+          ? inFlight.then((_) => syncPushRegistrations(force: true))
+          : inFlight;
+    }
+
+    final last = _lastPushResync;
+    if (!force &&
+        last != null &&
+        DateTime.now().difference(last) < pushResyncInterval) {
+      return Future.value();
+    }
+
+    final sync = () async {
+      try {
+        final pubkeys = await _liveTradePubkeys();
+        if (pubkeys.isEmpty) {
+          _lastPushResync = DateTime.now();
+          return;
+        }
+        final registered = await pushService.registerTokens(pubkeys);
+        logger.i('Push registrations refreshed: $registered/${pubkeys.length}');
+        // Partial failures (offline, server down) retry on the next trigger.
+        if (registered == pubkeys.length) _lastPushResync = DateTime.now();
+      } catch (e) {
+        logger.w('Failed to refresh push registrations: $e');
+      } finally {
+        _pushResyncInFlight = null;
+      }
+    }();
+    _pushResyncInFlight = sync;
+    return sync;
+  }
+
+  /// Removes the push registration of every trade this device holds, finished
+  /// or not. Called when the user disables push notifications.
+  Future<void> unregisterPushTokens() async {
+    final pushService = _pushService;
+    if (pushService == null) return;
+    _lastPushResync = null;
+    await pushService.unregisterTokens([
+      ..._sessions.values.map((session) => session.tradeKey.public),
+      ..._pendingChildSessions.keys,
+    ]);
+  }
+
+  /// Trade pubkeys that may still receive Mostro messages: pending range
+  /// children plus every session not finished longer than
+  /// [finishedTradePushGrace] ago. Unknown state counts as live.
+  Future<List<String>> _liveTradePubkeys() async {
+    final mostroStore = ref.read(mostroStorageProvider);
+    final pubkeys = [..._pendingChildSessions.keys];
+    for (final session in _sessions.values.toList()) {
+      final lastMessage =
+          await mostroStore.getLatestMessageById(session.orderId!);
+      if (!_isFinishedTrade(lastMessage)) {
+        pubkeys.add(session.tradeKey.public);
+      }
+    }
+    return pubkeys;
+  }
+
+  bool _isFinishedTrade(MostroMessage? message) {
+    if (message == null || !_finishedTradeActions.contains(message.action)) {
+      return false;
+    }
+    final timestamp = message.timestamp;
+    if (timestamp == null || timestamp <= 0) return false;
+    // Stored timestamps are a mix of seconds and milliseconds.
+    final ms = timestamp < 1000000000000 ? timestamp * 1000 : timestamp;
+    final receivedAt = DateTime.fromMillisecondsSinceEpoch(ms);
+    return DateTime.now().difference(receivedAt) > finishedTradePushGrace;
   }
 
   List<Session> get sessions => _sessions.values.toList();
@@ -197,6 +318,9 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     }
     _emitState();
     _scheduleCleanup();
+
+    // The push server may have lost these while the app was closed.
+    unawaited(syncPushRegistrations(force: true));
   }
 
   void _emitState() {

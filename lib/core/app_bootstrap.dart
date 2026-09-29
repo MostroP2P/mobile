@@ -123,14 +123,20 @@ void _initializePushNotificationIntegration(
 ) {
   try {
     // Connect push service with session notifier for automatic token registration
-    container
-        .read(sessionNotifierProvider.notifier)
-        .setPushNotificationService(pushServices.pushService);
+    final sessionNotifier = container.read(sessionNotifierProvider.notifier);
+    sessionNotifier.setPushNotificationService(pushServices.pushService);
 
-    // Connect push services with settings notifier for unregistration on disable
-    container
-        .read(settingsProvider.notifier)
-        .setPushServices(pushServices.pushService, pushServices.fcmService);
+    // Toggling push in settings drops or restores every trade's registration
+    container.read(settingsProvider.notifier).setPushServices(
+          pushServices.fcmService,
+          registerTokens: () =>
+              sessionNotifier.syncPushRegistrations(force: true),
+          unregisterTokens: sessionNotifier.unregisterPushTokens,
+        );
+
+    // A new FCM token invalidates every registration made with the old one
+    pushServices.fcmService.onTokenRefresh =
+        (_) => sessionNotifier.syncPushRegistrations(force: true);
 
     // Set up settings check callback
     pushServices.pushService.isPushEnabledInSettings = () {
@@ -194,11 +200,8 @@ Future<_PushServices?> _initializeFirebaseMessaging(
     final pushService = PushNotificationService(fcmService: fcmService);
     await pushService.initialize();
 
-    // Wire up token refresh to re-register all trade pubkeys
-    fcmService.onTokenRefresh = (_) => pushService.reRegisterAllTokens();
-
-    // Note: isPushEnabledInSettings callback will be set after ProviderContainer is created
-    // This is done in the app initialization to have access to settings provider
+    // Settings and token-refresh callbacks are wired once the ProviderContainer
+    // exists, in _initializePushNotificationIntegration
 
     return _PushServices(fcmService: fcmService, pushService: pushService);
   } catch (e) {

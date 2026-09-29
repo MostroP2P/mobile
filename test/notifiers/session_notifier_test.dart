@@ -1,12 +1,16 @@
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 
 import '../mocks.mocks.dart';
 
@@ -33,6 +37,7 @@ void main() {
 
   setUpAll(() {
     provideDummy<KeyManager>(MockKeyManager());
+    provideDummy<MostroStorage>(MockMostroStorage());
   });
 
   setUp(() {
@@ -213,6 +218,144 @@ void main() {
       expect(
         notifier.state.where((s) => s.orderId == 'order-2').length,
         1,
+      );
+    });
+  });
+
+  group('syncPushRegistrations', () {
+    late MockMostroStorage mockMostroStorage;
+
+    final liveKey = NostrKeyPairs(
+      private:
+          '1111111111111111111111111111111111111111111111111111111111111111',
+    );
+    final finishedKey = NostrKeyPairs(
+      private:
+          '2222222222222222222222222222222222222222222222222222222222222222',
+    );
+    final recentlyFinishedKey = NostrKeyPairs(
+      private:
+          '3333333333333333333333333333333333333333333333333333333333333333',
+    );
+    final unknownKey = NostrKeyPairs(
+      private:
+          '4444444444444444444444444444444444444444444444444444444444444444',
+    );
+
+    Session sessionFor(String orderId, NostrKeyPairs tradeKey) => Session(
+          masterKey: masterKey,
+          tradeKey: tradeKey,
+          keyIndex: 3,
+          fullPrivacy: false,
+          startTime: DateTime.now(),
+          orderId: orderId,
+          role: Role.seller,
+        );
+
+    MostroMessage messageAt(Action action, Duration age) => MostroMessage(
+          action: action,
+          id: 'x',
+          timestamp: DateTime.now().subtract(age).millisecondsSinceEpoch,
+        );
+
+    setUp(() {
+      mockMostroStorage = MockMostroStorage();
+      when(mockRef.read(mostroStorageProvider)).thenReturn(mockMostroStorage);
+      when(mockPushService.isPushEnabledInSettings).thenReturn(() => true);
+      when(mockPushService.registerTokens(any))
+          .thenAnswer((inv) async => (inv.positionalArguments[0] as List).length);
+      when(mockPushService.unregisterTokens(any)).thenAnswer((_) async {});
+
+      when(mockMostroStorage.getLatestMessageById('live'))
+          .thenAnswer((_) async => messageAt(Action.fiatSentOk, Duration.zero));
+      when(mockMostroStorage.getLatestMessageById('finished')).thenAnswer(
+          (_) async => messageAt(Action.purchaseCompleted, const Duration(days: 3)));
+      when(mockMostroStorage.getLatestMessageById('recently-finished'))
+          .thenAnswer((_) async =>
+              messageAt(Action.canceled, const Duration(hours: 2)));
+      when(mockMostroStorage.getLatestMessageById('unknown'))
+          .thenAnswer((_) async => null);
+
+      notifier.registerSessionInMemory(sessionFor('live', liveKey));
+      notifier.registerSessionInMemory(sessionFor('finished', finishedKey));
+      notifier.registerSessionInMemory(
+          sessionFor('recently-finished', recentlyFinishedKey));
+      notifier.registerSessionInMemory(sessionFor('unknown', unknownKey));
+    });
+
+    List<String> registeredKeys() {
+      final captured =
+          verify(mockPushService.registerTokens(captureAny)).captured;
+      return (captured.last as List).cast<String>();
+    }
+
+    test('registers live trades and skips ones finished past the grace period',
+        () async {
+      await notifier.syncPushRegistrations(force: true);
+
+      expect(
+        registeredKeys(),
+        unorderedEquals([
+          liveKey.public,
+          recentlyFinishedKey.public,
+          unknownKey.public,
+        ]),
+      );
+    });
+
+    test('includes pending range-order children', () async {
+      await notifier.createChildOrderSession(
+        tradeKey: childTradeKey,
+        keyIndex: 5,
+        parentOrderId: 'parent-order-id',
+        role: Role.seller,
+      );
+
+      await notifier.syncPushRegistrations(force: true);
+
+      expect(registeredKeys(), contains(childTradeKey.public));
+    });
+
+    test('throttles unforced calls but not forced ones', () async {
+      await notifier.syncPushRegistrations();
+      await notifier.syncPushRegistrations();
+      verify(mockPushService.registerTokens(any)).called(1);
+
+      await notifier.syncPushRegistrations(force: true);
+      verify(mockPushService.registerTokens(any)).called(1);
+    });
+
+    test('retries on the next call after a partial failure', () async {
+      when(mockPushService.registerTokens(any)).thenAnswer((_) async => 0);
+
+      await notifier.syncPushRegistrations();
+      await notifier.syncPushRegistrations();
+
+      verify(mockPushService.registerTokens(any)).called(2);
+    });
+
+    test('does nothing while push notifications are disabled', () async {
+      when(mockPushService.isPushEnabledInSettings).thenReturn(() => false);
+
+      await notifier.syncPushRegistrations(force: true);
+
+      verifyNever(mockPushService.registerTokens(any));
+    });
+
+    test('unregisterPushTokens drops every trade, finished ones included',
+        () async {
+      await notifier.unregisterPushTokens();
+
+      final captured =
+          verify(mockPushService.unregisterTokens(captureAny)).captured;
+      expect(
+        (captured.single as List).cast<String>(),
+        unorderedEquals([
+          liveKey.public,
+          finishedKey.public,
+          recentlyFinishedKey.public,
+          unknownKey.public,
+        ]),
       );
     });
   });
