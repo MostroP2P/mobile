@@ -61,6 +61,11 @@ When implementing or debugging protocol-related features (order flows, actions, 
 - **flutter_intl** for internationalization (`l10n/` directory)
 - Background services in `background/` for notifications and data sync
 
+### Push Notifications
+- The push server (`Config.pushServerUrl`) keeps `trade_pubkey -> FCM token` **in memory only**, with a TTL; any restart wipes it. Never assume a trade registered once stays registered
+- `SessionNotifier.syncPushRegistrations()` re-registers every live trade on app start, on foreground/background switches (throttled to 30 min for the server's per-IP rate limit), on FCM token refresh and when push is re-enabled in settings; disabling push unregisters every session (`unregisterPushTokens()`)
+- Details and the live-trade rule: `docs/architecture/FCM_IMPLEMENTATION.md` ("Token Re-registration")
+
 ### Key Architecture Patterns
 - Feature-based organization: `features/{feature}/{screens|providers|notifiers|widgets}/`
 - Shared utilities and widgets in `shared/`

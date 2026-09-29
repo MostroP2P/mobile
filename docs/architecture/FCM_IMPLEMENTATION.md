@@ -338,7 +338,7 @@ final response = await http.post(
 - **Server Communication:** HTTP API integration with mostro-push-server
 - **Platform Identification:** Include platform type for server-side handling
 - **HTTPS Communication:** Secure transport layer (tokens encrypted in transit)
-- **Token Lifecycle:** Register on trade start, unregister on trade end
+- **Token Lifecycle:** Register on trade start and re-register while the trade is live (see [Token Re-registration](#token-re-registration))
 
 ### Testing
 - ✅ FCM token sent to server correctly
@@ -380,6 +380,53 @@ final response = await http.post(
 - ✅ Token unregistration on disable
 - ✅ Notification preferences persist
 - ✅ Settings persistence across app restarts
+
+---
+
+## Token Re-registration
+
+### Why
+
+The push server keeps `trade_pubkey -> device_token` **in memory only** and expires each entry `TOKEN_TTL_HOURS` (48 h by default) after it was registered. Every deploy, `fly secrets set` or restart wipes all registrations. The server design relies on clients re-registering; the app originally registered a trade only once (in `SessionNotifier.saveSession`), so a single server restart left every open trade without push until it finished.
+
+This happened in production on 2026-09-24: two restarts (relay list change) dropped ~760 registrations, and affected users received no push at all, not even the server's generic fallback notification.
+
+### When the app re-registers
+
+`SessionNotifier.syncPushRegistrations()` registers every live trade. It runs:
+
+| Trigger | Where | Throttled |
+|---|---|---|
+| App start | end of `SessionNotifier.init()` | No (forced) |
+| Foreground / background switch | `LifecycleManager` | Yes, at most every 30 min |
+| New FCM token | `FCMService.onTokenRefresh` (wired in `app_bootstrap.dart`) | No (forced) |
+| Push re-enabled in settings | `SettingsNotifier.updatePushNotificationsEnabled` | No (forced) |
+
+The throttle (`SessionNotifier.pushResyncInterval`) exists because the server rate-limits `/api/register` per IP (burst 100, 120/min) and many users share one IP behind carrier NAT. A sweep with failed registrations is not counted, so the next trigger retries it. A forced call arriving during a sweep runs again after it, so a new FCM token is never absorbed by a sweep still sending the old one.
+
+Registration on `saveSession` and on range-order child creation/linking is unchanged; re-registration complements it.
+
+### What counts as a live trade
+
+- Pending range-order child sessions (they wait for the child `new-order` message).
+- Every session whose latest stored message is not a finished-trade action (`purchase-completed`, `rate`, `canceled`, `admin-settled`, …), or was one less than 24 h ago (`finishedTradePushGrace`), so ratings and bond notices still wake the device.
+- Sessions with no stored message count as live.
+
+Finished trades are not re-registered, so the server holds no more device ↔ trade links than needed.
+
+### Disabling and re-enabling push
+
+- **Disable:** `SessionNotifier.unregisterPushTokens()` unregisters **every** session (finished ones included), then the FCM token is deleted.
+- **Enable:** a forced `syncPushRegistrations()`. Firebase issues a new token, which is registered for every live trade.
+- Turning notifications off in **Android system settings** only stops Android from displaying them; the app is not notified and the server keeps the registration.
+
+### Token source
+
+`FCMService.getToken()` asks Firebase first (the SDK caches it) and falls back to the stored token only if Firebase fails. Firebase can rotate the token while the app is closed; registering the stored one would point the server at a dead token.
+
+### Remaining gap
+
+A server restart while the app is closed still leaves the user without push until they open the app. Closing that gap needs server-side persistence.
 
 ---
 
