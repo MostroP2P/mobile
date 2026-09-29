@@ -129,6 +129,10 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   Future<void> unregisterPushTokens() async {
     final pushService = _pushService;
     if (pushService == null) return;
+    // A registration already sent by a running sweep would land after the
+    // unregister and leave the trade registered with push disabled.
+    final inFlight = _pushResyncInFlight;
+    if (inFlight != null) await inFlight;
     _lastPushResync = null;
     await pushService.unregisterTokens([
       ..._sessions.values.map((session) => session.tradeKey.public),

@@ -418,6 +418,7 @@ Finished trades are not re-registered, so the server holds no more device ↔ tr
 
 - **Disable:** `SessionNotifier.unregisterPushTokens()` unregisters **every** session (finished ones included), then the FCM token is deleted.
 - **Enable:** a forced `syncPushRegistrations()`. Firebase issues a new token, which is registered for every live trade.
+- **Ordering:** toggles run one after another (`SettingsNotifier._pushTransition`), and a transition already superseded by a later toggle is skipped. Otherwise a slow disable would unregister the trades a quick re-enable just registered and delete their token. The disable also waits for a running registration sweep, so no registration lands after the unregister.
 - Turning notifications off in **Android system settings** only stops Android from displaying them; the app is not notified and the server keeps the registration.
 
 ### Token source

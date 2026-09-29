@@ -1,5 +1,5 @@
-import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/config.dart';
@@ -179,16 +179,35 @@ class SettingsNotifier extends StateNotifier<Settings> {
     MemoryLogOutput.isLoggingEnabled = newValue;
   }
 
+  /// Push toggle transitions run one after another. Run concurrently, the
+  /// teardown of an earlier "off" would undo the registrations of a later
+  /// "on" and delete the token they were made with.
+  Future<void> _pushTransition = Future.value();
+
+  @visibleForTesting
+  Future<void> get pushTransition => _pushTransition;
+
   Future<void> updatePushNotificationsEnabled(bool newValue) async {
     state = state.copyWith(pushNotificationsEnabled: newValue);
+    // Queued before any await so transitions keep the order of the toggles.
+    _pushTransition = _pushTransition.then((_) => _applyPushSetting(newValue));
     await _saveToPrefs();
     logger.i('Push notifications ${newValue ? 'enabled' : 'disabled'}');
+  }
 
-    if (newValue) {
+  /// Applies [enabled] unless a later toggle already superseded it; that
+  /// toggle's own transition is queued behind this one.
+  Future<void> _applyPushSetting(bool enabled) async {
+    if (state.pushNotificationsEnabled != enabled) return;
+    if (enabled) {
       // Disabling dropped every registration, so re-enabling must restore them.
-      unawaited(_registerPushTokens?.call());
+      try {
+        await _registerPushTokens?.call();
+      } catch (e) {
+        logger.w('Failed to register push tokens: $e');
+      }
     } else {
-      unawaited(_disablePush());
+      await _disablePush();
     }
   }
 
@@ -200,6 +219,10 @@ class SettingsNotifier extends StateNotifier<Settings> {
     } catch (e) {
       logger.w('Failed to unregister push tokens: $e');
     }
+
+    // Re-enabled during the teardown: the queued enable re-registers with the
+    // current token, which must stay valid.
+    if (state.pushNotificationsEnabled) return;
 
     try {
       await _fcmService?.deleteToken();

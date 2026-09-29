@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -340,6 +342,30 @@ void main() {
       await notifier.syncPushRegistrations(force: true);
 
       verifyNever(mockPushService.registerTokens(any));
+    });
+
+    test('unregisterPushTokens waits for an in-flight sweep', () async {
+      final sweepGate = Completer<int>();
+      final calls = <String>[];
+      when(mockPushService.registerTokens(any)).thenAnswer((_) {
+        calls.add('register');
+        return sweepGate.future;
+      });
+      when(mockPushService.unregisterTokens(any)).thenAnswer((_) async {
+        calls.add('unregister');
+      });
+
+      final sweep = notifier.syncPushRegistrations(force: true);
+      await pumpEventQueue();
+      final teardown = notifier.unregisterPushTokens();
+      await pumpEventQueue();
+      // A registration already sent must not land after the unregister.
+      expect(calls, ['register']);
+
+      sweepGate.complete(4);
+      await Future.wait([sweep, teardown]);
+
+      expect(calls, ['register', 'unregister']);
     });
 
     test('unregisterPushTokens drops every trade, finished ones included',
