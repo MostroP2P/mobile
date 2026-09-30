@@ -1,7 +1,7 @@
 {
     "@@locale": "nl",
     "backToHome": "Terug naar start",
-    "newOrder": "Je aanbod is gepubliceerd! Wacht tot een andere gebruiker je order neemt. Hij blijft {expiration_hours} uur beschikbaar. Je kunt deze order annuleren voordat iemand hem neemt, met: cancel.",
+    "newOrder": "Je aanbod is gepubliceerd! Wacht tot een andere gebruiker je order accepteert. Hij blijft {expiration_hours} uur beschikbaar. Je kunt deze order annuleren voordat iemand hem accepteert, met: cancel.",
     "@newOrder": {
         "placeholders": {
             "expiration_hours": {
@@ -83,7 +83,7 @@
             }
         }
     },
-    "orderTakenWaitingCounterpart": "Je order is geaccepteerd door een andere gebruiker. Wacht af of hij door wil gaan. Gaat hij akkoord, dan laat ik je weten wat jij moet doen. Voor nu hoef je niets te doen.\nReageert hij niet binnen {expiration_seconds} minuten, dan komt de order weer beschikbaar voor anderen.",
+    "orderTakenWaitingCounterpart": "Je order is geaccepteerd door een andere gebruiker. Wacht af of die gebruiker door wil gaan. Gaat die akkoord, dan laat ik je weten wat jij moet doen. Voor nu hoef je niets te doen.\nKomt er binnen {expiration_seconds} minuten geen reactie, dan komt de order weer beschikbaar voor anderen.",
     "@orderTakenWaitingCounterpart": {
         "placeholders": {
             "expiration_seconds": {
@@ -92,7 +92,7 @@
             }
         }
     },
-    "waitingBuyerInvoice": "Betaling ontvangen! Je sats staan nu vast in je wallet. Ik heb de koper om een invoice gevraagd. Levert hij die niet binnen {expiration_seconds} minuten, dan komen je sats terug in je wallet en wordt de trade geannuleerd.",
+    "waitingBuyerInvoice": "Betaling ontvangen! Je sats zijn nu vastgezet in je wallet. Ik heb de koper om een invoice gevraagd. Levert de koper die niet binnen {expiration_seconds} minuten, dan komen je sats terug in je wallet en wordt de trade geannuleerd.",
     "@waitingBuyerInvoice": {
         "placeholders": {
             "expiration_seconds": {
@@ -103,18 +103,18 @@
     },
     "buyerInvoiceAccepted": "De invoice is opgeslagen.",
     "holdInvoicePaymentAccepted": "Neem contact op met verkoper {seller_name} om af te spreken hoe je {fiat_code} {fiat_amount} overmaakt met {payment_method}. Heb je de fiat verstuurd, meld het me dan met de knop Fiat verstuurd.",
-    "buyerTookOrder": "Neem contact op met koper {buyer_name} om door te geven hoe hij {fiat_code} {fiat_amount} kan overmaken via {payment_method}. Je krijgt bericht zodra de koper de fiatbetaling bevestigt. Controleer daarna of het geld binnen is. Reageert de koper niet, dan kun je annuleren of een dispuut openen. Let op: een beheerder neemt NOOIT contact met je op over je order, tenzij je eerst een dispuut opent.",
-    "fiatSentOkBuyer": "Ik heb {seller_name} laten weten dat je de fiat hebt overgemaakt. Bevestigt de verkoper de ontvangst, dan geeft hij het geld vrij. Weigert hij, dan kun je een dispuut openen.",
+    "buyerTookOrder": "Neem contact op met koper {buyer_name} om door te geven hoe {fiat_code} {fiat_amount} kan worden overgemaakt via {payment_method}. Je krijgt bericht zodra de koper de fiatbetaling bevestigt. Controleer daarna of het geld binnen is. Reageert de koper niet, dan kun je annuleren of een dispuut openen. Let op: een beheerder neemt NOOIT contact met je op over je order, tenzij je eerst een dispuut opent.",
+    "fiatSentOkBuyer": "Ik heb {seller_name} laten weten dat je de fiat hebt overgemaakt. Bevestigt de verkoper de ontvangst, dan wordt het geld vrijgegeven. Weigert de verkoper dat, dan kun je een dispuut openen.",
     "fiatSentOkSeller": "{buyer_name} heeft me laten weten dat de fiat naar je is overgemaakt. Geef de satoshi vrij zodra je de ontvangst hebt gecontroleerd. Daarmee gaan ze naar de koper, en dat kan niet ongedaan worden gemaakt. Wil je doorgaan, druk dan op Vrijgeven.",
     "released": "{seller_name} heeft de sats vrijgegeven! Je invoice wordt zo betaald. Zorg dat je wallet online is om via het Lightning Network te ontvangen.",
     "purchaseCompleted": "Je aankoop van bitcoin is afgerond. Ik heb je invoice betaald; geniet van sound money!",
     "holdInvoicePaymentSettled": "Je verkoop van sats is afgerond na bevestiging van de betaling door {buyer_name}.",
     "rate": "BEOORDELEN",
     "rateReceived": "Beoordeling opgeslagen!",
-    "cooperativeCancelInitiatedByYou": "Je hebt de annulering van order-ID {id} in gang gezet. Je tegenpartij moet akkoord gaan. Reageert hij niet, dan kun je een dispuut openen. Let op: geen enkele beheerder neemt over deze annulering contact met je op, tenzij je eerst een dispuut opent.",
+    "cooperativeCancelInitiatedByYou": "Je hebt de annulering van order-ID {id} in gang gezet. Je tegenpartij moet akkoord gaan. Reageert je tegenpartij niet, dan kun je een dispuut openen. Let op: geen enkele beheerder neemt over deze annulering contact met je op, tenzij je eerst een dispuut opent.",
     "cooperativeCancelInitiatedByPeer": "Je tegenpartij wil order-ID {id} annuleren. Ga je akkoord, stuur me dan cancel-order-message. Let op: geen enkele beheerder neemt over deze annulering contact met je op, tenzij je eerst een dispuut opent.",
     "cooperativeCancelAccepted": "Order {id} is geannuleerd!",
-    "disputeInitiatedByYou": "Je hebt een dispuut geopend voor order-ID {id}. Er wordt binnenkort een solver toegewezen. Zodra dat gebeurd is, deel ik zijn npub met je; alleen hij kan je helpen. Je dispuut-ID is: {dispute_id}.",
+    "disputeInitiatedByYou": "Je hebt een dispuut geopend voor order-ID {id}. Er wordt binnenkort een solver toegewezen. Zodra dat gebeurd is, deel ik de npub van de solver met je; alleen de solver kan je helpen. Je dispuut-ID is: {dispute_id}.",
     "@disputeInitiatedByYou": {
         "placeholders": {
             "id": {
@@ -127,7 +127,7 @@
             }
         }
     },
-    "disputeInitiatedByPeer": "Je tegenpartij heeft een dispuut geopend voor order-ID {id}. Er wordt binnenkort een solver toegewezen. Zodra dat gebeurd is, deel ik zijn npub met je; alleen hij kan je helpen. Je dispuut-ID is: {dispute_id}.",
+    "disputeInitiatedByPeer": "Je tegenpartij heeft een dispuut geopend voor order-ID {id}. Er wordt binnenkort een solver toegewezen. Zodra dat gebeurd is, deel ik de npub van de solver met je; alleen de solver kan je helpen. Je dispuut-ID is: {dispute_id}.",
     "@disputeInitiatedByPeer": {
         "placeholders": {
             "id": {
@@ -141,7 +141,7 @@
         }
     },
     "adminTookDisputeAdmin": "Dit zijn de gegevens van het dispuut dat je hebt opgepakt: {details}. Bepaal welke gebruiker gelijk heeft en beslis of je de order annuleert of afrondt. Let op: je beslissing is definitief en kan niet worden teruggedraaid.",
-    "adminTookDisputeUsers": "Er is een solver toegewezen aan je dispuut. Hij neemt via de app contact met je op.",
+    "adminTookDisputeUsers": "Er is een solver toegewezen aan je dispuut. De solver neemt via de app contact met je op.",
     "adminCanceledAdmin": "Je hebt order-ID {id} geannuleerd.",
     "adminCanceledUsers": "De beheerder heeft order-ID {id} geannuleerd.",
     "adminSettledAdmin": "Je hebt order-ID {id} afgerond.",
@@ -844,10 +844,10 @@
     "share": "Delen",
     "failedToShareInvoice": "Delen van de invoice is mislukt. Probeer hem te kopiëren.",
     "bondScreenTitle": "Borg tegen misbruik",
-    "bondExplanation": "Om deze order te accepteren moet je een borg tegen misbruik betalen. Zo werkt het:\n\n• Je sats blijven vast staan in je wallet, ze worden niet uitgegeven.\n• Verloopt de ruil goed, dan krijg je je borg automatisch terug.\n• Krijg je een dispuut over deze order en verlies je dat, dan ben je de borg kwijt.\n• Dit beschermt alle gebruikers tegen oplichters.",
-    "bondExplanationMaker": "Voordat je order kan worden aangemaakt, moet je een borg tegen misbruik betalen. Houd dit scherm open tot de betaling rond is; sluit je het of betaal je niet, dan wordt de order niet aangemaakt. Zo werkt het:\n\n• Je sats blijven vast staan in je wallet, ze worden niet uitgegeven.\n• Verloopt de ruil goed, dan krijg je je borg automatisch terug.\n• Krijg je een dispuut over deze order en verlies je dat, dan ben je de borg kwijt.\n• Dit beschermt alle gebruikers tegen oplichters.",
+    "bondExplanation": "Om deze order te accepteren moet je een borg tegen misbruik betalen. Zo werkt het:\n\n• Je sats worden in je wallet vastgezet, niet uitgegeven.\n• Verloopt de ruil goed, dan krijg je je borg automatisch terug.\n• Krijg je een dispuut over deze order en verlies je dat, dan ben je de borg kwijt.\n• Dit beschermt alle gebruikers tegen oplichters.",
+    "bondExplanationMaker": "Voordat je order kan worden aangemaakt, moet je een borg tegen misbruik betalen. Houd dit scherm open tot de betaling rond is; sluit je het of betaal je niet, dan wordt de order niet aangemaakt. Zo werkt het:\n\n• Je sats worden in je wallet vastgezet, niet uitgegeven.\n• Verloopt de ruil goed, dan krijg je je borg automatisch terug.\n• Krijg je een dispuut over deze order en verlies je dat, dan ben je de borg kwijt.\n• Dit beschermt alle gebruikers tegen oplichters.",
     "bondPayInvoicePrompt": "Betaal de invoice hieronder van {amount} sats om door te gaan, of annuleer als je niet akkoord gaat.",
-    "statusWaitingTakerBond": "Wacht op betaling van de borg",
+    "statusWaitingTakerBond": "Wacht op borg",
     "payBondMessage": "Betaal de borg tegen misbruik om door te gaan met deze order.",
     "payBondButton": "Borg betalen",
     "failedToCancelOrder": "Annuleren van de order mislukt: {error}",
@@ -1105,7 +1105,7 @@
     "@_comment_settings_info_dialogs": "Settings Info Dialog Text",
     "languageInfoText": "Kies de taal waarin je de app wilt gebruiken.",
     "currencyInfoText": "Kies de standaardvaluta voor je orders.",
-    "lightningAddressInfoText": "Een Lightning-adres is een aanduiding in de vorm van een e-mailadres (bijvoorbeeld gebruiker@domein.nl) waarmee je makkelijker bitcoin ontvangt. Stel je er hier een in, dan wordt hij automatisch ingevuld bij het plaatsen van kooporders. Dat scheelt tijd.",
+    "lightningAddressInfoText": "Een Lightning-adres is een aanduiding in de vorm van een e-mailadres (bijvoorbeeld gebruiker@example.com) waarmee je makkelijker bitcoin ontvangt. Stel je er hier een in, dan wordt hij automatisch ingevuld bij het plaatsen van kooporders. Dat scheelt tijd.",
     "relaysInfoText": "• Relays zijn servers die je berichten over het Nostr-netwerk verspreiden.\n\n• Meer relays betekent doorgaans een betere en betrouwbaardere verbinding.\n\n• Relays synchroniseren niet met elkaar: alleen de relays waarmee jij verbonden bent, krijgen je berichten.",
     "mostroInfoText": "• Werkt met hex en npub (wordt als hex getoond).\n\n• De Mostro die je kiest, is de Mostro waar je je aanbod plaatst.\n\n• Bij een dispuut is het een mens van die Mostro die de zaak beslist.",
     "@_comment_account_info_dialogs": "Account Screen Info Dialog Text",
@@ -1136,7 +1136,7 @@
     "disputeCommunication": "Contact",
     "waitingAdminAssignment": "Wacht op toewijzing van een beheerder",
     "waitingAdminDescription": "Je dispuut is ingediend. Er wordt een beheerder toegewezen om het op te lossen.",
-    "adminAssignmentDescription": "Er wordt binnenkort een beheerder aan je dispuut toegewezen. Zodra dat gebeurd is, kun je hier rechtstreeks met hem praten.",
+    "adminAssignmentDescription": "Er wordt binnenkort een beheerder aan je dispuut toegewezen. Zodra dat gebeurd is, kun je hier rechtstreeks met de beheerder praten.",
     "adminAssigned": "Beheerder toegewezen",
     "adminAssignedDescription": "Je kunt nu met de beheerder praten. Begin het gesprek met een bericht hieronder.",
     "admin": "Beheerder",
@@ -1287,7 +1287,7 @@
     "notification_order_canceled_by_seller_inactivity_message": "De verkoper is niet doorgegaan met de order. De order is geannuleerd.",
     "notification_order_canceled_by_buyer_inactivity_message": "De koper is niet doorgegaan met de order. De order is geannuleerd.",
     "notification_cooperative_cancel_initiated_by_you_title": "Annulering aangevraagd",
-    "notification_cooperative_cancel_initiated_by_you_message": "Je hebt de order willen annuleren; je tegenpartij moet nog bevestigen",
+    "notification_cooperative_cancel_initiated_by_you_message": "Je hebt gevraagd de order te annuleren; wacht op bevestiging van je tegenpartij",
     "notification_cooperative_cancel_initiated_by_peer_title": "Verzoek tot annulering",
     "notification_cooperative_cancel_initiated_by_peer_message": "Je tegenpartij wil de order annuleren",
     "notification_cooperative_cancel_accepted_title": "Annulering geaccepteerd",
@@ -1739,7 +1739,7 @@
     },
     "communityAllCurrencies": "Alle valuta",
     "communityDisclaimerTitle": "Belangrijk",
-    "communityDisclaimerBody": "Het ontwikkelteam van Mostro is niet verantwoordelijk voor wat node-beheerders met het platform doen. Elke beheerder bestuurt zijn eigen Mostro-node en is als enige verantwoordelijk voor zijn handelen. Door Mostro te gebruiken neem je de volledige verantwoordelijkheid voor je eigen trades, en erken je dat het ontwikkelteam geen zeggenschap heeft over afzonderlijke node-beheerders.",
+    "communityDisclaimerBody": "Het ontwikkelteam van Mostro is niet verantwoordelijk voor wat node-beheerders met het platform doen. Elke beheerder bestuurt een eigen Mostro-node en is als enige verantwoordelijk voor wat daar gebeurt. Door Mostro te gebruiken neem je de volledige verantwoordelijkheid voor je eigen trades, en erken je dat het ontwikkelteam geen zeggenschap heeft over afzonderlijke node-beheerders.",
     "communityDisclaimerAccept": "Akkoord",
     "tooManyRequests": "Te veel verzoeken, probeer het later opnieuw.",
     "tradeHistory": "Tradehistorie",
