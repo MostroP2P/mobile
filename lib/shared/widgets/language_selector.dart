@@ -15,6 +15,7 @@ class LanguageSelector extends ConsumerWidget {
     'fr': 'french',
     'de': 'german',
     'pt': 'portuguese',
+    'nl': 'dutch',
   };
 
   @override
@@ -92,6 +93,8 @@ class LanguageSelector extends ConsumerWidget {
         return S.of(context)!.german;
       case 'portuguese':
         return S.of(context)!.portuguese;
+      case 'dutch':
+        return S.of(context)!.dutch;
       default:
         return key;
     }
