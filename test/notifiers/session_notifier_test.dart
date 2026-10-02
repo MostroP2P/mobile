@@ -1,12 +1,20 @@
+import 'dart:async';
+
 import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/data/models/session.dart';
+import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
 import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/shared/providers/mostro_storage_provider.dart';
 
 import '../mocks.mocks.dart';
 
@@ -33,6 +41,7 @@ void main() {
 
   setUpAll(() {
     provideDummy<KeyManager>(MockKeyManager());
+    provideDummy<MostroStorage>(MockMostroStorage());
   });
 
   setUp(() {
@@ -213,6 +222,360 @@ void main() {
       expect(
         notifier.state.where((s) => s.orderId == 'order-2').length,
         1,
+      );
+    });
+  });
+
+  group('syncPushRegistrations', () {
+    late MockMostroStorage mockMostroStorage;
+
+    final liveKey = NostrKeyPairs(
+      private:
+          '1111111111111111111111111111111111111111111111111111111111111111',
+    );
+    final finishedKey = NostrKeyPairs(
+      private:
+          '2222222222222222222222222222222222222222222222222222222222222222',
+    );
+    final recentlyFinishedKey = NostrKeyPairs(
+      private:
+          '3333333333333333333333333333333333333333333333333333333333333333',
+    );
+    final unknownKey = NostrKeyPairs(
+      private:
+          '4444444444444444444444444444444444444444444444444444444444444444',
+    );
+
+    Session sessionFor(String orderId, NostrKeyPairs tradeKey) => Session(
+          masterKey: masterKey,
+          tradeKey: tradeKey,
+          keyIndex: 3,
+          fullPrivacy: false,
+          startTime: DateTime.now(),
+          orderId: orderId,
+          role: Role.seller,
+        );
+
+    MostroMessage messageAt(Action action, Duration age) => MostroMessage(
+          action: action,
+          id: 'x',
+          timestamp: DateTime.now().subtract(age).millisecondsSinceEpoch,
+        );
+
+    setUp(() {
+      mockMostroStorage = MockMostroStorage();
+      when(mockRef.read(mostroStorageProvider)).thenReturn(mockMostroStorage);
+      when(mockPushService.isPushEnabledInSettings).thenReturn(() => true);
+      when(mockPushService.registerTokens(any))
+          .thenAnswer((inv) async => (inv.positionalArguments[0] as List).length);
+      when(mockPushService.unregisterTokens(any))
+          .thenAnswer((inv) async => (inv.positionalArguments[0] as List).length);
+
+      when(mockMostroStorage.getLatestMessageById('live'))
+          .thenAnswer((_) async => messageAt(Action.fiatSentOk, Duration.zero));
+      when(mockMostroStorage.getLatestMessageById('finished')).thenAnswer(
+          (_) async => messageAt(Action.purchaseCompleted, const Duration(days: 3)));
+      when(mockMostroStorage.getLatestMessageById('recently-finished'))
+          .thenAnswer((_) async =>
+              messageAt(Action.canceled, const Duration(hours: 2)));
+      when(mockMostroStorage.getLatestMessageById('unknown'))
+          .thenAnswer((_) async => null);
+
+      notifier.registerSessionInMemory(sessionFor('live', liveKey));
+      notifier.registerSessionInMemory(sessionFor('finished', finishedKey));
+      notifier.registerSessionInMemory(
+          sessionFor('recently-finished', recentlyFinishedKey));
+      notifier.registerSessionInMemory(sessionFor('unknown', unknownKey));
+    });
+
+    List<String> registeredKeys() {
+      final captured =
+          verify(mockPushService.registerTokens(captureAny)).captured;
+      return (captured.last as List).cast<String>();
+    }
+
+    test('registers live trades and skips ones finished past the grace period',
+        () async {
+      await notifier.syncPushRegistrations(force: true);
+
+      expect(
+        registeredKeys(),
+        unorderedEquals([
+          liveKey.public,
+          recentlyFinishedKey.public,
+          unknownKey.public,
+        ]),
+      );
+    });
+
+    test('includes pending range-order children', () async {
+      await notifier.createChildOrderSession(
+        tradeKey: childTradeKey,
+        keyIndex: 5,
+        parentOrderId: 'parent-order-id',
+        role: Role.seller,
+      );
+
+      await notifier.syncPushRegistrations(force: true);
+
+      expect(registeredKeys(), contains(childTradeKey.public));
+    });
+
+    test('throttles unforced calls but not forced ones', () async {
+      await notifier.syncPushRegistrations();
+      await notifier.syncPushRegistrations();
+      verify(mockPushService.registerTokens(any)).called(1);
+
+      await notifier.syncPushRegistrations(force: true);
+      verify(mockPushService.registerTokens(any)).called(1);
+    });
+
+    test('after a failed sweep, retries on the shorter interval only',
+        () async {
+      var now = DateTime(2026, 10, 1, 12);
+      notifier.pushResyncClock = () => now;
+      when(mockPushService.registerTokens(any)).thenAnswer((_) async => 0);
+
+      await notifier.syncPushRegistrations();
+      verify(mockPushService.registerTokens(any)).called(1);
+
+      // A server that keeps rejecting is not hit on every lifecycle switch.
+      now = now.add(const Duration(minutes: 1));
+      await notifier.syncPushRegistrations();
+      verifyNever(mockPushService.registerTokens(any));
+
+      now = now.add(SessionNotifier.pushResyncRetryInterval);
+      await notifier.syncPushRegistrations();
+      verify(mockPushService.registerTokens(any)).called(1);
+    });
+
+    test('after a successful sweep, waits the full interval', () async {
+      var now = DateTime(2026, 10, 1, 12);
+      notifier.pushResyncClock = () => now;
+
+      await notifier.syncPushRegistrations();
+      verify(mockPushService.registerTokens(any)).called(1);
+
+      now = now.add(SessionNotifier.pushResyncRetryInterval);
+      await notifier.syncPushRegistrations();
+      verifyNever(mockPushService.registerTokens(any));
+
+      now = now.add(SessionNotifier.pushResyncInterval);
+      await notifier.syncPushRegistrations();
+      verify(mockPushService.registerTokens(any)).called(1);
+    });
+
+    test('forced calls during a sweep coalesce into one repeat', () async {
+      final firstSweep = Completer<int>();
+      var calls = 0;
+      when(mockPushService.registerTokens(any)).thenAnswer((inv) {
+        calls++;
+        final count = (inv.positionalArguments[0] as List).length;
+        return calls == 1 ? firstSweep.future : Future.value(count);
+      });
+
+      final sweep = notifier.syncPushRegistrations(force: true);
+      await pumpEventQueue();
+      // e.g. re-enabling push, then the token refresh it causes.
+      final more = [
+        notifier.syncPushRegistrations(force: true),
+        notifier.syncPushRegistrations(force: true),
+        notifier.syncPushRegistrations(force: true),
+      ];
+
+      firstSweep.complete(4);
+      await Future.wait([sweep, ...more]);
+
+      expect(calls, 2, reason: 'one sweep plus a single repeat');
+    });
+
+    test('does nothing while push notifications are disabled', () async {
+      when(mockPushService.isPushEnabledInSettings).thenReturn(() => false);
+
+      await notifier.syncPushRegistrations(force: true);
+
+      verifyNever(mockPushService.registerTokens(any));
+    });
+
+    group('live trade rule', () {
+      var seed = 5;
+      NostrKeyPairs nextKey() => NostrKeyPairs(
+            private: (seed++).toRadixString(16).padLeft(2, '0') * 32,
+          );
+
+      /// Registers a session whose latest stored message is [message] and
+      /// returns its trade pubkey.
+      String addSession(
+        String orderId,
+        MostroMessage? message, {
+        Duration startedAgo = Duration.zero,
+        bool bondPending = false,
+      }) {
+        final key = nextKey();
+        final session = Session(
+          masterKey: masterKey,
+          tradeKey: key,
+          keyIndex: 3,
+          fullPrivacy: false,
+          startTime: DateTime.now().subtract(startedAgo),
+          orderId: orderId,
+          role: Role.seller,
+        )..bondPending = bondPending;
+        when(mockMostroStorage.getLatestMessageById(orderId))
+            .thenAnswer((_) async => message);
+        notifier.registerSessionInMemory(session);
+        return key.public;
+      }
+
+      MostroMessage pendingOrder(Duration age, Duration expiresIn) =>
+          MostroMessage(
+            action: Action.newOrder,
+            id: 'x',
+            timestamp: DateTime.now().subtract(age).millisecondsSinceEpoch,
+            payload: Order(
+              kind: OrderType.sell,
+              fiatCode: 'CUP',
+              fiatAmount: 100,
+              paymentMethod: 'cash',
+              expiresAt:
+                  DateTime.now().add(expiresIn).millisecondsSinceEpoch ~/ 1000,
+            ),
+          );
+
+      test('skips bond sessions that are not persisted yet', () async {
+        final bond = addSession(
+          'bond',
+          messageAt(Action.payBondInvoice, Duration.zero),
+          bondPending: true,
+        );
+
+        await notifier.syncPushRegistrations(force: true);
+
+        expect(registeredKeys(), isNot(contains(bond)));
+      });
+
+      test('keeps an unresolved trade for 7 days after its last message',
+          () async {
+        final recent = addSession(
+            'recent', messageAt(Action.fiatSent, const Duration(days: 6)));
+        final stale = addSession(
+            'stale', messageAt(Action.fiatSent, const Duration(days: 8)));
+        // A local outbound message is unresolved too.
+        final outbound = addSession('outbound',
+            messageAt(Action.addBondInvoice, const Duration(days: 8)));
+
+        await notifier.syncPushRegistrations(force: true);
+        final keys = registeredKeys();
+
+        expect(keys, contains(recent));
+        expect(keys, isNot(contains(stale)));
+        expect(keys, isNot(contains(outbound)));
+      });
+
+      test('a session without messages counts from its start', () async {
+        final fresh = addSession('fresh', null);
+        final old =
+            addSession('old', null, startedAgo: const Duration(days: 8));
+
+        await notifier.syncPushRegistrations(force: true);
+        final keys = registeredKeys();
+
+        expect(keys, contains(fresh));
+        expect(keys, isNot(contains(old)));
+      });
+
+      test('keeps a pending order until it expires, then lets it go', () async {
+        // Published 9 days ago, still waiting for a taker for 3 more days.
+        final waiting = addSession('waiting',
+            pendingOrder(const Duration(days: 9), const Duration(days: 3)));
+        // Expired two days ago without any message.
+        final expired = addSession('expired',
+            pendingOrder(const Duration(days: 3), const Duration(days: -2)));
+
+        await notifier.syncPushRegistrations(force: true);
+        final keys = registeredKeys();
+
+        expect(keys, contains(waiting));
+        expect(keys, isNot(contains(expired)));
+      });
+
+      test('dates a message by the daemon event time when known', () async {
+        // Received just now (a relay replay) but finished three days ago.
+        final replayed = addSession(
+          'replayed',
+          MostroMessage(
+            action: Action.purchaseCompleted,
+            id: 'x',
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+            eventCreatedAt: DateTime.now()
+                .subtract(const Duration(days: 3))
+                .millisecondsSinceEpoch,
+          ),
+        );
+
+        await notifier.syncPushRegistrations(force: true);
+
+        expect(registeredKeys(), isNot(contains(replayed)));
+      });
+
+      test('reads legacy timestamps stored in seconds', () async {
+        final legacy = addSession(
+          'legacy',
+          MostroMessage(
+            action: Action.purchaseCompleted,
+            id: 'x',
+            timestamp: DateTime.now()
+                    .subtract(const Duration(days: 3))
+                    .millisecondsSinceEpoch ~/
+                1000,
+          ),
+        );
+
+        await notifier.syncPushRegistrations(force: true);
+
+        expect(registeredKeys(), isNot(contains(legacy)));
+      });
+    });
+
+    test('unregisterPushTokens waits for an in-flight sweep', () async {
+      final sweepGate = Completer<int>();
+      final calls = <String>[];
+      when(mockPushService.registerTokens(any)).thenAnswer((_) {
+        calls.add('register');
+        return sweepGate.future;
+      });
+      when(mockPushService.unregisterTokens(any)).thenAnswer((_) async {
+        calls.add('unregister');
+        return 1;
+      });
+
+      final sweep = notifier.syncPushRegistrations(force: true);
+      await pumpEventQueue();
+      final teardown = notifier.unregisterPushTokens();
+      await pumpEventQueue();
+      // A registration already sent must not land after the unregister.
+      expect(calls, ['register']);
+
+      sweepGate.complete(4);
+      await Future.wait([sweep, teardown]);
+
+      expect(calls, ['register', 'unregister']);
+    });
+
+    test('unregisterPushTokens drops every trade, finished ones included',
+        () async {
+      await notifier.unregisterPushTokens();
+
+      final captured =
+          verify(mockPushService.unregisterTokens(captureAny)).captured;
+      expect(
+        (captured.single as List).cast<String>(),
+        unorderedEquals([
+          liveKey.public,
+          finishedKey.public,
+          recentlyFinishedKey.public,
+          unknownKey.public,
+        ]),
       );
     });
   });

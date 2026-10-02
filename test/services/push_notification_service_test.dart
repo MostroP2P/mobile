@@ -12,9 +12,13 @@ class _FakeFcmService extends FCMService {
   _FakeFcmService(super.prefs, {this.tokenOverride = 'fake-fcm-token'});
 
   final String? tokenOverride;
+  int getTokenCalls = 0;
 
   @override
-  Future<String?> getToken() async => tokenOverride;
+  Future<String?> getToken() async {
+    getTokenCalls++;
+    return tokenOverride;
+  }
 }
 
 PushNotificationService _buildService({
@@ -264,6 +268,139 @@ void main() {
 
       final body = jsonDecode(captured!.body) as Map<String, dynamic>;
       expect(body.containsKey('mostro_pubkey'), isFalse);
+    });
+  });
+
+  group('PushNotificationService.registerTokens', () {
+    const otherPubkey =
+        'b1b2c3d4e5f67890123456789012345678901234567890123456789012345abc';
+
+    test('registers each distinct pubkey once and counts successes', () async {
+      final registered = <String>[];
+      final mockClient = MockClient((request) async {
+        if (request.url.path == '/api/health') {
+          return http.Response('{"status":"ok"}', 200);
+        }
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        final pubkey = body['trade_pubkey'] as String;
+        registered.add(pubkey);
+        return pubkey == otherPubkey
+            ? http.Response('{"success":false}', 500)
+            : http.Response('{"success":true}', 200);
+      });
+
+      final count = await _buildService(httpClient: mockClient)
+          .registerTokens([_validPubkey, otherPubkey, _validPubkey]);
+
+      expect(registered, [_validPubkey, otherPubkey]);
+      expect(count, 1);
+    });
+
+    test('registers nothing while push is disabled in settings', () async {
+      var called = false;
+      final mockClient = MockClient((_) async {
+        called = true;
+        return http.Response('{"success":true}', 200);
+      });
+
+      final count = await _buildService(
+        httpClient: mockClient,
+        isPushEnabled: false,
+      ).registerTokens([_validPubkey]);
+
+      expect(count, 0);
+      expect(called, isFalse);
+    });
+  });
+
+  group('PushNotificationService.registerTokens sweep', () {
+    const pubkeys = [
+      'a1b2c3d4e5f67890123456789012345678901234567890123456789012345abc',
+      'b1b2c3d4e5f67890123456789012345678901234567890123456789012345abc',
+      'c1b2c3d4e5f67890123456789012345678901234567890123456789012345abc',
+    ];
+
+    test('fetches the FCM token and checks the server once per sweep',
+        () async {
+      var healthChecks = 0;
+      final mockClient = MockClient((request) async {
+        if (request.url.path == '/api/health') {
+          healthChecks++;
+          return http.Response('{"status":"ok"}', 200);
+        }
+        return http.Response('{"success":true}', 200);
+      });
+      final fcm = _FakeFcmService(MockSharedPreferencesAsync());
+      final service = PushNotificationService(
+        fcmService: fcm,
+        pushServerUrl: 'https://push.example',
+        httpClient: mockClient,
+        isSupportedOverride: true,
+        platformOverride: 'android',
+      );
+
+      final count = await service.registerTokens(pubkeys);
+
+      expect(count, 3);
+      expect(fcm.getTokenCalls, 1);
+      expect(healthChecks, 1);
+    });
+
+    test('stops when push is turned off mid-sweep', () async {
+      var enabled = true;
+      final registered = <String>[];
+      final mockClient = MockClient((request) async {
+        if (request.url.path == '/api/health') {
+          return http.Response('{"status":"ok"}', 200);
+        }
+        registered.add(
+          (jsonDecode(request.body) as Map<String, dynamic>)['trade_pubkey']
+              as String,
+        );
+        enabled = false; // the user disables push after the first request
+        return http.Response('{"success":true}', 200);
+      });
+      final service = _buildService(httpClient: mockClient)
+        ..isPushEnabledInSettings = () => enabled;
+
+      final count = await service.registerTokens(pubkeys);
+
+      expect(count, 1);
+      expect(registered, [pubkeys.first]);
+    });
+  });
+
+  group('PushNotificationService.unregisterTokens', () {
+    test('POSTs /api/unregister for each pubkey', () async {
+      final unregistered = <String>[];
+      final mockClient = MockClient((request) async {
+        expect(request.url.path, '/api/unregister');
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        unregistered.add(body['trade_pubkey'] as String);
+        return http.Response('{"success":true}', 200);
+      });
+
+      final count = await _buildService(httpClient: mockClient)
+          .unregisterTokens([_validPubkey, _validPubkey]);
+
+      expect(unregistered, [_validPubkey]);
+      expect(count, 1);
+    });
+
+    test('counts only the unregistrations the server accepted', () async {
+      const failing =
+          'b1b2c3d4e5f67890123456789012345678901234567890123456789012345abc';
+      final mockClient = MockClient((request) async {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        return body['trade_pubkey'] == failing
+            ? http.Response('{"success":false,"message":"internal error"}', 500)
+            : http.Response('{"success":true}', 200);
+      });
+
+      final count = await _buildService(httpClient: mockClient)
+          .unregisterTokens([_validPubkey, failing]);
+
+      expect(count, 1);
     });
   });
 }

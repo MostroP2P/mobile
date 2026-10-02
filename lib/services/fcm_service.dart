@@ -238,9 +238,14 @@ class FCMService {
     }
   }
 
+  /// The token Firebase currently holds. Overridden in tests, which cannot
+  /// reach Firebase.
+  @visibleForTesting
+  Future<String?> fetchFirebaseToken() => _messaging.getToken();
+
   Future<String?> _getAndStoreToken() async {
     try {
-      final token = await _messaging.getToken().timeout(
+      final token = await fetchFirebaseToken().timeout(
         _tokenTimeout,
         onTimeout: () {
           logger.w('Timeout getting FCM token');
@@ -301,15 +306,15 @@ class FCMService {
   }
 
   Future<String?> getToken() async {
-    try {
-      // Try to get from storage first
-      final storedToken = await _prefs.getString(_fcmTokenKey);
-      if (storedToken != null) {
-        return storedToken;
-      }
+    // Firebase first: it can rotate the token while the app is closed, and
+    // registering the stored one would point the server at a dead token.
+    if (isInitialized) {
+      final token = await _getAndStoreToken();
+      if (token != null) return token;
+    }
 
-      // If not in storage, get from Firebase
-      return await _getAndStoreToken();
+    try {
+      return await _prefs.getString(_fcmTokenKey);
     } catch (e) {
       logger.e('Error getting token: $e');
       return null;

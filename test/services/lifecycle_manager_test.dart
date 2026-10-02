@@ -2,8 +2,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
 import 'package:mostro_mobile/features/subscriptions/subscription_manager_provider.dart';
 import 'package:mostro_mobile/services/lifecycle_manager.dart';
+import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -18,6 +21,7 @@ import '../mocks.mocks.dart';
 /// switch to background, after a debounce that a quick resume cancels.
 void main() {
   late MockSubscriptionManagerSpy manager;
+  late _RecordingSessions sessions;
   late ProviderContainer container;
   late LifecycleManager lifecycle;
 
@@ -26,8 +30,10 @@ void main() {
         InMemorySharedPreferencesAsync.empty();
     manager = MockSubscriptionManagerSpy();
     when(manager.getActiveFilters(any)).thenReturn([]);
+    sessions = _RecordingSessions();
     container = ProviderContainer(overrides: [
       subscriptionManagerProvider.overrideWithValue(manager),
+      sessionNotifierProvider.overrideWith((ref) => sessions),
     ]);
   });
 
@@ -122,6 +128,55 @@ void main() {
     verifyNever(manager.unsubscribeAll());
     verifyNever(manager.subscribeAll());
   });
+
+  testWidgets('going to the background refreshes push registrations',
+      (tester) async {
+    lifecycle = build();
+
+    lifecycle.didChangeAppLifecycleState(AppLifecycleState.paused);
+    await settle(tester);
+
+    expect(sessions.syncCalls, 1);
+  });
+
+  testWidgets('coming back to the foreground refreshes push registrations',
+      (tester) async {
+    lifecycle = build();
+    lifecycle.didChangeAppLifecycleState(AppLifecycleState.paused);
+    await settle(tester);
+
+    lifecycle.didChangeAppLifecycleState(AppLifecycleState.resumed);
+    await tester.pump();
+
+    expect(sessions.syncCalls, 2);
+  });
+
+  testWidgets('a lifecycle blip does not refresh push registrations',
+      (tester) async {
+    lifecycle = build();
+
+    lifecycle.didChangeAppLifecycleState(AppLifecycleState.inactive);
+    await settle(tester);
+
+    expect(sessions.syncCalls, 0);
+  });
+}
+
+/// Counts the unforced push re-sync calls the lifecycle switches make.
+class _RecordingSessions extends SessionNotifier {
+  _RecordingSessions()
+      : super(
+          MockRef(),
+          MockSessionStorage(),
+          Settings(relays: [], fullPrivacyMode: false, mostroPublicKey: 'x'),
+        );
+
+  int syncCalls = 0;
+
+  @override
+  Future<void> syncPushRegistrations({bool force = false}) async {
+    if (!force) syncCalls++;
+  }
 }
 
 /// Minimal Ref façade over a container for unit-testing the manager.

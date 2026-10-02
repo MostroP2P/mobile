@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
+import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
+import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
 import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
@@ -41,6 +45,192 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   /// Set the push notification service for automatic token registration
   void setPushNotificationService(PushNotificationService? service) {
     _pushService = service;
+  }
+
+  /// Minimum spacing between unforced push re-registrations. The push server
+  /// rate-limits /api/register per IP and many users share one behind carrier
+  /// NAT, so lifecycle events must not trigger a sweep every time.
+  static const Duration pushResyncInterval = Duration(minutes: 30);
+
+  /// Shorter spacing after a sweep in which some registration failed (a 429,
+  /// a full store, offline): soon enough to recover, but never a retry on
+  /// every lifecycle switch against a server that is already rejecting.
+  static const Duration pushResyncRetryInterval = Duration(minutes: 5);
+
+  /// How long a finished trade keeps its push registration, so trailing
+  /// messages (rating, bond notices) still wake the device. Also the margin
+  /// kept past a pending order's expiry.
+  static const Duration finishedTradePushGrace = Duration(hours: 24);
+
+  /// How long a trade without a known outcome stays registered after its
+  /// last message (or the session start when it has none). Bounds sessions
+  /// whose last message is local or never got an answer, so they do not keep
+  /// linking a device to the trade for the whole session lifetime.
+  static const Duration unresolvedTradePushWindow = Duration(days: 7);
+
+  /// Actions after which Mostro only sends trailing notices for the trade.
+  static const Set<Action> _finishedTradeActions = {
+    Action.purchaseCompleted,
+    Action.rate,
+    Action.rateReceived,
+    Action.holdInvoicePaymentSettled,
+    Action.canceled,
+    Action.cooperativeCancelAccepted,
+    Action.holdInvoicePaymentCanceled,
+    Action.adminCanceled,
+    Action.adminSettle,
+    Action.adminSettled,
+  };
+
+  DateTime? _lastPushResync;
+  bool _lastPushResyncFailed = false;
+
+  /// Clock behind the re-sync spacing, replaceable in tests.
+  @visibleForTesting
+  DateTime Function() pushResyncClock = DateTime.now;
+  Future<void>? _pushResyncInFlight;
+
+  /// Set by a forced call that arrives during a sweep: the running sweep
+  /// repeats once when it ends, however many forced calls came in.
+  bool _pushResyncRerun = false;
+
+  /// Re-registers the push token for every trade that can still receive
+  /// Mostro messages.
+  ///
+  /// The push server expires registrations after a TTL counted from the last
+  /// one, and loses them on restart when it does not persist them; the app
+  /// re-asserts them on start, on lifecycle changes and when the FCM token or
+  /// the push setting changes. Unforced calls are throttled by
+  /// [pushResyncInterval], or [pushResyncRetryInterval] after a failed sweep.
+  Future<void> syncPushRegistrations({bool force = false}) {
+    final pushService = _pushService;
+    if (pushService == null) return Future.value();
+    if (pushService.isPushEnabledInSettings?.call() == false) {
+      return Future.value();
+    }
+
+    final inFlight = _pushResyncInFlight;
+    if (inFlight != null) {
+      // A forced sync (e.g. new FCM token) must not be absorbed by a sweep
+      // that may still be sending the old token; one repeat covers them all.
+      if (force) _pushResyncRerun = true;
+      return inFlight;
+    }
+
+    final last = _lastPushResync;
+    final spacing =
+        _lastPushResyncFailed ? pushResyncRetryInterval : pushResyncInterval;
+    if (!force &&
+        last != null &&
+        pushResyncClock().difference(last) < spacing) {
+      return Future.value();
+    }
+
+    final sync = () async {
+      try {
+        do {
+          _pushResyncRerun = false;
+          await _runPushResync(pushService);
+        } while (_pushResyncRerun &&
+            pushService.isPushEnabledInSettings?.call() != false);
+      } finally {
+        _pushResyncRerun = false;
+        _pushResyncInFlight = null;
+      }
+    }();
+    _pushResyncInFlight = sync;
+    return sync;
+  }
+
+  Future<void> _runPushResync(PushNotificationService pushService) async {
+    var failed = true;
+    try {
+      final pubkeys = await _liveTradePubkeys();
+      if (pubkeys.isEmpty) {
+        failed = false;
+        return;
+      }
+      final registered = await pushService.registerTokens(pubkeys);
+      logger.i('Push registrations refreshed: $registered/${pubkeys.length}');
+      failed = registered < pubkeys.length;
+    } catch (e) {
+      logger.w('Failed to refresh push registrations: $e');
+    } finally {
+      _lastPushResync = pushResyncClock();
+      _lastPushResyncFailed = failed;
+    }
+  }
+
+  /// Removes the push registration of every trade this device holds, finished
+  /// or not. Called when the user disables push notifications.
+  Future<void> unregisterPushTokens() async {
+    final pushService = _pushService;
+    if (pushService == null) return;
+    // A registration already sent by a running sweep would land after the
+    // unregister and leave the trade registered with push disabled.
+    final inFlight = _pushResyncInFlight;
+    if (inFlight != null) await inFlight;
+    _lastPushResync = null;
+    final pubkeys = [
+      ..._sessions.values.map((session) => session.tradeKey.public),
+      ..._pendingChildSessions.keys,
+    ];
+    final unregistered = await pushService.unregisterTokens(pubkeys);
+    logger.i('Push registrations removed: $unregistered/${pubkeys.length}');
+  }
+
+  /// Trade pubkeys that may still receive Mostro messages: pending range
+  /// children plus every persisted session [_isLiveTrade] accepts. The same
+  /// FCM token goes with each one, so every extra entry lets the push server
+  /// link one more trade to the device.
+  Future<List<String>> _liveTradePubkeys() async {
+    final mostroStore = ref.read(mostroStorageProvider);
+    final now = pushResyncClock();
+    final pubkeys = [..._pendingChildSessions.keys];
+    for (final session in _sessions.values.toList()) {
+      // Maker bond limbo: not persisted until the order is confirmed.
+      if (session.bondPending) continue;
+      final lastMessage =
+          await mostroStore.getLatestMessageById(session.orderId!);
+      if (_isLiveTrade(session, lastMessage, now)) {
+        pubkeys.add(session.tradeKey.public);
+      }
+    }
+    return pubkeys;
+  }
+
+  /// - Finished trade: live for [finishedTradePushGrace] after its outcome.
+  /// - Published order waiting for a taker: live until it expires, plus
+  ///   [finishedTradePushGrace].
+  /// - Anything else (in progress, no message, a local outbound message):
+  ///   live for [unresolvedTradePushWindow] after the last message, or after
+  ///   the session start when there is none.
+  /// A time that cannot be read counts as live.
+  bool _isLiveTrade(Session session, MostroMessage? message, DateTime now) {
+    final at = message == null ? session.startTime : _messageTime(message);
+    if (at == null) return true;
+
+    if (message != null && _finishedTradeActions.contains(message.action)) {
+      return now.difference(at) <= finishedTradePushGrace;
+    }
+
+    final order = message?.getPayload<Order>();
+    final expiresAt = order?.status == Status.pending ? order?.expiresAt : null;
+    if (expiresAt != null && expiresAt > 0) {
+      final expiry = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+      return now.isBefore(expiry.add(finishedTradePushGrace));
+    }
+
+    return now.difference(at) <= unresolvedTradePushWindow;
+  }
+
+  /// The daemon's event time, falling back to the local receive time.
+  DateTime? _messageTime(MostroMessage message) {
+    final raw = message.eventCreatedAt ?? message.timestamp;
+    if (raw == null || raw <= 0) return null;
+    // Rows written before eventCreatedAt existed may hold seconds.
+    final ms = raw < 1000000000000 ? raw * 1000 : raw;
+    return DateTime.fromMillisecondsSinceEpoch(ms);
   }
 
   List<Session> get sessions => _sessions.values.toList();
@@ -197,6 +387,9 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     }
     _emitState();
     _scheduleCleanup();
+
+    // The push server may have lost these while the app was closed.
+    unawaited(syncPushRegistrations(force: true));
   }
 
   void _emitState() {
