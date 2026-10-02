@@ -109,8 +109,8 @@ class PushNotificationService {
   /// The FCM token and the server check are resolved once for the whole
   /// sweep, not per trade.
   ///
-  /// The server keeps registrations in memory only and expires them after a
-  /// TTL, so callers pass the full set of live trades each time rather than
+  /// The server expires registrations after a TTL counted from the last one,
+  /// so callers pass the full set of live trades each time rather than
   /// relying on anything registered earlier. Returns how many succeeded.
   Future<int> registerTokens(Iterable<String> tradePubkeys) async {
     final fcmToken = await _prepareRegistration();

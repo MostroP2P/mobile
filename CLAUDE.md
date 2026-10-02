@@ -62,9 +62,9 @@ When implementing or debugging protocol-related features (order flows, actions, 
 - Background services in `background/` for notifications and data sync
 
 ### Push Notifications
-- The push server (`Config.pushServerUrl`) keeps `trade_pubkey -> FCM token` **in memory only**, with a TTL; any restart wipes it. Never assume a trade registered once stays registered
-- `SessionNotifier.syncPushRegistrations()` re-registers every live trade on app start, on foreground/background switches (throttled to 30 min for the server's per-IP rate limit), on FCM token refresh and when push is re-enabled in settings; disabling push unregisters every session (`unregisterPushTokens()`)
-- Details and the live-trade rule: `docs/architecture/FCM_IMPLEMENTATION.md` ("Token Re-registration")
+- The push server (`Config.pushServerUrl`) expires each `trade_pubkey -> FCM token` registration 48 h after it was last made, and a server without persistence (or with a new `TOKEN_STORE_KEY`) loses them on restart. Never assume a trade registered once stays registered
+- `SessionNotifier.syncPushRegistrations()` re-registers every live trade on app start, on foreground/background switches (throttled: 30 min after a successful sweep, 5 min after a failed one, for the server's per-IP rate limit), on FCM token refresh and when push is re-enabled in settings; disabling push unregisters every session (`unregisterPushTokens()`). The wiring lives in `core/push_registration_wiring.dart`
+- Only live trades are registered (each one links the device to another trade on the server): see the live-trade rule in `docs/architecture/FCM_IMPLEMENTATION.md` ("Token Re-registration")
 
 ### Key Architecture Patterns
 - Feature-based organization: `features/{feature}/{screens|providers|notifiers|widgets}/`

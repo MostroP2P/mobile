@@ -97,10 +97,11 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   /// Re-registers the push token for every trade that can still receive
   /// Mostro messages.
   ///
-  /// The push server keeps registrations in memory with a TTL, so a restart
-  /// or expiry silently drops them; the app re-asserts them on start, on
-  /// lifecycle changes and when the FCM token or the push setting changes.
-  /// Unforced calls are throttled by [pushResyncInterval].
+  /// The push server expires registrations after a TTL counted from the last
+  /// one, and loses them on restart when it does not persist them; the app
+  /// re-asserts them on start, on lifecycle changes and when the FCM token or
+  /// the push setting changes. Unforced calls are throttled by
+  /// [pushResyncInterval], or [pushResyncRetryInterval] after a failed sweep.
   Future<void> syncPushRegistrations({bool force = false}) {
     final pushService = _pushService;
     if (pushService == null) return Future.value();

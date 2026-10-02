@@ -387,9 +387,13 @@ final response = await http.post(
 
 ### Why
 
-The push server keeps `trade_pubkey -> device_token` **in memory only** and expires each entry `TOKEN_TTL_HOURS` (48 h by default) after it was registered. Every deploy, `fly secrets set` or restart wipes all registrations. The server design relies on clients re-registering; the app originally registered a trade only once (in `SessionNotifier.saveSession`), so a single server restart left every open trade without push until it finished.
+The app originally registered a trade only once (in `SessionNotifier.saveSession`). Whatever dropped that registration server-side left the trade without push until it finished:
 
-This happened in production on 2026-09-24: two restarts (relay list change) dropped ~760 registrations, and affected users received no push at all, not even the server's generic fallback notification.
+- **TTL:** the push server expires each entry `TOKEN_TTL_HOURS` (48 h by default) after it was last registered. Re-registering restarts the count, so a trade stays registered while the app is opened at least every 48 h.
+- **Server restarts without persistence:** a push server without `TOKEN_STORE_PATH` (local, self-hosted, or the production server before mostro-push-server #46 is deployed) keeps registrations in memory, and every deploy, `fly secrets set` or restart wipes them. With persistence (#46) they survive restarts.
+- **Key change:** a new `TOKEN_STORE_KEY` makes the server discard every persisted registration.
+
+This happened in production on 2026-09-24: two restarts of the in-memory server (relay list change) dropped ~760 registrations, and affected users received no push at all, not even the server's generic fallback notification.
 
 ### When the app re-registers
 
@@ -398,36 +402,46 @@ This happened in production on 2026-09-24: two restarts (relay list change) drop
 | Trigger | Where | Throttled |
 |---|---|---|
 | App start | end of `SessionNotifier.init()` | No (forced) |
-| Foreground / background switch | `LifecycleManager` | Yes, at most every 30 min |
-| New FCM token | `FCMService.onTokenRefresh` (wired in `app_bootstrap.dart`) | No (forced) |
+| Foreground / background switch | `LifecycleManager` | Yes: 30 min after a successful sweep, 5 min after one with failures |
+| New FCM token | `FCMService.onTokenRefresh` (wired in `core/push_registration_wiring.dart`) | No (forced) |
 | Push re-enabled in settings | `SettingsNotifier.updatePushNotificationsEnabled` | No (forced) |
 
-The throttle (`SessionNotifier.pushResyncInterval`) exists because the server rate-limits `/api/register` per IP (burst 100, 120/min) and many users share one IP behind carrier NAT. A sweep with failed registrations is not counted, so the next trigger retries it. A forced call arriving during a sweep runs again after it, so a new FCM token is never absorbed by a sweep still sending the old one.
+- **Throttle:** the server rate-limits `/api/register` per IP (burst 100, 120/min) and many users share one IP behind carrier NAT. Every sweep is recorded; one with failed registrations (a `429`, a full store, offline) is retried after `pushResyncRetryInterval` (5 min) instead of on every lifecycle switch, and a successful one after `pushResyncInterval` (30 min).
+- **Forced calls during a sweep** are coalesced: the running sweep repeats once when it ends, however many arrived. A new FCM token is therefore never absorbed by a sweep still sending the old one, and re-enabling push (forced sweep, then the token refresh it causes) costs at most two sweeps.
+- **One token per sweep:** `PushNotificationService.registerTokens` resolves the FCM token and the server check once, not per trade.
 
 Registration on `saveSession` and on range-order child creation/linking is unchanged; re-registration complements it.
 
 ### What counts as a live trade
 
-- Pending range-order child sessions (they wait for the child `new-order` message).
-- Every session whose latest stored message is not a finished-trade action (`purchase-completed`, `rate`, `canceled`, `admin-settled`, …), or was one less than 24 h ago (`finishedTradePushGrace`), so ratings and bond notices still wake the device.
-- Sessions with no stored message count as live.
+The same FCM token is registered with every trade pubkey, so each registration lets the push server link one more trade to the device (on disk when it persists). Only trades that can still receive Mostro messages are registered:
 
-Finished trades are not re-registered, so the server holds no more device ↔ trade links than needed.
+| Session | Registered |
+|---|---|
+| Pending range-order child (waits for the child `new-order`) | Yes |
+| Maker bond limbo (`bondPending`, not persisted until the order is confirmed) | No |
+| Latest message is a finished-trade action (`purchase-completed`, `rate`, `canceled`, `admin-settled`, …) | For 24 h after it (`finishedTradePushGrace`), so ratings and bond notices still wake the device |
+| Latest message is a pending order with `expires_at` (published, waiting for a taker) | Until it expires, plus 24 h |
+| Anything else: trade in progress, no stored message, a local outbound message | For 7 days after the last message, or after the session start when there is none (`unresolvedTradePushWindow`) |
+
+Message times use the daemon's event time (`eventCreatedAt`), falling back to the local receive time.
 
 ### Disabling and re-enabling push
 
-- **Disable:** `SessionNotifier.unregisterPushTokens()` unregisters **every** session (finished ones included), then the FCM token is deleted.
+- **Disable:** `SessionNotifier.unregisterPushTokens()` unregisters **every** session (finished ones included) and logs how many the server accepted, then the FCM token is deleted.
 - **Enable:** a forced `syncPushRegistrations()`. Firebase issues a new token, which is registered for every live trade.
-- **Ordering:** toggles run one after another (`SettingsNotifier._pushTransition`), and a transition already superseded by a later toggle is skipped. Otherwise a slow disable would unregister the trades a quick re-enable just registered and delete their token. The disable also waits for a running registration sweep, so no registration lands after the unregister.
+- **Ordering:** toggles run one after another (`SettingsNotifier._pushTransition`), and a transition already superseded by a later toggle is skipped. Otherwise a slow disable would unregister the trades a quick re-enable just registered and delete their token. The disable also waits for a running registration sweep, so no registration lands after the unregister. A failed transition is logged and never blocks the later ones.
 - Turning notifications off in **Android system settings** only stops Android from displaying them; the app is not notified and the server keeps the registration.
 
 ### Token source
 
-`FCMService.getToken()` asks Firebase first (the SDK caches it) and falls back to the stored token only if Firebase fails. Firebase can rotate the token while the app is closed; registering the stored one would point the server at a dead token.
+`FCMService.getToken()` asks Firebase first (`fetchFirebaseToken`; the SDK caches it) and falls back to the stored token only if Firebase has none or fails. Firebase can rotate the token while the app is closed; registering the stored one would point the server at a dead token.
 
 ### Remaining gap
 
-A server restart while the app is closed still leaves the user without push until they open the app. Closing that gap needs server-side persistence.
+A registration expires once the app has not been opened for `TOKEN_TTL_HOURS` (48 h), for example a maker who leaves a long-lived order and never opens the app; a server without persistence also loses registrations on every restart. Both recover the next time the app is opened.
+
+Sessions deleted by the user or by the session cleanup are not unregistered; their rows stay on the server until the TTL expires.
 
 ---
 
