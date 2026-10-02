@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
+import 'package:mostro_mobile/data/models/enums/status.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/session.dart';
 import 'package:mostro_mobile/data/repositories/session_storage.dart';
@@ -57,8 +58,15 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   static const Duration pushResyncRetryInterval = Duration(minutes: 5);
 
   /// How long a finished trade keeps its push registration, so trailing
-  /// messages (rating, bond notices) still wake the device.
+  /// messages (rating, bond notices) still wake the device. Also the margin
+  /// kept past a pending order's expiry.
   static const Duration finishedTradePushGrace = Duration(hours: 24);
+
+  /// How long a trade without a known outcome stays registered after its
+  /// last message (or the session start when it has none). Bounds sessions
+  /// whose last message is local or never got an answer, so they do not keep
+  /// linking a device to the trade for the whole session lifetime.
+  static const Duration unresolvedTradePushWindow = Duration(days: 7);
 
   /// Actions after which Mostro only sends trailing notices for the trade.
   static const Set<Action> _finishedTradeActions = {
@@ -67,11 +75,9 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     Action.rateReceived,
     Action.holdInvoicePaymentSettled,
     Action.canceled,
-    Action.cancel,
     Action.cooperativeCancelAccepted,
     Action.holdInvoicePaymentCanceled,
     Action.adminCanceled,
-    Action.adminCancel,
     Action.adminSettle,
     Action.adminSettled,
   };
@@ -171,31 +177,57 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   }
 
   /// Trade pubkeys that may still receive Mostro messages: pending range
-  /// children plus every session not finished longer than
-  /// [finishedTradePushGrace] ago. Unknown state counts as live.
+  /// children plus every persisted session [_isLiveTrade] accepts. The same
+  /// FCM token goes with each one, so every extra entry lets the push server
+  /// link one more trade to the device.
   Future<List<String>> _liveTradePubkeys() async {
     final mostroStore = ref.read(mostroStorageProvider);
+    final now = pushResyncClock();
     final pubkeys = [..._pendingChildSessions.keys];
     for (final session in _sessions.values.toList()) {
+      // Maker bond limbo: not persisted until the order is confirmed.
+      if (session.bondPending) continue;
       final lastMessage =
           await mostroStore.getLatestMessageById(session.orderId!);
-      if (!_isFinishedTrade(lastMessage)) {
+      if (_isLiveTrade(session, lastMessage, now)) {
         pubkeys.add(session.tradeKey.public);
       }
     }
     return pubkeys;
   }
 
-  bool _isFinishedTrade(MostroMessage? message) {
-    if (message == null || !_finishedTradeActions.contains(message.action)) {
-      return false;
+  /// - Finished trade: live for [finishedTradePushGrace] after its outcome.
+  /// - Published order waiting for a taker: live until it expires, plus
+  ///   [finishedTradePushGrace].
+  /// - Anything else (in progress, no message, a local outbound message):
+  ///   live for [unresolvedTradePushWindow] after the last message, or after
+  ///   the session start when there is none.
+  /// A time that cannot be read counts as live.
+  bool _isLiveTrade(Session session, MostroMessage? message, DateTime now) {
+    final at = message == null ? session.startTime : _messageTime(message);
+    if (at == null) return true;
+
+    if (message != null && _finishedTradeActions.contains(message.action)) {
+      return now.difference(at) <= finishedTradePushGrace;
     }
-    final timestamp = message.timestamp;
-    if (timestamp == null || timestamp <= 0) return false;
-    // Stored timestamps are a mix of seconds and milliseconds.
-    final ms = timestamp < 1000000000000 ? timestamp * 1000 : timestamp;
-    final receivedAt = DateTime.fromMillisecondsSinceEpoch(ms);
-    return DateTime.now().difference(receivedAt) > finishedTradePushGrace;
+
+    final order = message?.getPayload<Order>();
+    final expiresAt = order?.status == Status.pending ? order?.expiresAt : null;
+    if (expiresAt != null && expiresAt > 0) {
+      final expiry = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+      return now.isBefore(expiry.add(finishedTradePushGrace));
+    }
+
+    return now.difference(at) <= unresolvedTradePushWindow;
+  }
+
+  /// The daemon's event time, falling back to the local receive time.
+  DateTime? _messageTime(MostroMessage message) {
+    final raw = message.eventCreatedAt ?? message.timestamp;
+    if (raw == null || raw <= 0) return null;
+    // Rows written before eventCreatedAt existed may hold seconds.
+    final ms = raw < 1000000000000 ? raw * 1000 : raw;
+    return DateTime.fromMillisecondsSinceEpoch(ms);
   }
 
   List<Session> get sessions => _sessions.values.toList();

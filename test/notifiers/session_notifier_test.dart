@@ -4,8 +4,10 @@ import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
+import 'package:mostro_mobile/data/models/enums/order_type.dart';
 import 'package:mostro_mobile/data/models/enums/role.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
+import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager.dart';
 import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/data/models/session.dart';
@@ -392,6 +394,146 @@ void main() {
       await notifier.syncPushRegistrations(force: true);
 
       verifyNever(mockPushService.registerTokens(any));
+    });
+
+    group('live trade rule', () {
+      var seed = 5;
+      NostrKeyPairs nextKey() => NostrKeyPairs(
+            private: (seed++).toRadixString(16).padLeft(2, '0') * 32,
+          );
+
+      /// Registers a session whose latest stored message is [message] and
+      /// returns its trade pubkey.
+      String addSession(
+        String orderId,
+        MostroMessage? message, {
+        Duration startedAgo = Duration.zero,
+        bool bondPending = false,
+      }) {
+        final key = nextKey();
+        final session = Session(
+          masterKey: masterKey,
+          tradeKey: key,
+          keyIndex: 3,
+          fullPrivacy: false,
+          startTime: DateTime.now().subtract(startedAgo),
+          orderId: orderId,
+          role: Role.seller,
+        )..bondPending = bondPending;
+        when(mockMostroStorage.getLatestMessageById(orderId))
+            .thenAnswer((_) async => message);
+        notifier.registerSessionInMemory(session);
+        return key.public;
+      }
+
+      MostroMessage pendingOrder(Duration age, Duration expiresIn) =>
+          MostroMessage(
+            action: Action.newOrder,
+            id: 'x',
+            timestamp: DateTime.now().subtract(age).millisecondsSinceEpoch,
+            payload: Order(
+              kind: OrderType.sell,
+              fiatCode: 'CUP',
+              fiatAmount: 100,
+              paymentMethod: 'cash',
+              expiresAt:
+                  DateTime.now().add(expiresIn).millisecondsSinceEpoch ~/ 1000,
+            ),
+          );
+
+      test('skips bond sessions that are not persisted yet', () async {
+        final bond = addSession(
+          'bond',
+          messageAt(Action.payBondInvoice, Duration.zero),
+          bondPending: true,
+        );
+
+        await notifier.syncPushRegistrations(force: true);
+
+        expect(registeredKeys(), isNot(contains(bond)));
+      });
+
+      test('keeps an unresolved trade for 7 days after its last message',
+          () async {
+        final recent = addSession(
+            'recent', messageAt(Action.fiatSent, const Duration(days: 6)));
+        final stale = addSession(
+            'stale', messageAt(Action.fiatSent, const Duration(days: 8)));
+        // A local outbound message is unresolved too.
+        final outbound = addSession('outbound',
+            messageAt(Action.addBondInvoice, const Duration(days: 8)));
+
+        await notifier.syncPushRegistrations(force: true);
+        final keys = registeredKeys();
+
+        expect(keys, contains(recent));
+        expect(keys, isNot(contains(stale)));
+        expect(keys, isNot(contains(outbound)));
+      });
+
+      test('a session without messages counts from its start', () async {
+        final fresh = addSession('fresh', null);
+        final old =
+            addSession('old', null, startedAgo: const Duration(days: 8));
+
+        await notifier.syncPushRegistrations(force: true);
+        final keys = registeredKeys();
+
+        expect(keys, contains(fresh));
+        expect(keys, isNot(contains(old)));
+      });
+
+      test('keeps a pending order until it expires, then lets it go', () async {
+        // Published 9 days ago, still waiting for a taker for 3 more days.
+        final waiting = addSession('waiting',
+            pendingOrder(const Duration(days: 9), const Duration(days: 3)));
+        // Expired two days ago without any message.
+        final expired = addSession('expired',
+            pendingOrder(const Duration(days: 3), const Duration(days: -2)));
+
+        await notifier.syncPushRegistrations(force: true);
+        final keys = registeredKeys();
+
+        expect(keys, contains(waiting));
+        expect(keys, isNot(contains(expired)));
+      });
+
+      test('dates a message by the daemon event time when known', () async {
+        // Received just now (a relay replay) but finished three days ago.
+        final replayed = addSession(
+          'replayed',
+          MostroMessage(
+            action: Action.purchaseCompleted,
+            id: 'x',
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+            eventCreatedAt: DateTime.now()
+                .subtract(const Duration(days: 3))
+                .millisecondsSinceEpoch,
+          ),
+        );
+
+        await notifier.syncPushRegistrations(force: true);
+
+        expect(registeredKeys(), isNot(contains(replayed)));
+      });
+
+      test('reads legacy timestamps stored in seconds', () async {
+        final legacy = addSession(
+          'legacy',
+          MostroMessage(
+            action: Action.purchaseCompleted,
+            id: 'x',
+            timestamp: DateTime.now()
+                    .subtract(const Duration(days: 3))
+                    .millisecondsSinceEpoch ~/
+                1000,
+          ),
+        );
+
+        await notifier.syncPushRegistrations(force: true);
+
+        expect(registeredKeys(), isNot(contains(legacy)));
+      });
     });
 
     test('unregisterPushTokens waits for an in-flight sweep', () async {
