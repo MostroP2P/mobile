@@ -441,7 +441,7 @@ Message times use the daemon's event time (`eventCreatedAt`), falling back to th
 
 A registration expires once the app has not been opened for `TOKEN_TTL_HOURS` (48 h), for example a maker who leaves a long-lived order and never opens the app; a server without persistence also loses registrations on every restart. Both recover the next time the app is opened.
 
-Sessions deleted by the user or by the session cleanup are not unregistered; their rows stay on the server until the TTL expires.
+Sessions deleted by the app (cancellations, failed takes, timeout bond slashes) or by the session expiry cleanup are not unregistered; their rows stay on the server until the TTL expires.
 
 ---
 
