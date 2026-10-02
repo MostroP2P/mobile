@@ -27,7 +27,8 @@ class _RouterHostState extends ConsumerState<_RouterHost> {
 }
 
 /// Builds the app's real router inside a scope that can resolve it, and hands
-/// it back without mounting any screen.
+/// it back without mounting any screen. Use [parseInitialLocation] to run the
+/// matching step: constructing the router does not.
 Future<GoRouter> buildRouter(WidgetTester tester) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -41,6 +42,29 @@ Future<GoRouter> buildRouter(WidgetTester tester) async {
       tester.state<_RouterHostState>(find.byType(_RouterHost)).router;
   addTearDown(router.dispose);
   return router;
+}
+
+/// Runs the router's own parser over its initial route information.
+///
+/// This is the step #670 crashed in: `RouteConfiguration` asserts
+/// `uriPathToCompare.startsWith(newMatchedLocationToCompare)`
+/// (`go_router/lib/src/match.dart:245`) while matching, and an opaque URI like
+/// `mostro:<id>` has no leading slash. Building the router never reaches it, so
+/// without this call nothing here exercises the regression.
+///
+/// The resolved location is deliberately not asserted: parsing also applies the
+/// app's redirects, so on a fresh profile `/` legitimately resolves to
+/// `/walkthrough`. What the initial location *is* comes from
+/// `routeInformationProvider`; what this proves is that matching it does not
+/// assert.
+Future<void> parseInitialLocation(
+  WidgetTester tester,
+  GoRouter router,
+) async {
+  await router.routeInformationParser.parseRouteInformationWithDependencies(
+    router.routeInformationProvider.value,
+    tester.element(find.byType(_RouterHost)),
+  );
 }
 
 void main() {
@@ -60,10 +84,8 @@ void main() {
 
       final router = await buildRouter(tester);
 
-      expect(
-        router.routeInformationProvider.value.uri.toString(),
-        '/',
-      );
+      await expectLater(parseInitialLocation(tester, router), completes);
+      expect(router.routeInformationProvider.value.uri.toString(), '/');
       expect(tester.takeException(), isNull);
     });
 
@@ -74,6 +96,7 @@ void main() {
 
       final router = await buildRouter(tester);
 
+      await expectLater(parseInitialLocation(tester, router), completes);
       expect(router.routeInformationProvider.value.uri.toString(), '/');
       expect(tester.takeException(), isNull);
     });
@@ -87,6 +110,7 @@ void main() {
 
       final router = await buildRouter(tester);
 
+      await expectLater(parseInitialLocation(tester, router), completes);
       expect(
         router.routeInformationProvider.value.uri.toString(),
         '/settings',
