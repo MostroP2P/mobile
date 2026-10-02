@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:dart_nostr/dart_nostr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mostro_mobile/data/models/nostr_event.dart';
 import 'package:mostro_mobile/features/home/providers/home_order_providers.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
 
 void main() {
   late ProviderContainer container;
@@ -119,6 +124,59 @@ void main() {
     test('is a no-op when no filter is active', () {
       clearAllOrderFilters(container.read);
       expect(activeCount(), 0);
+    });
+  });
+
+  group('filteredOrdersProvider minimum days', () {
+    NostrEvent order(String id, Map<String, Object> rating) => NostrEvent(
+          id: 'event-$id',
+          kind: 38383,
+          content: '',
+          sig: '',
+          pubkey: 'mostro-pubkey',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1000000),
+          tags: [
+            ['d', id],
+            ['k', 'sell'],
+            ['s', 'pending'],
+            ['expiration', '100'],
+            [
+              'rating',
+              jsonEncode(['rating', rating])
+            ],
+          ],
+        );
+
+    int secondsAgo(Duration age) =>
+        DateTime.now().subtract(age).millisecondsSinceEpoch ~/ 1000;
+
+    test('counts the maker age from since, not from the stale days', () async {
+      final book = [
+        // Old event: days was 2 when published, the first trade is 30 days ago
+        order('stale-days', {
+          'days': 2,
+          'since': secondsAgo(const Duration(days: 30)),
+        }),
+        // Old daemon: only days
+        order('old-daemon', {'days': 25}),
+        order('too-new', {
+          'days': 25,
+          'since': secondsAgo(const Duration(days: 5)),
+        }),
+      ];
+      final orders = ProviderContainer(overrides: [
+        orderEventsProvider.overrideWith((ref) => Stream.value(book)),
+      ]);
+      addTearDown(orders.dispose);
+      orders.listen(filteredOrdersProvider, (_, __) {});
+      await Future<void>.delayed(Duration.zero);
+
+      orders.read(minDaysFilterProvider.notifier).state = 20;
+
+      expect(
+        orders.read(filteredOrdersProvider).map((o) => o.orderId),
+        unorderedEquals(['stale-days', 'old-daemon']),
+      );
     });
   });
 }

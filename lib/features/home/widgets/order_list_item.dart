@@ -265,7 +265,7 @@ class OrderListItem extends ConsumerWidget {
     final orderRating = order.rating;
     final rating = orderRating?.totalRating ?? 0.0;
     final int reviews = orderRating?.totalReviews ?? 0;
-    final int daysOld = orderRating?.days ?? 0;
+    final int daysOld = orderRating?.daysOnMostro ?? 0;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

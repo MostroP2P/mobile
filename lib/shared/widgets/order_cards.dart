@@ -321,7 +321,7 @@ class PeerReputationCard extends StatelessWidget {
             _ReputationMetricsRow(
               rating: reputation.rating,
               reviews: reputation.reviews,
-              days: reputation.operatingDays,
+              days: reputation.daysOnMostro,
             ),
           ],
         ),
@@ -373,7 +373,7 @@ class PeerReputationInline extends StatelessWidget {
               child: Text(
                 '${reputation.rating.toStringAsFixed(1)} / 5 · '
                 '${S.of(context)!.reputationReviewsCount(reputation.reviews)} · '
-                '${S.of(context)!.reputationDaysCount(reputation.operatingDays)}',
+                '${S.of(context)!.reputationDaysCount(reputation.daysOnMostro)}',
                 style: const TextStyle(
                   color: AppTheme.textPrimary,
                   fontSize: 16,

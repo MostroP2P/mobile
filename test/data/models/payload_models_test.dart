@@ -492,6 +492,87 @@ void main() {
       expect(rating.totalRating, 0.0);
       expect(rating.days, 0);
     });
+
+    test('reads since next to days in the ["rating", {...}] tag shape', () {
+      final data = jsonEncode([
+        'rating',
+        {
+          'total_reviews': 7,
+          'total_rating': 4.5,
+          'days': 30,
+          'since': 1699920000,
+        }
+      ]);
+
+      final rating = Rating.deserialized(data);
+
+      expect(rating.since, 1699920000);
+      expect(rating.days, 30);
+    });
+
+    test('reads since in a flat rating object', () {
+      final data = jsonEncode({'total_reviews': 3, 'since': 1699920000});
+
+      expect(Rating.deserialized(data).since, 1699920000);
+    });
+
+    test('leaves since null when an old daemon sends only days', () {
+      final data = jsonEncode([
+        'rating',
+        {'total_reviews': 7, 'total_rating': 4.5, 'days': 30}
+      ]);
+
+      final rating = Rating.deserialized(data);
+
+      expect(rating.since, isNull);
+      expect(rating.days, 30);
+    });
+
+    test('ignores an invalid since and keeps the rest of the rating', () {
+      for (final since in [0, -1, '1699920000', 1.5]) {
+        final data = jsonEncode([
+          'rating',
+          {'total_reviews': 7, 'days': 30, 'since': since}
+        ]);
+
+        final rating = Rating.deserialized(data);
+
+        expect(rating.since, isNull, reason: 'since: $since');
+        expect(rating.totalReviews, 7);
+        expect(rating.days, 30);
+      }
+    });
+
+    test('daysOnMostro counts from since, not from the stale days', () {
+      final tenDaysAgo = DateTime.now()
+              .subtract(const Duration(days: 10))
+              .millisecondsSinceEpoch ~/
+          1000;
+      final rating = Rating(
+        totalReviews: 1,
+        totalRating: 5,
+        lastRating: 5,
+        maxRate: 5,
+        minRate: 1,
+        days: 2,
+        since: tenDaysAgo,
+      );
+
+      expect(rating.daysOnMostro, 10);
+    });
+
+    test('daysOnMostro falls back to days without since', () {
+      const rating = Rating(
+        totalReviews: 1,
+        totalRating: 5,
+        lastRating: 5,
+        maxRate: 5,
+        minRate: 1,
+        days: 2,
+      );
+
+      expect(rating.daysOnMostro, 2);
+    });
   });
 
   group('ChatRoom', () {

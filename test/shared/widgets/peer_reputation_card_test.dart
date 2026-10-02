@@ -59,6 +59,23 @@ void main() {
     expect(find.text('Days'), findsOneWidget);
   });
 
+  testWidgets('shows the age computed from since, not the stale count',
+      (tester) async {
+    await pumpCard(
+      tester,
+      reputation: UserInfo(
+        rating: 4.375,
+        reviews: 1,
+        operatingDays: 3,
+        since: _secondsAgo(const Duration(days: 64)),
+      ),
+      counterpartIsBuyer: true,
+    );
+
+    expect(find.text('64'), findsOneWidget);
+    expect(find.text('3'), findsNothing);
+  });
+
   group('PeerReputationInline', () {
     Future<void> pumpInline(
       WidgetTester tester, {
@@ -112,5 +129,24 @@ void main() {
       expect(find.text("Buyer's Reputation"), findsOneWidget);
       expect(find.text('0.0 / 5 · 0 reviews · 0 days'), findsOneWidget);
     });
+
+    testWidgets('shows the age computed from since, not the stale count',
+        (tester) async {
+      await pumpInline(
+        tester,
+        reputation: UserInfo(
+          rating: 2.5,
+          reviews: 1,
+          operatingDays: 4,
+          since: _secondsAgo(const Duration(days: 64)),
+        ),
+        counterpartIsBuyer: true,
+      );
+
+      expect(find.text('2.5 / 5 · 1 review · 64 days'), findsOneWidget);
+    });
   });
 }
+
+int _secondsAgo(Duration age) =>
+    DateTime.now().subtract(age).millisecondsSinceEpoch ~/ 1000;
