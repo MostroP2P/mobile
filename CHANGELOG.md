@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.5.0] - 2026-10-02
+
+### Added
+- feat: show days on Mostro from the since date (#740) (4c347e0f)
+- feat: add complete Dutch (nl) translation (#736) (9d3a543b)
+- Add 'Satispay' to EUR payment methods (#733) (46c0fda6)
+
+### Fixed
+- fix: re-register push tokens so trades survive push server restarts (#738) (ec89a09a)
+
+
 ## [v1.4.2] - 2026-09-04
 
 ### Fixed
