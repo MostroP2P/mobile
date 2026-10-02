@@ -12,9 +12,13 @@ class _FakeFcmService extends FCMService {
   _FakeFcmService(super.prefs, {this.tokenOverride = 'fake-fcm-token'});
 
   final String? tokenOverride;
+  int getTokenCalls = 0;
 
   @override
-  Future<String?> getToken() async => tokenOverride;
+  Future<String?> getToken() async {
+    getTokenCalls++;
+    return tokenOverride;
+  }
 }
 
 PushNotificationService _buildService({
@@ -306,6 +310,63 @@ void main() {
 
       expect(count, 0);
       expect(called, isFalse);
+    });
+  });
+
+  group('PushNotificationService.registerTokens sweep', () {
+    const pubkeys = [
+      'a1b2c3d4e5f67890123456789012345678901234567890123456789012345abc',
+      'b1b2c3d4e5f67890123456789012345678901234567890123456789012345abc',
+      'c1b2c3d4e5f67890123456789012345678901234567890123456789012345abc',
+    ];
+
+    test('fetches the FCM token and checks the server once per sweep',
+        () async {
+      var healthChecks = 0;
+      final mockClient = MockClient((request) async {
+        if (request.url.path == '/api/health') {
+          healthChecks++;
+          return http.Response('{"status":"ok"}', 200);
+        }
+        return http.Response('{"success":true}', 200);
+      });
+      final fcm = _FakeFcmService(MockSharedPreferencesAsync());
+      final service = PushNotificationService(
+        fcmService: fcm,
+        pushServerUrl: 'https://push.example',
+        httpClient: mockClient,
+        isSupportedOverride: true,
+        platformOverride: 'android',
+      );
+
+      final count = await service.registerTokens(pubkeys);
+
+      expect(count, 3);
+      expect(fcm.getTokenCalls, 1);
+      expect(healthChecks, 1);
+    });
+
+    test('stops when push is turned off mid-sweep', () async {
+      var enabled = true;
+      final registered = <String>[];
+      final mockClient = MockClient((request) async {
+        if (request.url.path == '/api/health') {
+          return http.Response('{"status":"ok"}', 200);
+        }
+        registered.add(
+          (jsonDecode(request.body) as Map<String, dynamic>)['trade_pubkey']
+              as String,
+        );
+        enabled = false; // the user disables push after the first request
+        return http.Response('{"success":true}', 200);
+      });
+      final service = _buildService(httpClient: mockClient)
+        ..isPushEnabledInSettings = () => enabled;
+
+      final count = await service.registerTokens(pubkeys);
+
+      expect(count, 1);
+      expect(registered, [pubkeys.first]);
     });
   });
 

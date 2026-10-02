@@ -8,7 +8,6 @@ import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/services/fcm_service.dart';
 
-
 /// Safely truncate a pubkey for logging, avoiding RangeError on short strings.
 String _shortenPubkey(String pubkey, [int maxLength = 16]) {
   if (pubkey.length <= maxLength) return pubkey;
@@ -101,31 +100,67 @@ class PushNotificationService {
   /// [tradePubkey] - The public key of the trade (hex, 64 chars)
   /// This is the key that Mostro daemon uses in the 'p' tag when sending events
   Future<bool> registerToken(String tradePubkey) async {
+    final fcmToken = await _prepareRegistration();
+    if (fcmToken == null) return false;
+    return _register(tradePubkey, fcmToken);
+  }
+
+  /// Registers every trade pubkey in [tradePubkeys], one request at a time.
+  /// The FCM token and the server check are resolved once for the whole
+  /// sweep, not per trade.
+  ///
+  /// The server keeps registrations in memory only and expires them after a
+  /// TTL, so callers pass the full set of live trades each time rather than
+  /// relying on anything registered earlier. Returns how many succeeded.
+  Future<int> registerTokens(Iterable<String> tradePubkeys) async {
+    final fcmToken = await _prepareRegistration();
+    if (fcmToken == null) return 0;
+
+    var registered = 0;
+    for (final tradePubkey in tradePubkeys.toSet()) {
+      // The user may turn push off while a sweep is running.
+      if (isPushEnabledInSettings?.call() == false) break;
+      if (await _register(tradePubkey, fcmToken)) registered++;
+    }
+    return registered;
+  }
+
+  /// Checks that registering is possible (platform, push setting, server)
+  /// and returns the current FCM token, or null when it is not.
+  Future<String?> _prepareRegistration() async {
     if (!isSupported) {
-      return false;
+      return null;
     }
 
     // Check if push notifications are enabled in settings
     if (isPushEnabledInSettings != null && !isPushEnabledInSettings!()) {
-      debugPrint('PushService: Push notifications disabled in settings, skipping registration');
-      return false;
+      debugPrint(
+          'PushService: Push notifications disabled in settings, skipping registration');
+      return null;
     }
 
     if (!_isInitialized) {
       logger.w('Push service not initialized');
       final initialized = await initialize();
-      if (!initialized) return false;
+      if (!initialized) return null;
     }
 
     try {
-      // Get FCM token from FCMService
       final fcmToken = await _fcmService.getToken();
       if (fcmToken == null) {
         logger.w('FCM token is null, cannot register');
-        return false;
       }
+      return fcmToken;
+    } catch (e) {
+      logger.e('Error getting FCM token: $e');
+      return null;
+    }
+  }
 
-      debugPrint('PushService: Registering token for trade ${_shortenPubkey(tradePubkey)}');
+  Future<bool> _register(String tradePubkey, String fcmToken) async {
+    try {
+      debugPrint(
+          'PushService: Registering token for trade ${_shortenPubkey(tradePubkey)}');
 
       // Send plaintext token to server (Phase 3 - unencrypted).
       // `mostro_pubkey` enables the server-side trusted-instance whitelist
@@ -173,19 +208,6 @@ class PushNotificationService {
       logger.e('Error registering token: $e');
       return false;
     }
-  }
-
-  /// Registers every trade pubkey in [tradePubkeys], one request at a time.
-  ///
-  /// The server keeps registrations in memory only and expires them after a
-  /// TTL, so callers pass the full set of live trades each time rather than
-  /// relying on anything registered earlier. Returns how many succeeded.
-  Future<int> registerTokens(Iterable<String> tradePubkeys) async {
-    var registered = 0;
-    for (final tradePubkey in tradePubkeys.toSet()) {
-      if (await registerToken(tradePubkey)) registered++;
-    }
-    return registered;
   }
 
   /// Unregisters every trade pubkey in [tradePubkeys].

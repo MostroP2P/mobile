@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mostro_mobile/core/config.dart';
 import 'package:mostro_mobile/data/models/enums/action.dart';
@@ -50,6 +51,11 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   /// NAT, so lifecycle events must not trigger a sweep every time.
   static const Duration pushResyncInterval = Duration(minutes: 30);
 
+  /// Shorter spacing after a sweep in which some registration failed (a 429,
+  /// a full store, offline): soon enough to recover, but never a retry on
+  /// every lifecycle switch against a server that is already rejecting.
+  static const Duration pushResyncRetryInterval = Duration(minutes: 5);
+
   /// How long a finished trade keeps its push registration, so trailing
   /// messages (rating, bond notices) still wake the device.
   static const Duration finishedTradePushGrace = Duration(hours: 24);
@@ -71,7 +77,16 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   };
 
   DateTime? _lastPushResync;
+  bool _lastPushResyncFailed = false;
+
+  /// Clock behind the re-sync spacing, replaceable in tests.
+  @visibleForTesting
+  DateTime Function() pushResyncClock = DateTime.now;
   Future<void>? _pushResyncInFlight;
+
+  /// Set by a forced call that arrives during a sweep: the running sweep
+  /// repeats once when it ends, however many forced calls came in.
+  bool _pushResyncRerun = false;
 
   /// Re-registers the push token for every trade that can still receive
   /// Mostro messages.
@@ -90,38 +105,53 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     final inFlight = _pushResyncInFlight;
     if (inFlight != null) {
       // A forced sync (e.g. new FCM token) must not be absorbed by a sweep
-      // that may still be sending the old token.
-      return force
-          ? inFlight.then((_) => syncPushRegistrations(force: true))
-          : inFlight;
+      // that may still be sending the old token; one repeat covers them all.
+      if (force) _pushResyncRerun = true;
+      return inFlight;
     }
 
     final last = _lastPushResync;
+    final spacing =
+        _lastPushResyncFailed ? pushResyncRetryInterval : pushResyncInterval;
     if (!force &&
         last != null &&
-        DateTime.now().difference(last) < pushResyncInterval) {
+        pushResyncClock().difference(last) < spacing) {
       return Future.value();
     }
 
     final sync = () async {
       try {
-        final pubkeys = await _liveTradePubkeys();
-        if (pubkeys.isEmpty) {
-          _lastPushResync = DateTime.now();
-          return;
-        }
-        final registered = await pushService.registerTokens(pubkeys);
-        logger.i('Push registrations refreshed: $registered/${pubkeys.length}');
-        // Partial failures (offline, server down) retry on the next trigger.
-        if (registered == pubkeys.length) _lastPushResync = DateTime.now();
-      } catch (e) {
-        logger.w('Failed to refresh push registrations: $e');
+        do {
+          _pushResyncRerun = false;
+          await _runPushResync(pushService);
+        } while (_pushResyncRerun &&
+            pushService.isPushEnabledInSettings?.call() != false);
       } finally {
+        _pushResyncRerun = false;
         _pushResyncInFlight = null;
       }
     }();
     _pushResyncInFlight = sync;
     return sync;
+  }
+
+  Future<void> _runPushResync(PushNotificationService pushService) async {
+    var failed = true;
+    try {
+      final pubkeys = await _liveTradePubkeys();
+      if (pubkeys.isEmpty) {
+        failed = false;
+        return;
+      }
+      final registered = await pushService.registerTokens(pubkeys);
+      logger.i('Push registrations refreshed: $registered/${pubkeys.length}');
+      failed = registered < pubkeys.length;
+    } catch (e) {
+      logger.w('Failed to refresh push registrations: $e');
+    } finally {
+      _lastPushResync = pushResyncClock();
+      _lastPushResyncFailed = failed;
+    }
   }
 
   /// Removes the push registration of every trade this device holds, finished

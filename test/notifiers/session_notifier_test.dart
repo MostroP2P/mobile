@@ -327,13 +327,63 @@ void main() {
       verify(mockPushService.registerTokens(any)).called(1);
     });
 
-    test('retries on the next call after a partial failure', () async {
+    test('after a failed sweep, retries on the shorter interval only',
+        () async {
+      var now = DateTime(2026, 10, 1, 12);
+      notifier.pushResyncClock = () => now;
       when(mockPushService.registerTokens(any)).thenAnswer((_) async => 0);
 
       await notifier.syncPushRegistrations();
-      await notifier.syncPushRegistrations();
+      verify(mockPushService.registerTokens(any)).called(1);
 
-      verify(mockPushService.registerTokens(any)).called(2);
+      // A server that keeps rejecting is not hit on every lifecycle switch.
+      now = now.add(const Duration(minutes: 1));
+      await notifier.syncPushRegistrations();
+      verifyNever(mockPushService.registerTokens(any));
+
+      now = now.add(SessionNotifier.pushResyncRetryInterval);
+      await notifier.syncPushRegistrations();
+      verify(mockPushService.registerTokens(any)).called(1);
+    });
+
+    test('after a successful sweep, waits the full interval', () async {
+      var now = DateTime(2026, 10, 1, 12);
+      notifier.pushResyncClock = () => now;
+
+      await notifier.syncPushRegistrations();
+      verify(mockPushService.registerTokens(any)).called(1);
+
+      now = now.add(SessionNotifier.pushResyncRetryInterval);
+      await notifier.syncPushRegistrations();
+      verifyNever(mockPushService.registerTokens(any));
+
+      now = now.add(SessionNotifier.pushResyncInterval);
+      await notifier.syncPushRegistrations();
+      verify(mockPushService.registerTokens(any)).called(1);
+    });
+
+    test('forced calls during a sweep coalesce into one repeat', () async {
+      final firstSweep = Completer<int>();
+      var calls = 0;
+      when(mockPushService.registerTokens(any)).thenAnswer((inv) {
+        calls++;
+        final count = (inv.positionalArguments[0] as List).length;
+        return calls == 1 ? firstSweep.future : Future.value(count);
+      });
+
+      final sweep = notifier.syncPushRegistrations(force: true);
+      await pumpEventQueue();
+      // e.g. re-enabling push, then the token refresh it causes.
+      final more = [
+        notifier.syncPushRegistrations(force: true),
+        notifier.syncPushRegistrations(force: true),
+        notifier.syncPushRegistrations(force: true),
+      ];
+
+      firstSweep.complete(4);
+      await Future.wait([sweep, ...more]);
+
+      expect(calls, 2, reason: 'one sweep plus a single repeat');
     });
 
     test('does nothing while push notifications are disabled', () async {
