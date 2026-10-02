@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mostro_mobile/core/app.dart';
+import 'package:mostro_mobile/core/push_registration_wiring.dart';
 import 'package:mostro_mobile/features/relays/relay.dart';
 import 'package:mostro_mobile/features/auth/providers/auth_notifier_provider.dart';
 import 'package:mostro_mobile/features/relays/relays_provider.dart';
@@ -122,31 +123,12 @@ void _initializePushNotificationIntegration(
   _PushServices pushServices,
 ) {
   try {
-    // Connect push service with session notifier for automatic token registration
-    final sessionNotifier = container.read(sessionNotifierProvider.notifier);
-    sessionNotifier.setPushNotificationService(pushServices.pushService);
-
-    // Toggling push in settings drops or restores every trade's registration
-    container.read(settingsProvider.notifier).setPushServices(
-          pushServices.fcmService,
-          registerTokens: () =>
-              sessionNotifier.syncPushRegistrations(force: true),
-          unregisterTokens: sessionNotifier.unregisterPushTokens,
-        );
-
-    // A new FCM token invalidates every registration made with the old one
-    pushServices.fcmService.onTokenRefresh =
-        (_) => sessionNotifier.syncPushRegistrations(force: true);
-
-    // Set up settings check callback
-    pushServices.pushService.isPushEnabledInSettings = () {
-      return container.read(settingsProvider).pushNotificationsEnabled;
-    };
-
-    // Provide the active Mostro instance pubkey for /api/register
-    pushServices.pushService.getMostroPubkey = () {
-      return container.read(settingsProvider).mostroPublicKey;
-    };
+    wirePushRegistration(
+      sessions: container.read(sessionNotifierProvider.notifier),
+      settings: container.read(settingsProvider.notifier),
+      pushService: pushServices.pushService,
+      fcmService: pushServices.fcmService,
+    );
 
     logger.i('Push notification integration initialized');
   } catch (e) {
