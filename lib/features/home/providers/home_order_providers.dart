@@ -107,9 +107,11 @@ final filteredOrdersProvider = Provider<List<NostrEvent>>((ref) {
         });
       }
 
-      // Apply minimum days filter (maker's account age as reported in rating.days)
+      // Apply minimum days filter (maker's days on Mostro, from rating.since
+      // when the daemon sends it, else the deprecated rating.days)
       if (_isMinDaysActive(minDays)) {
-        filtered = filtered.where((o) => (o.rating?.days ?? 0) >= minDays);
+        filtered =
+            filtered.where((o) => (o.rating?.daysOnMostro ?? 0) >= minDays);
       }
 
       // Apply rating filter

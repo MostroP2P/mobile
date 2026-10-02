@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:mostro_mobile/shared/utils/reputation_age.dart';
+
 class Rating {
   final int totalReviews;
   final double totalRating;
@@ -8,6 +10,10 @@ class Rating {
   final int minRate;
   final int days;
 
+  /// Day of the maker's first trade (Unix seconds, UTC day start), or null
+  /// when the daemon predates the protocol's `since`.
+  final int? since;
+
   const Rating({
     required this.totalReviews,
     required this.totalRating,
@@ -15,7 +21,12 @@ class Rating {
     required this.maxRate,
     required this.minRate,
     required this.days,
+    this.since,
   });
+
+  /// Days on Mostro to show: counted from [since], else the deprecated [days].
+  int get daysOnMostro =>
+      reputationDaysOnMostro(since: since, fallbackDays: days);
 
   factory Rating.deserialized(String data) {
     if (data.isEmpty) {
@@ -38,6 +49,7 @@ class Rating {
           totalReviews: _parseIntFromNestedJson(ratingData, 'total_reviews'),
           totalRating: _parseDoubleFromNestedJson(ratingData, 'total_rating'),
           days: _parseIntFromNestedJson(ratingData, 'days'),
+          since: parseReputationSince(ratingData['since']),
           lastRating: 0,
           maxRate: 5,
           minRate: 1,
@@ -50,6 +62,7 @@ class Rating {
           maxRate: _parseInt(json, 'max_rate'),
           minRate: _parseInt(json, 'min_rate'),
           days: _parseInt(json, 'days', defaultValue: 0),
+          since: parseReputationSince(json['since']),
         );
       } else {
         return Rating.empty();

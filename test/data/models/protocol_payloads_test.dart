@@ -284,6 +284,78 @@ void main() {
       expect(peer.reputation!.operatingDays, 64);
     });
 
+    test('parses since next to operating_days', () {
+      final peer = Peer.fromJson(const {
+        'pubkey': '',
+        'reputation': {
+          'rating': 4.375,
+          'reviews': 4,
+          'operating_days': 64,
+          'since': 1699920000,
+        },
+      });
+
+      expect(peer.reputation!.since, 1699920000);
+      expect(peer.reputation!.operatingDays, 64);
+    });
+
+    test('leaves since null when an old daemon omits it', () {
+      final peer = Peer.fromJson(const {
+        'pubkey': '',
+        'reputation': {'rating': 4.375, 'reviews': 4, 'operating_days': 64},
+      });
+
+      expect(peer.reputation!.since, isNull);
+    });
+
+    test('ignores an invalid since', () {
+      final peer = Peer.fromJson(const {
+        'pubkey': '',
+        'reputation': {
+          'rating': 4.375,
+          'reviews': 4,
+          'operating_days': 64,
+          'since': 0,
+        },
+      });
+
+      expect(peer.reputation!.since, isNull);
+      expect(peer.reputation!.operatingDays, 64);
+    });
+
+    test('since survives a toJson round trip and is omitted when absent', () {
+      const withSince = UserInfo(
+        rating: 4.375,
+        reviews: 4,
+        operatingDays: 64,
+        since: 1699920000,
+      );
+      const withoutSince =
+          UserInfo(rating: 4.375, reviews: 4, operatingDays: 64);
+
+      expect(UserInfo.fromJson(withSince.toJson()), withSince);
+      expect(withSince.toJson()['since'], 1699920000);
+      expect(withoutSince.toJson().containsKey('since'), isFalse);
+      expect(withSince == withoutSince, isFalse);
+    });
+
+    test('daysOnMostro counts from since, else operating_days', () {
+      final tenDaysAgo = DateTime.now()
+              .subtract(const Duration(days: 10))
+              .millisecondsSinceEpoch ~/
+          1000;
+
+      expect(
+        UserInfo(rating: 5, reviews: 1, operatingDays: 2, since: tenDaysAgo)
+            .daysOnMostro,
+        10,
+      );
+      expect(
+        const UserInfo(rating: 5, reviews: 1, operatingDays: 2).daysOnMostro,
+        2,
+      );
+    });
+
     test('parses a zeroed reputation (new user or full privacy)', () {
       final peer = Peer.fromJson(const {
         'pubkey': '',

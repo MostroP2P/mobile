@@ -949,7 +949,7 @@ class TradeDetailScreen extends ConsumerWidget {
 
     final rating = ratingInfo?.totalRating ?? 0.0;
     final reviews = ratingInfo?.totalReviews ?? 0;
-    final days = ratingInfo?.days ?? 0;
+    final days = ratingInfo?.daysOnMostro ?? 0;
 
     return CreatorReputationCard(
       rating: rating,
