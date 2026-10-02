@@ -49,7 +49,12 @@ GoRouter createRouter(WidgetRef ref) {
   final overridesPlatformDefault =
       isCustomSchemeLocation(platformDefaultLocation);
   if (overridesPlatformDefault) {
-    logger.i('Ignoring platform default location: $platformDefaultLocation');
+    // Scheme only: the location carries an order id and its relays, and
+    // MemoryLogOutput is exportable by the user.
+    logger.i(
+      'Ignoring platform default location with scheme '
+      '${Uri.tryParse(platformDefaultLocation)?.scheme}',
+    );
   }
 
   return GoRouter(
