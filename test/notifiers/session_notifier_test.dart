@@ -268,7 +268,8 @@ void main() {
       when(mockPushService.isPushEnabledInSettings).thenReturn(() => true);
       when(mockPushService.registerTokens(any))
           .thenAnswer((inv) async => (inv.positionalArguments[0] as List).length);
-      when(mockPushService.unregisterTokens(any)).thenAnswer((_) async {});
+      when(mockPushService.unregisterTokens(any))
+          .thenAnswer((inv) async => (inv.positionalArguments[0] as List).length);
 
       when(mockMostroStorage.getLatestMessageById('live'))
           .thenAnswer((_) async => messageAt(Action.fiatSentOk, Duration.zero));
@@ -545,6 +546,7 @@ void main() {
       });
       when(mockPushService.unregisterTokens(any)).thenAnswer((_) async {
         calls.add('unregister');
+        return 1;
       });
 
       final sweep = notifier.syncPushRegistrations(force: true);

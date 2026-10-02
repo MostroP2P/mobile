@@ -212,11 +212,17 @@ class PushNotificationService {
 
   /// Unregisters every trade pubkey in [tradePubkeys].
   /// Called when the user disables push notifications in settings.
-  Future<void> unregisterTokens(Iterable<String> tradePubkeys) async {
-    if (!isSupported) return;
+  ///
+  /// Requests go one at a time, each with a 10 s timeout, so a large set
+  /// offline takes a while; the caller deletes the FCM token afterwards, which
+  /// makes any row left behind undeliverable. Returns how many succeeded.
+  Future<int> unregisterTokens(Iterable<String> tradePubkeys) async {
+    if (!isSupported) return 0;
+    var unregistered = 0;
     for (final tradePubkey in tradePubkeys.toSet()) {
-      await unregisterToken(tradePubkey);
+      if (await unregisterToken(tradePubkey)) unregistered++;
     }
+    return unregistered;
   }
 
   /// Wake the peer's device by triggering a silent push via `/api/notify`.

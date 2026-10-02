@@ -190,7 +190,12 @@ class SettingsNotifier extends StateNotifier<Settings> {
   Future<void> updatePushNotificationsEnabled(bool newValue) async {
     state = state.copyWith(pushNotificationsEnabled: newValue);
     // Queued before any await so transitions keep the order of the toggles.
-    _pushTransition = _pushTransition.then((_) => _applyPushSetting(newValue));
+    // The guard keeps one failed transition from skipping every later one.
+    _pushTransition = _pushTransition
+        .then((_) => _applyPushSetting(newValue))
+        .catchError((Object e) {
+      logger.w('Push setting transition failed: $e');
+    });
     await _saveToPrefs();
     logger.i('Push notifications ${newValue ? 'enabled' : 'disabled'}');
   }
@@ -215,7 +220,6 @@ class SettingsNotifier extends StateNotifier<Settings> {
   Future<void> _disablePush() async {
     try {
       await _unregisterPushTokens?.call();
-      logger.i('All push tokens unregistered');
     } catch (e) {
       logger.w('Failed to unregister push tokens: $e');
     }

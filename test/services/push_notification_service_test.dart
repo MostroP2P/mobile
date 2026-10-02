@@ -380,10 +380,27 @@ void main() {
         return http.Response('{"success":true}', 200);
       });
 
-      await _buildService(httpClient: mockClient)
+      final count = await _buildService(httpClient: mockClient)
           .unregisterTokens([_validPubkey, _validPubkey]);
 
       expect(unregistered, [_validPubkey]);
+      expect(count, 1);
+    });
+
+    test('counts only the unregistrations the server accepted', () async {
+      const failing =
+          'b1b2c3d4e5f67890123456789012345678901234567890123456789012345abc';
+      final mockClient = MockClient((request) async {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        return body['trade_pubkey'] == failing
+            ? http.Response('{"success":false,"message":"internal error"}', 500)
+            : http.Response('{"success":true}', 200);
+      });
+
+      final count = await _buildService(httpClient: mockClient)
+          .unregisterTokens([_validPubkey, failing]);
+
+      expect(count, 1);
     });
   });
 }

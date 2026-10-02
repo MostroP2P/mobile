@@ -170,10 +170,12 @@ class SessionNotifier extends StateNotifier<List<Session>> {
     final inFlight = _pushResyncInFlight;
     if (inFlight != null) await inFlight;
     _lastPushResync = null;
-    await pushService.unregisterTokens([
+    final pubkeys = [
       ..._sessions.values.map((session) => session.tradeKey.public),
       ..._pendingChildSessions.keys,
-    ]);
+    ];
+    final unregistered = await pushService.unregisterTokens(pubkeys);
+    logger.i('Push registrations removed: $unregistered/${pubkeys.length}');
   }
 
   /// Trade pubkeys that may still receive Mostro messages: pending range
