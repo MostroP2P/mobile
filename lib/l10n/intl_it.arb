@@ -727,6 +727,8 @@
     "bondAlreadyPaid": "Questo deposito è già stato pagato. Il tuo scambio è già in corso.",
     "goToTrade": "VAI ALLO SCAMBIO",
     "bondInvoiceUnavailable": "Questa fattura di deposito non è più valida. Torna indietro e prendi di nuovo l'ordine per ottenerne una nuova.",
+    "bondOrderPublished": "Il tuo ordine è pubblicato nel libro ordini e il suo deposito è già stato pagato.",
+    "bondOrderNoLongerActive": "Questo ordine non è più attivo, quindi la sua fattura di deposito non è più valida.",
     "bondScreenTitle": "Deposito anti-abuso",
     "bondExplanation": "Per prendere questo ordine devi pagare un deposito anti-abuso. Funziona così:\n\n• I tuoi sats vengono trattenuti nel tuo wallet, non vengono spesi.\n• Se lo scambio si conclude correttamente, recuperi il deposito automaticamente.\n• Se hai una disputa su questo ordine e la perdi, perderai il deposito.\n• Questo meccanismo protegge tutti gli utenti dai truffatori.",
     "bondExplanationMaker": "Prima che il tuo ordine possa essere creato, devi pagare un deposito anti-abuso. Tieni aperta questa schermata fino al completamento del pagamento: se la chiudi o non paghi, l'ordine non verrà creato. Funziona così:\n\n• I tuoi sats vengono trattenuti nel tuo wallet, non vengono spesi.\n• Se lo scambio si conclude correttamente, recuperi il deposito automaticamente.\n• Se hai una disputa su questo ordine e la perdi, perderai il deposito.\n• Questo meccanismo protegge tutti gli utenti dai truffatori.",

@@ -151,13 +151,15 @@ class PayBondInvoiceScreen extends ConsumerWidget {
       final cycleEnded =
           OrderState.endsTradeCycle(orderState.status) &&
               orderState.status != enums.Status.pending;
-      // `pending` here is the notifier's initial state as well: the maker bond
-      // arrives on AddOrderNotifier and only reaches this provider once its
-      // sync() has read the message, so the first frames legitimately have
-      // nothing to render.
+      // `pending` is not enough on its own: it is the notifier's initial state
+      // while a maker bond is still loading, *and* the state of a maker's
+      // order that is paid and live in the book. The pay-bond notification
+      // stays in the history and pushes this screen, so a maker who taps it
+      // after paying used to get a spinner that could never resolve (#732
+      // review). `bondPending` is the marker that separates the two.
       final stillLoading = !cycleEnded &&
-          (orderState.status == enums.Status.pending ||
-              orderState.status == enums.Status.waitingTakerBond);
+          (orderState.status == enums.Status.waitingTakerBond ||
+              (orderState.status == enums.Status.pending && isMakerBond));
 
       if (stillLoading) {
         return _EmptyBondState(
@@ -171,7 +173,11 @@ class PayBondInvoiceScreen extends ConsumerWidget {
         return _EmptyBondState(
           title: s.bondScreenTitle,
           icon: Icons.hourglass_disabled,
-          message: s.bondInvoiceUnavailable,
+          // A maker cannot take their own order, so "take the order again"
+          // only makes sense to a taker.
+          message: isMakerBond
+              ? s.bondOrderNoLongerActive
+              : s.bondInvoiceUnavailable,
           // The copy says "go back", so go back when there is a stack to pop.
           actionLabel: s.close,
           onAction: (context) =>
@@ -179,11 +185,14 @@ class PayBondInvoiceScreen extends ConsumerWidget {
         );
       }
 
-      // Past the bond phase: the bond is paid and the trade moved on.
+      // Past the bond phase: the bond is paid. For a taker that means the
+      // trade moved on; for the maker of a pending order it means the order
+      // is in the book, with no trade to go to yet.
+      final orderIsPublished = orderState.status == enums.Status.pending;
       return _EmptyBondState(
         title: s.bondScreenTitle,
         icon: Icons.check_circle_outline,
-        message: s.bondAlreadyPaid,
+        message: orderIsPublished ? s.bondOrderPublished : s.bondAlreadyPaid,
         actionLabel: s.goToTrade,
         onAction: (context) => context.go('/trade_detail/$orderId'),
       );

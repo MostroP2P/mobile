@@ -847,6 +847,8 @@
     "bondAlreadyPaid": "This deposit has already been paid. Your trade is already in progress.",
     "goToTrade": "GO TO TRADE",
     "bondInvoiceUnavailable": "This bond invoice is no longer valid. Go back and take the order again to get a new one.",
+    "bondOrderPublished": "Your order is published in the order book and its deposit has already been paid.",
+    "bondOrderNoLongerActive": "This order is no longer active, so its deposit invoice is no longer valid.",
     "bondScreenTitle": "Anti-abuse deposit",
     "bondExplanation": "To take this order you must pay an anti-abuse deposit. Here's how it works:\n\n• Your sats are held in your wallet, they are not spent.\n• If the exchange completes successfully, you get your deposit back automatically.\n• If you have a dispute on this order and lose it, you will lose the deposit.\n• This mechanism protects all users against scammers.",
     "bondExplanationMaker": "Before your order can be created, you must pay an anti-abuse deposit. Keep this screen open until the payment is done — if you close it or don't pay, the order won't be created. Here's how it works:\n\n• Your sats are held in your wallet, they are not spent.\n• If the exchange completes successfully, you get your deposit back automatically.\n• If you have a dispute on this order and lose it, you will lose the deposit.\n• This mechanism protects all users against scammers.",
