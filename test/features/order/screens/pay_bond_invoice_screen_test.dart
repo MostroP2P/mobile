@@ -115,11 +115,15 @@ void main() {
     required enums.Status status,
     required enums.Action action,
     String? invoice,
+    bool hydrated = true,
   }) =>
       OrderState(
         status: status,
         action: action,
-        order: order(status),
+        // The notifier's initial state carries no payload until a sync() has
+        // read the history, which is how the screen tells "nothing has loaded
+        // yet" from a real pending order.
+        order: hydrated ? order(status) : null,
         paymentRequest: invoice == null
             ? null
             : PaymentRequest(order: order(status), lnInvoice: invoice),
@@ -220,8 +224,11 @@ void main() {
     );
     await tester.pump(const Duration(seconds: 5));
 
+    final context = tester.element(find.byType(PayBondInvoiceScreen));
+    final s = S.of(context)!;
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.byType(QrImageView), findsNothing);
+    expect(find.text(s.bondOrderPublished), findsOneWidget);
     expect(find.byType(ElevatedButton), findsOneWidget);
   });
 
@@ -242,6 +249,43 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(PayBondInvoiceScreen), findsNothing);
+  });
+
+  // A taker whose take timed out finds the order back in the book, with their
+  // bond returned and no session: telling them "your order is published" would
+  // be a statement about an order they do not own (#732 review).
+  testWidgets('tells a taker to retake a republished order', (tester) async {
+    await pumpScreen(
+      tester,
+      stateWith(
+        status: enums.Status.pending,
+        action: enums.Action.newOrder,
+      ),
+      // No session: Mostro deletes the taker's when it republishes.
+    );
+    await tester.pump(const Duration(seconds: 5));
+
+    final context = tester.element(find.byType(PayBondInvoiceScreen));
+    final s = S.of(context)!;
+    expect(find.text(s.bondInvoiceUnavailable), findsOneWidget);
+    expect(find.text(s.bondOrderPublished), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  // Opened from a notification before this order's notifier has synced: the
+  // state is the unhydrated initial one, so waiting is the honest answer.
+  testWidgets('waits while the order has not hydrated yet', (tester) async {
+    await pumpScreen(
+      tester,
+      stateWith(
+        status: enums.Status.pending,
+        action: enums.Action.newOrder,
+        hydrated: false,
+      ),
+    );
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(ElevatedButton), findsNothing);
   });
 
   // A maker cannot take their own order, so "take the order again" is wrong

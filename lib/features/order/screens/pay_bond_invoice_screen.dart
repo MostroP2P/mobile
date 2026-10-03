@@ -137,28 +137,32 @@ class PayBondInvoiceScreen extends ConsumerWidget {
         isBondPhase ? orderState.paymentRequest?.order?.amount : null;
     // A maker creating an order pays the bond before it is published, so the
     // copy must warn them to keep the screen open or the order won't be created.
-    final isMakerBond = ref
-            .read(sessionNotifierProvider.notifier)
-            .getSessionByOrderId(orderId)
-            ?.bondPending ??
-        false;
+    final session =
+        ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(orderId);
+    final isMakerBond = session?.bondPending ?? false;
     final explanation = isMakerBond ? s.bondExplanationMaker : s.bondExplanation;
 
     if (lnInvoice.isEmpty) {
       // No invoice to show — and the reason decides what to tell the user.
-      // Saying "expired, take the order again" in all three cases is what
-      // could make a maker abandon a bond that was merely still loading.
+      // Saying "expired, take the order again" in every case is what could
+      // make a maker abandon a bond that was merely still loading.
       final cycleEnded =
           OrderState.endsTradeCycle(orderState.status) &&
               orderState.status != enums.Status.pending;
-      // `pending` is not enough on its own: it is the notifier's initial state
-      // while a maker bond is still loading, *and* the state of a maker's
-      // order that is paid and live in the book. The pay-bond notification
-      // stays in the history and pushes this screen, so a maker who taps it
-      // after paying used to get a spinner that could never resolve (#732
-      // review). `bondPending` is the marker that separates the two.
+      // `pending` is not enough on its own. It is the notifier's unhydrated
+      // initial state, the state of a maker awaiting their bond invoice, the
+      // state of a maker's order that is paid and live in the book, and the
+      // state a taker finds after their take timed out and Mostro republished
+      // the order. This screen is reachable from a notification card at any
+      // time, so any of them can show up here (#732 review). Three signals
+      // separate them: an absent order payload means nothing has hydrated
+      // yet, `bondPending` means a maker bond is actually awaited, and a
+      // session for this order means the order is the user's own — Mostro
+      // deletes the taker's session when it republishes.
+      final notHydrated = orderState.order == null;
       final stillLoading = !cycleEnded &&
           (orderState.status == enums.Status.waitingTakerBond ||
+              notHydrated ||
               (orderState.status == enums.Status.pending && isMakerBond));
 
       if (stillLoading) {
@@ -185,14 +189,33 @@ class PayBondInvoiceScreen extends ConsumerWidget {
         );
       }
 
-      // Past the bond phase: the bond is paid. For a taker that means the
-      // trade moved on; for the maker of a pending order it means the order
-      // is in the book, with no trade to go to yet.
-      final orderIsPublished = orderState.status == enums.Status.pending;
+      // Hydrated and still pending, with no bond awaited: either the maker's
+      // own order, published and paid, or a taker whose take ended and whose
+      // session Mostro deleted when it put the order back in the book.
+      if (orderState.status == enums.Status.pending) {
+        return session != null
+            ? _EmptyBondState(
+                title: s.bondScreenTitle,
+                icon: Icons.check_circle_outline,
+                message: s.bondOrderPublished,
+                actionLabel: s.goToTrade,
+                onAction: (context) => context.go('/trade_detail/$orderId'),
+              )
+            : _EmptyBondState(
+                title: s.bondScreenTitle,
+                icon: Icons.hourglass_disabled,
+                message: s.bondInvoiceUnavailable,
+                actionLabel: s.close,
+                onAction: (context) =>
+                    context.canPop() ? context.pop() : context.go('/'),
+              );
+      }
+
+      // Past the bond phase: the bond is paid and the trade moved on.
       return _EmptyBondState(
         title: s.bondScreenTitle,
         icon: Icons.check_circle_outline,
-        message: orderIsPublished ? s.bondOrderPublished : s.bondAlreadyPaid,
+        message: s.bondAlreadyPaid,
         actionLabel: s.goToTrade,
         onAction: (context) => context.go('/trade_detail/$orderId'),
       );
