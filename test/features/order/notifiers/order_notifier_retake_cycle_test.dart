@@ -367,6 +367,34 @@ void main() {
     });
   });
 
+  group('the cycle guard', () {
+    test('a message with no time at all counts as preceding the cycle',
+        () async {
+      final notifier =
+          container.read(orderNotifierProvider(orderId).notifier);
+
+      notifier.state = notifier.applyToCycle(
+        container.read(orderNotifierProvider(orderId)),
+        invoice(Action.payBondInvoice, 'lnbcbond',
+            eventCreatedAt: 4000, timestamp: 4),
+      );
+
+      // _eventTimeOf falls back to 0, so a message carrying neither clock is
+      // treated as older than any started cycle and dropped. Documented here
+      // because the drop is silent.
+      expect(
+        notifier.precedesActiveCycle(
+          MostroMessage<Order>(
+            action: Action.canceled,
+            id: orderId,
+            payload: orderPayload(Status.canceled),
+          ),
+        ),
+        isTrue,
+      );
+    });
+  });
+
   // RestoreManager writes state through updateStateFromMessage, not sync(). If
   // that path skips the cycle bookkeeping, cycleEndedAt stays null, the
   // restart condition cannot fire and the next take's bond invoice is dropped
