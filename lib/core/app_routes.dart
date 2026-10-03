@@ -12,6 +12,7 @@ import 'package:mostro_mobile/features/rate/rate_counterpart_screen.dart';
 import 'package:mostro_mobile/features/settings/about_screen.dart';
 import 'package:mostro_mobile/features/settings/settings_screen.dart';
 import 'package:mostro_mobile/features/settings/notification_settings_screen.dart';
+import 'package:mostro_mobile/features/reputation/screens/import_reputation_screen.dart';
 import 'package:mostro_mobile/features/trades/screens/trade_detail_screen.dart';
 import 'package:mostro_mobile/features/trades/screens/trades_screen.dart';
 import 'package:mostro_mobile/features/relays/relays_screen.dart';
@@ -121,50 +122,50 @@ GoRouter createRouter(WidgetRef ref) {
             path: '/',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const HomeScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const HomeScreen(),
+            ),
           ),
           GoRoute(
             path: '/order_book',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const TradesScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const TradesScreen(),
+            ),
           ),
           GoRoute(
             path: '/trade_detail/:orderId',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: TradeDetailScreen(
-                    orderId: state.pathParameters['orderId']!,
-                  ),
-                ),
+              context: context,
+              state: state,
+              child: TradeDetailScreen(
+                orderId: state.pathParameters['orderId']!,
+              ),
+            ),
           ),
           GoRoute(
             path: '/chat_list',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const ChatRoomsScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const ChatRoomsScreen(),
+            ),
           ),
           GoRoute(
             path: '/chat_room/:orderId',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: ChatRoomScreen(
-                    orderId: state.pathParameters['orderId']!,
-                  ),
-                ),
+              context: context,
+              state: state,
+              child: ChatRoomScreen(
+                orderId: state.pathParameters['orderId']!,
+              ),
+            ),
           ),
           GoRoute(
             path: '/dispute_details/:disputeId',
@@ -181,75 +182,75 @@ GoRouter createRouter(WidgetRef ref) {
             path: '/relays',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const RelaysScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const RelaysScreen(),
+            ),
           ),
           GoRoute(
             path: '/key_management',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const KeyManagementScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const KeyManagementScreen(),
+            ),
           ),
           GoRoute(
             path: '/settings',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const SettingsScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const SettingsScreen(),
+            ),
           ),
           GoRoute(
             path: '/about',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const AboutScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const AboutScreen(),
+            ),
           ),
           GoRoute(
             path: '/walkthrough',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: WalkthroughScreen(),
-                ),
+              context: context,
+              state: state,
+              child: WalkthroughScreen(),
+            ),
           ),
           GoRoute(
             path: '/community_selector',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const CommunitySelectorScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const CommunitySelectorScreen(),
+            ),
           ),
           GoRoute(
             path: '/add_order',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: AddOrderScreen(),
-                ),
+              context: context,
+              state: state,
+              child: AddOrderScreen(),
+            ),
           ),
           GoRoute(
             path: '/rate_user/:orderId',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: RateCounterpartScreen(
-                    orderId: state.pathParameters['orderId']!,
-                  ),
-                ),
+              context: context,
+              state: state,
+              child: RateCounterpartScreen(
+                orderId: state.pathParameters['orderId']!,
+              ),
+            ),
           ),
           GoRoute(
             path: '/take_sell/:orderId',
@@ -269,102 +270,111 @@ GoRouter createRouter(WidgetRef ref) {
             path: '/order_confirmed/:orderId',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: OrderConfirmationScreen(
-                    orderId: state.pathParameters['orderId']!,
-                  ),
-                ),
+              context: context,
+              state: state,
+              child: OrderConfirmationScreen(
+                orderId: state.pathParameters['orderId']!,
+              ),
+            ),
           ),
           GoRoute(
             path: '/pay_invoice/:orderId',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: PayLightningInvoiceScreen(
-                    orderId: state.pathParameters['orderId']!,
-                  ),
-                ),
+              context: context,
+              state: state,
+              child: PayLightningInvoiceScreen(
+                orderId: state.pathParameters['orderId']!,
+              ),
+            ),
           ),
           GoRoute(
             path: '/pay_bond/:orderId',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: PayBondInvoiceScreen(
-                    orderId: state.pathParameters['orderId']!,
-                  ),
-                ),
+              context: context,
+              state: state,
+              child: PayBondInvoiceScreen(
+                orderId: state.pathParameters['orderId']!,
+              ),
+            ),
           ),
           GoRoute(
             path: '/bond_payout/:orderId',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: BondPayoutInvoiceScreen(
-                    orderId: state.pathParameters['orderId']!,
-                  ),
-                ),
+              context: context,
+              state: state,
+              child: BondPayoutInvoiceScreen(
+                orderId: state.pathParameters['orderId']!,
+              ),
+            ),
           ),
           GoRoute(
             path: '/add_invoice/:orderId',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: AddLightningInvoiceScreen(
-                    orderId: state.pathParameters['orderId']!,
-                    lnAddress: state.uri.queryParameters['lnAddress'],
-                  ),
-                ),
+              context: context,
+              state: state,
+              child: AddLightningInvoiceScreen(
+                orderId: state.pathParameters['orderId']!,
+                lnAddress: state.uri.queryParameters['lnAddress'],
+              ),
+            ),
           ),
           GoRoute(
             path: '/notifications',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const NotificationsScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const NotificationsScreen(),
+            ),
           ),
           GoRoute(
             path: '/logs',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const LogsScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const LogsScreen(),
+            ),
           ),
           GoRoute(
             path: '/wallet_settings',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const WalletSettingsScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const WalletSettingsScreen(),
+            ),
           ),
           GoRoute(
             path: '/connect_wallet',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const ConnectWalletScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const ConnectWalletScreen(),
+            ),
           ),
           GoRoute(
             path: '/notification_settings',
             pageBuilder: (context, state) =>
                 buildPageWithDefaultTransition<void>(
-                  context: context,
-                  state: state,
-                  child: const NotificationSettingsScreen(),
-                ),
+              context: context,
+              state: state,
+              child: const NotificationSettingsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/import_reputation',
+            pageBuilder: (context, state) =>
+                buildPageWithDefaultTransition<void>(
+              context: context,
+              state: state,
+              child: const ImportReputationScreen(),
+            ),
           ),
         ],
       ),
