@@ -1863,5 +1863,25 @@
             }
         }
     },
-    "reputationFiguresNote": "Imported reputation is added to the one you have here; your counterparties see them merged."
+    "reputationFiguresNote": "Imported reputation is added to the one you have here; your counterparties see them merged.",
+    "reputationSettingsDescription": "Carry the reputation you earned here to another Mostro, or bring the one you earned elsewhere.",
+    "reputationMove": "Move reputation",
+    "reputationImportCardBody": "Bring the reputation you earned on lnp2pBot or on another Mostro to this one.",
+    "reputationExportTitle": "Export my reputation",
+    "reputationExportCardBody": "Get a signed copy of the reputation you earned on this Mostro, to import it on another one.",
+    "reputationExportConfirmTitle": "Export to this identity?",
+    "reputationExportConfirmBody": "Your reputation on this Mostro will be exported for this identity:\n\n{npub}\n\nOnce exported, it is bound to it: exporting it for another identity later needs an authorization signed with this one.",
+    "@reputationExportConfirmBody": {
+        "placeholders": {
+            "npub": {
+                "type": "String"
+            }
+        }
+    },
+    "reputationExportConfirmButton": "Export",
+    "reputationExported": "Your reputation is ready. Switch to the Mostro where you want it and import it; it is valid for 7 days.",
+    "reputationRebindBody": "Moving to a new identity? Sign here, with the identity your reputation is bound to now, an authorization for the new one, then use it from the new identity.",
+    "reputationNewIdentityHint": "New identity (npub)",
+    "reputationRebindSign": "Sign authorization",
+    "reputationInvalidIdentity": "That is not a valid npub."
 }
