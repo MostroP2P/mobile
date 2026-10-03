@@ -58,13 +58,18 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
 
   /// Whether [message] belongs to a take cycle this order has already left.
   ///
-  /// The replay is sorted by event time, but live delivery is not: a `canceled`
-  /// from the previous cycle can reach the stream *after* the new cycle's bond
-  /// invoice. The stale guard waves it through — a cancelled order outranks
-  /// every waiting phase — and it would then void the invoice the user is
-  /// looking at, delete the session and navigate away. Callers use this to
-  /// drop the message and its side effects, the way
+  /// Such a message would be destructive: the stale guard waves a previous
+  /// cycle's `canceled` through — a cancelled order outranks every waiting
+  /// phase — so applying it would void the invoice the user is looking at,
+  /// delete the session and navigate away. Callers use this to drop the
+  /// message and its side effects, the way
   /// [OrderState.rejectsAdminDisputeMessage] already does.
+  ///
+  /// This is a defence, not a case observed on the live stream: the orders
+  /// stream is `watchLatestMessage`, which emits only the newest stored
+  /// message by `compareByEventTime`, so an older cycle's `canceled` stored
+  /// after the new bond is never the latest and never reaches it (#732
+  /// review). It still guards `sync()` and any future caller.
   bool precedesActiveCycle(MostroMessage message) {
     final startedAt = cycleStartedAt;
     return startedAt != null && _eventTimeOf(message) < startedAt;
@@ -206,11 +211,12 @@ class AbstractMostroNotifier extends StateNotifier<OrderState> {
                 return;
               }
 
-              // Same reasoning for a message the current cycle has outlived:
-              // live delivery is not ordered, so an old cycle's `canceled` can
-              // arrive after the new cycle started. Applying it would void the
-              // new bond invoice; notifying and navigating on it would send
-              // the user out of a trade that is running (#731).
+              // Same reasoning for a message the current cycle has
+              // outlived: applying it would void the new bond invoice, and
+              // notifying or navigating on it would send the user out of a
+              // trade that is running (#731). Kept as a defence — the stream
+              // emits only the latest stored message, so it should not be
+              // able to hand one over.
               if (precedesActiveCycle(msg)) {
                 logger.w(
                     'Dropping ${msg.action} for order $orderId: it predates the current take cycle');
