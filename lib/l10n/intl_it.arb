@@ -1825,5 +1825,26 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "reputationNodeDoesNotExport": "Questo Mostro non esporta la reputazione.",
+    "reputationNodeDoesNotImport": "Questo Mostro non importa la reputazione.",
+    "reputationNoResponse": "Mostro non ha risposto. Controlla la connessione e riprova.",
+    "reputationIdentityRequired": "La reputazione si può spostare solo da un account che la conserva. Disattiva la modalità di privacy totale e riprova.",
+    "reputationNotEligible": "Il tuo account non può ancora esportare la reputazione: servono almeno 10 scambi completati e 5 valutazioni ricevute.",
+    "reputationBoundToOtherIdentity": "La tua reputazione lì è già legata a un'altra identità. Autorizza lo spostamento dall'identità a cui è legata.",
+    "reputationInvalidRebind": "L'autorizzazione a spostare la tua reputazione non è valida o è scaduta. Creane una nuova.",
+    "reputationExpiredAttestation": "Questa reputazione è scaduta. Richiedila di nuovo alla sua origine.",
+    "reputationUntrustedIssuer": "Questo Mostro non accetta reputazione da quell'origine.",
+    "reputationIdentityMismatch": "Questa reputazione è stata emessa per un'identità diversa da quella che stai usando.",
+    "reputationAlreadyImported": "Questa reputazione è già stata importata su questo Mostro.",
+    "reputationInvalidAttestation": "Questa non è una reputazione valida. Richiedila di nuovo alla sua origine.",
+    "reputationImportTitle": "Importa reputazione",
+    "reputationImportIntro": "Porta su questo Mostro la reputazione guadagnata su lnp2pBot o su un altro Mostro. L'importazione collega i due account: l'origine e questo Mostro sanno che appartengono alla stessa persona.",
+    "reputationOpenLnp2pbot": "Ottienila da lnp2pBot",
+    "reputationPasteHint": "Incolla la reputazione ricevuta",
+    "reputationCheck": "Verifica",
+    "reputationImported": "La tua reputazione è stata importata.",
+    "reputationImportConfirm": "Importa su questo Mostro",
+    "reputationFigures": "{reviews} valutazioni ricevute, {rating} di media, scambia da {days} giorni",
+    "reputationFiguresNote": "La reputazione importata si somma a quella che hai qui; le tue controparti le vedono unite."
 }

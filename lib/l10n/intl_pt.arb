@@ -1829,5 +1829,26 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "reputationNodeDoesNotExport": "Este Mostro não exporta reputação.",
+    "reputationNodeDoesNotImport": "Este Mostro não importa reputação.",
+    "reputationNoResponse": "O Mostro não respondeu. Verifique sua conexão e tente novamente.",
+    "reputationIdentityRequired": "A reputação só pode ser movida de uma conta que a mantém. Desative o modo de privacidade total e tente novamente.",
+    "reputationNotEligible": "Sua conta ainda não pode exportar a reputação: precisa de pelo menos 10 negociações concluídas e 5 avaliações recebidas.",
+    "reputationBoundToOtherIdentity": "Sua reputação lá já está vinculada a outra identidade. Autorize a mudança com a identidade à qual está vinculada.",
+    "reputationInvalidRebind": "A autorização para mover sua reputação é inválida ou expirou. Crie uma nova.",
+    "reputationExpiredAttestation": "Esta reputação expirou. Peça-a novamente à origem.",
+    "reputationUntrustedIssuer": "Este Mostro não aceita reputação dessa origem.",
+    "reputationIdentityMismatch": "Esta reputação foi emitida para outra identidade, diferente da que você está usando.",
+    "reputationAlreadyImported": "Esta reputação já foi importada neste Mostro.",
+    "reputationInvalidAttestation": "Esta não é uma reputação válida. Peça-a novamente à origem.",
+    "reputationImportTitle": "Importar reputação",
+    "reputationImportIntro": "Traga para este Mostro a reputação que você ganhou no lnp2pBot ou em outro Mostro. Importar vincula as duas contas: a origem e este Mostro sabem que pertencem à mesma pessoa.",
+    "reputationOpenLnp2pbot": "Obter no lnp2pBot",
+    "reputationPasteHint": "Cole a reputação que você recebeu",
+    "reputationCheck": "Verificar",
+    "reputationImported": "Sua reputação foi importada.",
+    "reputationImportConfirm": "Importar neste Mostro",
+    "reputationFigures": "{reviews} avaliações recebidas, média de {rating}, negociando há {days} dias",
+    "reputationFiguresNote": "A reputação importada soma-se à que você tem aqui; suas contrapartes as veem juntas."
 }
