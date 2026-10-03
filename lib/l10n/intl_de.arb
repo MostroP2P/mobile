@@ -1805,5 +1805,18 @@
     "reputationImported": "Deine Reputation wurde importiert.",
     "reputationImportConfirm": "In diesen Mostro importieren",
     "reputationFigures": "{reviews} erhaltene Bewertungen, im Schnitt {rating}, seit {days} Tagen am Handeln",
-    "reputationFiguresNote": "Importierte Reputation wird zu deiner hiesigen addiert; deine Handelspartner sehen beide zusammen."
+    "reputationFiguresNote": "Importierte Reputation wird zu deiner hiesigen addiert; deine Handelspartner sehen beide zusammen.",
+    "reputationSettingsDescription": "Nimm die hier verdiente Reputation zu einem anderen Mostro mit oder bring die anderswo verdiente hierher.",
+    "reputationMove": "Reputation übertragen",
+    "reputationImportCardBody": "Bring die auf lnp2pBot oder einem anderen Mostro verdiente Reputation hierher.",
+    "reputationExportTitle": "Meine Reputation exportieren",
+    "reputationExportCardBody": "Hol dir eine signierte Kopie der auf diesem Mostro verdienten Reputation, um sie auf einem anderen zu importieren.",
+    "reputationExportConfirmTitle": "An diese Identität exportieren?",
+    "reputationExportConfirmBody": "Deine Reputation auf diesem Mostro wird für diese Identität exportiert:\n\n{npub}\n\nNach dem Export ist sie an sie gebunden: Ein späterer Export für eine andere Identität erfordert eine mit dieser signierte Autorisierung.",
+    "reputationExportConfirmButton": "Exportieren",
+    "reputationExported": "Deine Reputation ist bereit. Wechsle zu dem Mostro, auf dem du sie haben willst, und importiere sie; sie ist 7 Tage gültig.",
+    "reputationRebindBody": "Wechselst du zu einer neuen Identität? Signiere hier mit der Identität, an die deine Reputation jetzt gebunden ist, eine Autorisierung für die neue und verwende sie dann von der neuen Identität aus.",
+    "reputationNewIdentityHint": "Neue Identität (npub)",
+    "reputationRebindSign": "Autorisierung signieren",
+    "reputationInvalidIdentity": "Das ist kein gültiger npub."
 }
