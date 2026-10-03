@@ -6,6 +6,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
+import 'package:mostro_mobile/data/enums.dart' as enums;
+import 'package:mostro_mobile/features/order/models/order_state.dart';
 import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
 import 'package:mostro_mobile/features/order/widgets/order_app_bar.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
@@ -123,16 +125,101 @@ class PayBondInvoiceScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = S.of(context)!;
     final orderState = ref.watch(orderNotifierProvider(orderId));
-    final lnInvoice = orderState.paymentRequest?.lnInvoice ?? '';
-    final bondAmount = orderState.paymentRequest?.order?.amount;
+    // Only the invoice of the bond phase belongs on this screen. The order
+    // notifier is keyed by order id, so an escrow invoice from an earlier
+    // take of the same order could otherwise be rendered here as a bond —
+    // long after Mostro cancelled it node-side (#731).
+    final isBondPhase = orderState.action == enums.Action.payBondInvoice ||
+        orderState.status == enums.Status.waitingTakerBond;
+    final lnInvoice =
+        isBondPhase ? orderState.paymentRequest?.lnInvoice ?? '' : '';
+    final bondAmount =
+        isBondPhase ? orderState.paymentRequest?.order?.amount : null;
     // A maker creating an order pays the bond before it is published, so the
     // copy must warn them to keep the screen open or the order won't be created.
-    final isMakerBond = ref
-            .read(sessionNotifierProvider.notifier)
-            .getSessionByOrderId(orderId)
-            ?.bondPending ??
-        false;
+    final session =
+        ref.read(sessionNotifierProvider.notifier).getSessionByOrderId(orderId);
+    final isMakerBond = session?.bondPending ?? false;
     final explanation = isMakerBond ? s.bondExplanationMaker : s.bondExplanation;
+
+    if (lnInvoice.isEmpty) {
+      // No invoice to show — and the reason decides what to tell the user.
+      // Saying "expired, take the order again" in every case is what could
+      // make a maker abandon a bond that was merely still loading.
+      final cycleEnded =
+          OrderState.endsTradeCycle(orderState.status) &&
+              orderState.status != enums.Status.pending;
+      // `pending` is not enough on its own. It is the notifier's unhydrated
+      // initial state, the state of a maker awaiting their bond invoice, the
+      // state of a maker's order that is paid and live in the book, and the
+      // state a taker finds after their take timed out and Mostro republished
+      // the order. This screen is reachable from a notification card at any
+      // time, so any of them can show up here (#732 review). Three signals
+      // separate them: an absent order payload means nothing has hydrated
+      // yet, `bondPending` means a maker bond is actually awaited, and a
+      // session for this order means the order is the user's own — Mostro
+      // deletes the taker's session when it republishes.
+      final notHydrated = orderState.order == null;
+      final stillLoading = !cycleEnded &&
+          (orderState.status == enums.Status.waitingTakerBond ||
+              notHydrated ||
+              (orderState.status == enums.Status.pending && isMakerBond));
+
+      if (stillLoading) {
+        return _EmptyBondState(
+          title: s.bondScreenTitle,
+          icon: null,
+          message: s.bondInvoicePending,
+        );
+      }
+
+      if (cycleEnded) {
+        return _EmptyBondState(
+          title: s.bondScreenTitle,
+          icon: Icons.hourglass_disabled,
+          // A maker cannot take their own order, so "take the order again"
+          // only makes sense to a taker.
+          message: isMakerBond
+              ? s.bondOrderNoLongerActive
+              : s.bondInvoiceUnavailable,
+          // The copy says "go back", so go back when there is a stack to pop.
+          actionLabel: s.close,
+          onAction: (context) =>
+              context.canPop() ? context.pop() : context.go('/'),
+        );
+      }
+
+      // Hydrated and still pending, with no bond awaited: either the maker's
+      // own order, published and paid, or a taker whose take ended and whose
+      // session Mostro deleted when it put the order back in the book.
+      if (orderState.status == enums.Status.pending) {
+        return session != null
+            ? _EmptyBondState(
+                title: s.bondScreenTitle,
+                icon: Icons.check_circle_outline,
+                message: s.bondOrderPublished,
+                actionLabel: s.goToTrade,
+                onAction: (context) => context.go('/trade_detail/$orderId'),
+              )
+            : _EmptyBondState(
+                title: s.bondScreenTitle,
+                icon: Icons.hourglass_disabled,
+                message: s.bondInvoiceUnavailable,
+                actionLabel: s.close,
+                onAction: (context) =>
+                    context.canPop() ? context.pop() : context.go('/'),
+              );
+      }
+
+      // Past the bond phase: the bond is paid and the trade moved on.
+      return _EmptyBondState(
+        title: s.bondScreenTitle,
+        icon: Icons.check_circle_outline,
+        message: s.bondAlreadyPaid,
+        actionLabel: s.goToTrade,
+        onAction: (context) => context.go('/trade_detail/$orderId'),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.dark1,
@@ -236,6 +323,63 @@ class PayBondInvoiceScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The bond screen with no invoice to show: one message, at most one action.
+class _EmptyBondState extends StatelessWidget {
+  final String title;
+  final IconData? icon;
+  final String message;
+  final String? actionLabel;
+  final void Function(BuildContext context)? onAction;
+
+  const _EmptyBondState({
+    required this.title,
+    required this.icon,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.dark1,
+      appBar: OrderAppBar(title: title),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon != null)
+              Icon(icon, color: AppTheme.textSecondary, size: 48)
+            else
+              const CircularProgressIndicator(color: AppTheme.mostroGreen),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppTheme.cream1,
+                fontSize: 15,
+                height: 1.4,
+              ),
+            ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => onAction!(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.mostroGreen,
+                ),
+                child: Text(actionLabel!),
+              ),
+            ],
           ],
         ),
       ),

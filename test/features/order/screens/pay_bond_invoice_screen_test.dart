@@ -1,0 +1,324 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mostro_mobile/data/enums.dart' as enums;
+import 'package:mostro_mobile/data/models.dart';
+import 'package:mostro_mobile/features/order/models/order_state.dart';
+import 'package:mostro_mobile/features/order/notifiers/order_notifier.dart';
+import 'package:mostro_mobile/features/order/providers/order_notifier_provider.dart';
+import 'package:mostro_mobile/features/order/screens/pay_bond_invoice_screen.dart';
+import 'package:mostro_mobile/generated/l10n.dart';
+import 'package:mostro_mobile/services/mostro_service.dart';
+import 'package:mostro_mobile/shared/providers/mostro_service_provider.dart';
+import 'package:mostro_mobile/shared/providers/order_repository_provider.dart';
+import 'package:mostro_mobile/shared/providers/session_notifier_provider.dart';
+import 'package:mostro_mobile/shared/providers/storage_providers.dart';
+import 'package:mostro_mobile/shared/notifiers/session_notifier.dart';
+import 'package:mostro_mobile/features/settings/settings.dart';
+import 'package:mostro_mobile/data/repositories/session_storage.dart';
+import 'package:mostro_mobile/shared/utils/nostr_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+
+/// The screen is reachable from a notification card, from trade detail and
+/// from the maker create flow, so it can be opened at any point of an order's
+/// life. "No invoice to show" then means three different things, and telling
+/// a maker mid-bond that the invoice expired would make them abandon a valid
+/// order (#732 review).
+class _NoopSessionStorage implements SessionStorage {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => Future.value();
+}
+
+/// The screen asks the session whether a bond is actually awaited, which is
+/// what separates "the invoice has not arrived" from "the bond is paid and the
+/// order is live in the book".
+class _FixedSessionNotifier extends SessionNotifier {
+  _FixedSessionNotifier(Ref ref, this._sessions)
+      : super(
+          ref,
+          _NoopSessionStorage(),
+          Settings(
+            relays: [],
+            fullPrivacyMode: false,
+            mostroPublicKey: 'test',
+          ),
+        ) {
+    state = _sessions;
+  }
+
+  final List<Session> _sessions;
+
+  // The real lookup reads a private map that only its own writes populate, so
+  // seeding `state` is not enough for a double.
+  @override
+  Session? getSessionByOrderId(String orderId) {
+    for (final session in _sessions) {
+      if (session.orderId == orderId) return session;
+    }
+    return null;
+  }
+}
+
+/// A maker session for [orderId], in bond limbo or past it.
+Session _makerSession(String orderId, {required bool bondPending}) {
+  final session = Session(
+    masterKey: NostrUtils.generateKeyPair(),
+    tradeKey: NostrUtils.generateKeyPair(),
+    keyIndex: 1,
+    fullPrivacy: false,
+    startTime: DateTime.now(),
+    orderId: orderId,
+  );
+  session.bondPending = bondPending;
+  return session;
+}
+
+class _IdleMostroService extends MostroService {
+  _IdleMostroService(super.ref);
+}
+
+class _FixedOrderNotifier extends OrderNotifier {
+  _FixedOrderNotifier(super.orderId, super.ref, OrderState initial) {
+    state = initial;
+  }
+
+  @override
+  void subscribe() {}
+
+  @override
+  Future<void> sync() async {}
+}
+
+void main() {
+  const orderId = 'order-1';
+
+  setUp(() {
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
+  });
+
+  Order order(enums.Status status) => Order(
+        id: orderId,
+        kind: enums.OrderType.buy,
+        status: status,
+        amount: 16558,
+        fiatCode: 'EUR',
+        fiatAmount: 10,
+        paymentMethod: 'face to face',
+      );
+
+  OrderState stateWith({
+    required enums.Status status,
+    required enums.Action action,
+    String? invoice,
+    bool hydrated = true,
+  }) =>
+      OrderState(
+        status: status,
+        action: action,
+        // The notifier's initial state carries no payload until a sync() has
+        // read the history, which is how the screen tells "nothing has loaded
+        // yet" from a real pending order.
+        order: hydrated ? order(status) : null,
+        paymentRequest: invoice == null
+            ? null
+            : PaymentRequest(order: order(status), lnInvoice: invoice),
+      );
+
+  /// [bondPending] mirrors `Session.bondPending`: true while a maker-created
+  /// order sits in bond limbo, false once the bond is paid and the order is
+  /// published — and false too when there is no session at all (a taker).
+  Future<void> pumpScreen(
+    WidgetTester tester,
+    OrderState state, {
+    bool? bondPending,
+  }) async {
+    final router = GoRouter(
+      initialLocation: '/pay_bond/$orderId',
+      routes: [
+        GoRoute(path: '/', builder: (_, __) => const Scaffold()),
+        GoRoute(
+            path: '/trade_detail/:id', builder: (_, __) => const Scaffold()),
+        GoRoute(
+          path: '/pay_bond/:orderId',
+          builder: (_, __) => const PayBondInvoiceScreen(orderId: orderId),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(SharedPreferencesAsync()),
+          sessionNotifierProvider.overrideWith(
+            (ref) => _FixedSessionNotifier(
+              ref,
+              bondPending == null
+                  ? <Session>[]
+                  : [_makerSession(orderId, bondPending: bondPending)],
+            ),
+          ),
+          mostroServiceProvider.overrideWith((ref) => _IdleMostroService(ref)),
+          eventProvider(orderId).overrideWithValue(null),
+          orderNotifierProvider.overrideWith(
+            (ref, id) => _FixedOrderNotifier(id, ref, state),
+          ),
+        ],
+        child: MaterialApp.router(
+          routerConfig: router,
+          localizationsDelegates: S.localizationsDelegates,
+          supportedLocales: S.supportedLocales,
+        ),
+      ),
+    );
+    await tester.pump();
+  }
+
+  testWidgets('renders the QR while the bond invoice is the current one',
+      (tester) async {
+    await pumpScreen(
+      tester,
+      stateWith(
+        status: enums.Status.waitingTakerBond,
+        action: enums.Action.payBondInvoice,
+        invoice: 'lnbcbond',
+      ),
+    );
+
+    expect(find.byType(QrImageView), findsOneWidget);
+  });
+
+  testWidgets('waits, without a destructive action, before the invoice arrives',
+      (tester) async {
+    await pumpScreen(
+      tester,
+      // The maker create flow lands here while this provider is still at its
+      // initial state: the bond message reaches it only after its own sync().
+      stateWith(
+        status: enums.Status.pending,
+        action: enums.Action.newOrder,
+      ),
+      bondPending: true,
+    );
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(QrImageView), findsNothing);
+    expect(find.byType(ElevatedButton), findsNothing);
+  });
+
+  // The pay-bond notification stays in the history, and tapping it pushes this
+  // screen. A maker who taps it after paying is on a published order: no
+  // invoice is coming, so a spinner would never resolve (#732 review).
+  testWidgets('does not spin on a published maker order', (tester) async {
+    await pumpScreen(
+      tester,
+      stateWith(
+        status: enums.Status.pending,
+        action: enums.Action.newOrder,
+      ),
+      bondPending: false,
+    );
+    await tester.pump(const Duration(seconds: 5));
+
+    final context = tester.element(find.byType(PayBondInvoiceScreen));
+    final s = S.of(context)!;
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(QrImageView), findsNothing);
+    expect(find.text(s.bondOrderPublished), findsOneWidget);
+    expect(find.byType(ElevatedButton), findsOneWidget);
+  });
+
+  testWidgets('sends the user to the trade once the bond has been paid',
+      (tester) async {
+    await pumpScreen(
+      tester,
+      stateWith(
+        status: enums.Status.waitingBuyerInvoice,
+        action: enums.Action.waitingBuyerInvoice,
+      ),
+    );
+
+    expect(find.byType(QrImageView), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    await tester.tap(find.byType(ElevatedButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PayBondInvoiceScreen), findsNothing);
+  });
+
+  // A taker whose take timed out finds the order back in the book, with their
+  // bond returned and no session: telling them "your order is published" would
+  // be a statement about an order they do not own (#732 review).
+  testWidgets('tells a taker to retake a republished order', (tester) async {
+    await pumpScreen(
+      tester,
+      stateWith(
+        status: enums.Status.pending,
+        action: enums.Action.newOrder,
+      ),
+      // No session: Mostro deletes the taker's when it republishes.
+    );
+    await tester.pump(const Duration(seconds: 5));
+
+    final context = tester.element(find.byType(PayBondInvoiceScreen));
+    final s = S.of(context)!;
+    expect(find.text(s.bondInvoiceUnavailable), findsOneWidget);
+    expect(find.text(s.bondOrderPublished), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  // Opened from a notification before this order's notifier has synced: the
+  // state is the unhydrated initial one, so waiting is the honest answer.
+  testWidgets('waits while the order has not hydrated yet', (tester) async {
+    await pumpScreen(
+      tester,
+      stateWith(
+        status: enums.Status.pending,
+        action: enums.Action.newOrder,
+        hydrated: false,
+      ),
+    );
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(ElevatedButton), findsNothing);
+  });
+
+  // A maker cannot take their own order, so "take the order again" is wrong
+  // for the maker of an expired one (#732 review).
+  testWidgets('tells a maker their own order is over, not to retake it',
+      (tester) async {
+    await pumpScreen(
+      tester,
+      stateWith(
+        status: enums.Status.expired,
+        action: enums.Action.canceled,
+      ),
+      bondPending: true,
+    );
+
+    final context = tester.element(find.byType(PayBondInvoiceScreen));
+    final s = S.of(context)!;
+    expect(find.text(s.bondOrderNoLongerActive), findsOneWidget);
+    expect(find.text(s.bondInvoiceUnavailable), findsNothing);
+  });
+
+  testWidgets('says the invoice is gone once the take cycle ended',
+      (tester) async {
+    await pumpScreen(
+      tester,
+      stateWith(
+        status: enums.Status.canceled,
+        action: enums.Action.canceled,
+      ),
+    );
+
+    expect(find.byType(QrImageView), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(ElevatedButton), findsOneWidget);
+  });
+}

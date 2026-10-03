@@ -91,10 +91,12 @@ class OrderNotifier extends AbstractMostroNotifier {
 
       OrderState currentState = state;
 
+      // The replay rebuilds the cycle bookkeeping from the history itself.
+      cycleEndedAt = null;
+      cycleStartedAt = null;
       for (final message in messages) {
-        if (message.action != Action.cantDo) {
-          currentState = currentState.updateWith(message);
-        }
+        if (message.action == Action.cantDo) continue;
+        currentState = applyToCycle(currentState, message);
       }
 
       // A replay that lands on the same values notifies nobody:
@@ -273,9 +275,16 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   /// Update state from MostroMessage (used during restore)
+  ///
+  /// Goes through [applyToCycle] like `sync()` and the live stream do.
+  /// RestoreManager calls this for every restored order, cancelled and expired
+  /// included; writing the state directly left `cycleEndedAt` null, so the
+  /// next take of that order could not restart the cycle and its bond invoice
+  /// was dropped as stale — #731 again, through the one write that skipped the
+  /// rule (#732 review).
   void updateStateFromMessage(MostroMessage message) {
     if (mounted) {
-      state = state.updateWith(message);
+      state = applyToCycle(state, message);
     }
   }
 
