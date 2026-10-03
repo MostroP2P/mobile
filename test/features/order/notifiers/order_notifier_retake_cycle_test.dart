@@ -138,7 +138,7 @@ void main() {
   MostroMessage<Order> message(
     Action action,
     Status status, {
-    required int eventCreatedAt,
+    required int? eventCreatedAt,
     required int timestamp,
   }) =>
       MostroMessage<Order>(
@@ -365,6 +365,35 @@ void main() {
       expect(state.status, Status.cooperativelyCanceled);
       expect(state.fiatWasSent, isTrue);
     });
+  });
+
+  // RestoreManager writes state through updateStateFromMessage, not sync(). If
+  // that path skips the cycle bookkeeping, cycleEndedAt stays null, the
+  // restart condition cannot fire and the next take's bond invoice is dropped
+  // as stale — #731 again, through the one write that bypassed the rule
+  // (#732 review).
+  group('the restore path', () {
+    test('a restored cancel still lets the next take open a cycle', () async {
+      final notifier =
+          container.read(orderNotifierProvider(orderId).notifier);
+
+      // What RestoreManager builds: a locally synthesized message, so no
+      // eventCreatedAt — only a timestamp, in milliseconds.
+      notifier.updateStateFromMessage(
+        message(Action.canceled, Status.canceled,
+            eventCreatedAt: null, timestamp: 3000),
+      );
+
+      final next = notifier.applyToCycle(
+        container.read(orderNotifierProvider(orderId)),
+        invoice(Action.payBondInvoice, 'lnbcnewbond',
+            eventCreatedAt: 5000, timestamp: 5000),
+      );
+
+      expect(next.status, Status.waitingTakerBond);
+      expect(next.paymentRequest?.lnInvoice, 'lnbcnewbond');
+    });
+
   });
 }
 

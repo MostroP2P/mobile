@@ -773,9 +773,8 @@ class RestoreService {
               disputeId: restoredDispute.disputeId,
               orderId: restoredDispute.orderId,
               status: restoredDispute.status,
-              createdAt: orderDetail.createdAt != null
-                  ? DateTime.fromMillisecondsSinceEpoch(orderDetail.createdAt!)
-                  : DateTime.now(),
+              createdAt: DateTime.fromMillisecondsSinceEpoch(
+                  restoreCreatedAtMillis(orderDetail.createdAt)),
               action: userInitiated
                   ? 'dispute-initiated-by-you'
                   : 'dispute-initiated-by-peer',
@@ -819,9 +818,7 @@ class RestoreService {
               id: orderDetail.id,
               action: action,
               payload: dispute,
-              timestamp:
-                  orderDetail.createdAt ??
-                  DateTime.now().millisecondsSinceEpoch,
+              timestamp: restoreCreatedAtMillis(orderDetail.createdAt),
             );
 
             // Save dispute message to storage
@@ -861,9 +858,7 @@ class RestoreService {
               id: orderDetail.id,
               action: action,
               payload: order,
-              timestamp:
-                  orderDetail.createdAt ??
-                  DateTime.now().millisecondsSinceEpoch,
+              timestamp: restoreCreatedAtMillis(orderDetail.createdAt),
             );
 
             // Save order message to storage
@@ -1160,6 +1155,20 @@ class RestoreService {
 /// Top-level (not a private method) so the transport branch can be
 /// regression-tested without the full [RestoreService] / Riverpod orchestration.
 @visibleForTesting
+/// Converts mostrod's `created_at` to the millisecond scale this app stores.
+///
+/// The daemon reports it in seconds (`Timestamp::now().as_secs()` in
+/// `mostro/src/flow.rs`), while [MostroMessage.timestamp] and
+/// [MostroMessage.eventCreatedAt] are both milliseconds. Feeding the raw value
+/// in put restored messages ~1000x in the past, which mattered once restored
+/// messages started driving the take-cycle bookkeeping (#732 review), and it
+/// also dated restored disputes to January 1970.
+@visibleForTesting
+int restoreCreatedAtMillis(int? createdAtSeconds) =>
+    createdAtSeconds != null
+        ? createdAtSeconds * Duration.millisecondsPerSecond
+        : DateTime.now().millisecondsSinceEpoch;
+
 Future<Map<String, dynamic>> decodeRestoreMessage(
   NostrEvent event,
   NostrKeyPairs tempTradeKey,

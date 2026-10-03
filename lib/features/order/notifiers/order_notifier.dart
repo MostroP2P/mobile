@@ -275,9 +275,16 @@ class OrderNotifier extends AbstractMostroNotifier {
   }
 
   /// Update state from MostroMessage (used during restore)
+  ///
+  /// Goes through [applyToCycle] like `sync()` and the live stream do.
+  /// RestoreManager calls this for every restored order, cancelled and expired
+  /// included; writing the state directly left `cycleEndedAt` null, so the
+  /// next take of that order could not restart the cycle and its bond invoice
+  /// was dropped as stale — #731 again, through the one write that skipped the
+  /// rule (#732 review).
   void updateStateFromMessage(MostroMessage message) {
     if (mounted) {
-      state = state.updateWith(message);
+      state = applyToCycle(state, message);
     }
   }
 
