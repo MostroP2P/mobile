@@ -94,6 +94,10 @@ class NotificationMessageMapper {
       case mostro.Action.restore:
       case mostro.Action.orders:
       case mostro.Action.lastTradeIndex:
+      case mostro.Action.exportReputation:
+      case mostro.Action.reputationExported:
+      case mostro.Action.importReputation:
+      case mostro.Action.reputationImported:
       case mostro.Action.addBondInvoice:
       case mostro.Action.bondInvoiceAccepted:
       case mostro.Action.bondPayoutCompleted:
@@ -217,6 +221,10 @@ class NotificationMessageMapper {
       case mostro.Action.restore:
       case mostro.Action.orders:
       case mostro.Action.lastTradeIndex:
+      case mostro.Action.exportReputation:
+      case mostro.Action.reputationExported:
+      case mostro.Action.importReputation:
+      case mostro.Action.reputationImported:
       case mostro.Action.addBondInvoice:
       case mostro.Action.bondInvoiceAccepted:
       case mostro.Action.bondPayoutCompleted:
