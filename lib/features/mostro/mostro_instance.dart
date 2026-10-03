@@ -155,6 +155,22 @@ extension MostroInstanceExtensions on NostrEvent {
     return value.isEmpty ? null : value;
   }
 
+  /// The key this node signs reputation attestations with, when it exports
+  /// reputation (`reputation_issuer`); `null` otherwise.
+  String? get reputationIssuer => _getOptionalTagValue('reputation_issuer');
+
+  /// The issuer keys this node imports reputation from
+  /// (`reputation_import_issuers`); `null` when it does not import, empty
+  /// when it imports from nobody yet.
+  List<String>? get reputationImportIssuers {
+    final tag = tags?.firstWhere(
+      (t) => t.isNotEmpty && t[0] == 'reputation_import_issuers',
+      orElse: () => const <String>[],
+    );
+    if (tag == null || tag.isEmpty) return null;
+    return tag.sublist(1).map((key) => key.trim()).toList();
+  }
+
   String get pubKey => _getTagValue('d');
   String get mostroVersion => _getTagValue('mostro_version');
   String get commitHash => _getTagValue('mostro_commit_hash');
@@ -229,8 +245,8 @@ extension MostroInstanceExtensions on NostrEvent {
   /// other than `"true"` or `"false"` (case-insensitive) so malformed data
   /// is not silently collapsed into a valid policy state.
   bool? get bondSlashOnWaitingTimeout {
-    final raw = _getOptionalTagValue('bond_slash_on_waiting_timeout')
-        ?.toLowerCase();
+    final raw =
+        _getOptionalTagValue('bond_slash_on_waiting_timeout')?.toLowerCase();
     if (raw == 'true') return true;
     if (raw == 'false') return false;
     return null;
