@@ -1147,14 +1147,6 @@ class RestoreService {
   }
 }
 
-/// Decodes a restore response into its message map, handling both transports:
-/// v2 (kind 14, NIP-44 direct, decrypted straight to the tuple) and v1
-/// (kind 1059, gift wrap unwrapped to a rumor whose content is the tuple). Both
-/// converge on `tuple[0]`.
-///
-/// Top-level (not a private method) so the transport branch can be
-/// regression-tested without the full [RestoreService] / Riverpod orchestration.
-@visibleForTesting
 /// Converts mostrod's `created_at` to the millisecond scale this app stores.
 ///
 /// The daemon reports it in seconds (`Timestamp::now().as_secs()` in
@@ -1169,6 +1161,14 @@ int restoreCreatedAtMillis(int? createdAtSeconds) =>
         ? createdAtSeconds * Duration.millisecondsPerSecond
         : DateTime.now().millisecondsSinceEpoch;
 
+/// Decodes a restore response into its message map, handling both transports:
+/// v2 (kind 14, NIP-44 direct, decrypted straight to the tuple) and v1
+/// (kind 1059, gift wrap unwrapped to a rumor whose content is the tuple). Both
+/// converge on `tuple[0]`.
+///
+/// Top-level (not a private method) so the transport branch can be
+/// regression-tested without the full [RestoreService] / Riverpod orchestration.
+@visibleForTesting
 Future<Map<String, dynamic>> decodeRestoreMessage(
   NostrEvent event,
   NostrKeyPairs tempTradeKey,
