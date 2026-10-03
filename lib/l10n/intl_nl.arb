@@ -1829,5 +1829,26 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "reputationNodeDoesNotExport": "Deze Mostro exporteert geen reputatie.",
+    "reputationNodeDoesNotImport": "Deze Mostro importeert geen reputatie.",
+    "reputationNoResponse": "Mostro antwoordde niet. Controleer je verbinding en probeer het opnieuw.",
+    "reputationIdentityRequired": "Reputatie kan alleen worden verplaatst vanaf een account dat zijn reputatie bewaart. Zet de volledige privacymodus uit en probeer het opnieuw.",
+    "reputationNotEligible": "Je account kan zijn reputatie nog niet exporteren: er zijn minstens 10 voltooide transacties en 5 ontvangen beoordelingen nodig.",
+    "reputationBoundToOtherIdentity": "Je reputatie daar is al gekoppeld aan een andere identiteit. Geef toestemming voor de verplaatsing vanuit de identiteit waaraan ze gekoppeld is.",
+    "reputationInvalidRebind": "De toestemming om je reputatie te verplaatsen is ongeldig of verlopen. Maak een nieuwe aan.",
+    "reputationExpiredAttestation": "Deze reputatie is verlopen. Vraag ze opnieuw aan bij de bron.",
+    "reputationUntrustedIssuer": "Deze Mostro accepteert geen reputatie van die bron.",
+    "reputationIdentityMismatch": "Deze reputatie is uitgegeven voor een andere identiteit dan die je gebruikt.",
+    "reputationAlreadyImported": "Deze reputatie is al geïmporteerd op deze Mostro.",
+    "reputationInvalidAttestation": "Dit is geen geldige reputatie. Vraag ze opnieuw aan bij de bron.",
+    "reputationImportTitle": "Reputatie importeren",
+    "reputationImportIntro": "Breng de reputatie die je op lnp2pBot of op een andere Mostro hebt verdiend naar deze. Importeren koppelt de twee accounts: de bron en deze Mostro weten dat ze van dezelfde persoon zijn.",
+    "reputationOpenLnp2pbot": "Ophalen bij lnp2pBot",
+    "reputationPasteHint": "Plak de ontvangen reputatie",
+    "reputationCheck": "Controleren",
+    "reputationImported": "Je reputatie is geïmporteerd.",
+    "reputationImportConfirm": "Importeren in deze Mostro",
+    "reputationFigures": "{reviews} ontvangen beoordelingen, gemiddeld {rating}, handelt al {days} dagen",
+    "reputationFiguresNote": "Geïmporteerde reputatie wordt opgeteld bij die van hier; je tegenpartijen zien ze samen."
 }

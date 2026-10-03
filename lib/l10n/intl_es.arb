@@ -1759,5 +1759,26 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "reputationNodeDoesNotExport": "Este Mostro no exporta reputación.",
+    "reputationNodeDoesNotImport": "Este Mostro no importa reputación.",
+    "reputationNoResponse": "Mostro no respondió. Revisa tu conexión e inténtalo de nuevo.",
+    "reputationIdentityRequired": "La reputación solo se puede mover desde una cuenta que la conserva. Desactiva el modo de privacidad total e inténtalo de nuevo.",
+    "reputationNotEligible": "Tu cuenta todavía no puede exportar su reputación: necesita al menos 10 operaciones completadas y 5 calificaciones recibidas.",
+    "reputationBoundToOtherIdentity": "Tu reputación allí ya está ligada a otra identidad. Autoriza el cambio desde la identidad a la que está ligada.",
+    "reputationInvalidRebind": "La autorización para mover tu reputación no es válida o expiró. Crea una nueva.",
+    "reputationExpiredAttestation": "Esta reputación expiró. Pídela de nuevo a su origen.",
+    "reputationUntrustedIssuer": "Este Mostro no acepta reputación de ese origen.",
+    "reputationIdentityMismatch": "Esta reputación se emitió para otra identidad distinta de la que estás usando.",
+    "reputationAlreadyImported": "Esta reputación ya se importó en este Mostro.",
+    "reputationInvalidAttestation": "Esta no es una reputación válida. Pídela de nuevo a su origen.",
+    "reputationImportTitle": "Importar reputación",
+    "reputationImportIntro": "Trae a este Mostro la reputación que ganaste en lnp2pBot o en otro Mostro. Importar vincula las dos cuentas: el origen y este Mostro saben que son de la misma persona.",
+    "reputationOpenLnp2pbot": "Obtenerla de lnp2pBot",
+    "reputationPasteHint": "Pega la reputación que recibiste",
+    "reputationCheck": "Comprobar",
+    "reputationImported": "Tu reputación se importó.",
+    "reputationImportConfirm": "Importar en este Mostro",
+    "reputationFigures": "{reviews} calificaciones recibidas, {rating} de promedio, operando desde hace {days} días",
+    "reputationFiguresNote": "La reputación importada se suma a la que tienes aquí; tus contrapartes las ven juntas."
 }

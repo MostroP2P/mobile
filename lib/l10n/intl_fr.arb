@@ -1784,5 +1784,26 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "reputationNodeDoesNotExport": "Ce Mostro n'exporte pas la réputation.",
+    "reputationNodeDoesNotImport": "Ce Mostro n'importe pas la réputation.",
+    "reputationNoResponse": "Mostro n'a pas répondu. Vérifiez votre connexion et réessayez.",
+    "reputationIdentityRequired": "La réputation ne peut être transférée que depuis un compte qui la conserve. Désactivez le mode confidentialité totale et réessayez.",
+    "reputationNotEligible": "Votre compte ne peut pas encore exporter sa réputation : il lui faut au moins 10 échanges terminés et 5 évaluations reçues.",
+    "reputationBoundToOtherIdentity": "Votre réputation là-bas est déjà liée à une autre identité. Autorisez le transfert depuis l'identité à laquelle elle est liée.",
+    "reputationInvalidRebind": "L'autorisation de transférer votre réputation n'est pas valide ou a expiré. Créez-en une nouvelle.",
+    "reputationExpiredAttestation": "Cette réputation a expiré. Redemandez-la à sa source.",
+    "reputationUntrustedIssuer": "Ce Mostro n'accepte pas la réputation de cette source.",
+    "reputationIdentityMismatch": "Cette réputation a été émise pour une autre identité que celle que vous utilisez.",
+    "reputationAlreadyImported": "Cette réputation a déjà été importée sur ce Mostro.",
+    "reputationInvalidAttestation": "Ce n'est pas une réputation valide. Redemandez-la à sa source.",
+    "reputationImportTitle": "Importer la réputation",
+    "reputationImportIntro": "Apportez sur ce Mostro la réputation gagnée sur lnp2pBot ou sur un autre Mostro. L'import relie les deux comptes : la source et ce Mostro savent qu'ils appartiennent à la même personne.",
+    "reputationOpenLnp2pbot": "L'obtenir de lnp2pBot",
+    "reputationPasteHint": "Collez la réputation reçue",
+    "reputationCheck": "Vérifier",
+    "reputationImported": "Votre réputation a été importée.",
+    "reputationImportConfirm": "Importer sur ce Mostro",
+    "reputationFigures": "{reviews} évaluations reçues, {rating} en moyenne, échange depuis {days} jours",
+    "reputationFiguresNote": "La réputation importée s'ajoute à celle que vous avez ici ; vos contreparties les voient fusionnées."
 }

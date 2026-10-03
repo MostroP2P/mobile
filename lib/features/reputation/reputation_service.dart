@@ -261,6 +261,11 @@ class ReputationService {
   }
 }
 
+/// Unix seconds, as reputation checks read the clock; overridden in tests.
+final reputationClockProvider = Provider<int Function()>(
+  (ref) => () => DateTime.now().millisecondsSinceEpoch ~/ 1000,
+);
+
 final reputationServiceProvider = Provider<ReputationService>(
-  (ref) => ReputationService(ref),
+  (ref) => ReputationService(ref, now: ref.watch(reputationClockProvider)),
 );
