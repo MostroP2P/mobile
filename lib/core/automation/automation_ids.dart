@@ -53,6 +53,13 @@ class AutomationIds {
 
   // Settings
   static const String settingsMostroNode = 'settings.mostro_node';
+  static const String settingsReputation = 'settings.reputation';
+  static const String reputationOpenImport = 'reputation.open_import';
+  static const String reputationExport = 'reputation.export';
+  static const String reputationExportConfirm = 'reputation.export.confirm';
+  static const String reputationExported = 'reputation.export.result';
+  static const String reputationRebindIdentity = 'reputation.rebind.identity';
+  static const String reputationRebindSign = 'reputation.rebind.sign';
   static const String reputationImportOpenBot = 'reputation.import.open_bot';
   static const String reputationImportInput = 'reputation.import.input';
   static const String reputationImportCheck = 'reputation.import.check';

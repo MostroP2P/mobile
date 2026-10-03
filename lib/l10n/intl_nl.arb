@@ -1850,5 +1850,18 @@
     "reputationImported": "Je reputatie is geïmporteerd.",
     "reputationImportConfirm": "Importeren in deze Mostro",
     "reputationFigures": "{reviews} ontvangen beoordelingen, gemiddeld {rating}, handelt al {days} dagen",
-    "reputationFiguresNote": "Geïmporteerde reputatie wordt opgeteld bij die van hier; je tegenpartijen zien ze samen."
+    "reputationFiguresNote": "Geïmporteerde reputatie wordt opgeteld bij die van hier; je tegenpartijen zien ze samen.",
+    "reputationSettingsDescription": "Neem de reputatie die je hier verdiende mee naar een andere Mostro, of breng de reputatie die je elders verdiende hierheen.",
+    "reputationMove": "Reputatie verplaatsen",
+    "reputationImportCardBody": "Breng de reputatie die je op lnp2pBot of een andere Mostro verdiende naar deze.",
+    "reputationExportTitle": "Mijn reputatie exporteren",
+    "reputationExportCardBody": "Haal een ondertekende kopie op van de reputatie die je op deze Mostro verdiende, om ze op een andere te importeren.",
+    "reputationExportConfirmTitle": "Exporteren naar deze identiteit?",
+    "reputationExportConfirmBody": "Je reputatie op deze Mostro wordt geëxporteerd voor deze identiteit:\n\n{npub}\n\nNa het exporteren is ze eraan gekoppeld: later exporteren voor een andere identiteit vereist een toestemming ondertekend met deze.",
+    "reputationExportConfirmButton": "Exporteren",
+    "reputationExported": "Je reputatie is klaar. Schakel over naar de Mostro waar je ze wilt en importeer ze; ze is 7 dagen geldig.",
+    "reputationRebindBody": "Stap je over op een nieuwe identiteit? Onderteken hier, met de identiteit waaraan je reputatie nu gekoppeld is, een toestemming voor de nieuwe en gebruik die vanaf de nieuwe identiteit.",
+    "reputationNewIdentityHint": "Nieuwe identiteit (npub)",
+    "reputationRebindSign": "Toestemming ondertekenen",
+    "reputationInvalidIdentity": "Dat is geen geldige npub."
 }

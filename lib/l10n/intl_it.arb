@@ -1846,5 +1846,18 @@
     "reputationImported": "La tua reputazione è stata importata.",
     "reputationImportConfirm": "Importa su questo Mostro",
     "reputationFigures": "{reviews} valutazioni ricevute, {rating} di media, scambia da {days} giorni",
-    "reputationFiguresNote": "La reputazione importata si somma a quella che hai qui; le tue controparti le vedono unite."
+    "reputationFiguresNote": "La reputazione importata si somma a quella che hai qui; le tue controparti le vedono unite.",
+    "reputationSettingsDescription": "Porta su un altro Mostro la reputazione guadagnata qui, o porta qui quella guadagnata altrove.",
+    "reputationMove": "Sposta reputazione",
+    "reputationImportCardBody": "Porta su questo Mostro la reputazione guadagnata su lnp2pBot o su un altro Mostro.",
+    "reputationExportTitle": "Esporta la mia reputazione",
+    "reputationExportCardBody": "Ottieni una copia firmata della reputazione guadagnata su questo Mostro per importarla su un altro.",
+    "reputationExportConfirmTitle": "Esportare verso questa identità?",
+    "reputationExportConfirmBody": "La tua reputazione su questo Mostro verrà esportata per questa identità:\n\n{npub}\n\nUna volta esportata resta legata a essa: esportarla poi per un'altra identità richiede un'autorizzazione firmata con questa.",
+    "reputationExportConfirmButton": "Esporta",
+    "reputationExported": "La tua reputazione è pronta. Passa al Mostro dove la vuoi e importala; è valida per 7 giorni.",
+    "reputationRebindBody": "Passi a una nuova identità? Firma qui, con l'identità a cui è legata ora la tua reputazione, un'autorizzazione per la nuova, poi usala dalla nuova identità.",
+    "reputationNewIdentityHint": "Nuova identità (npub)",
+    "reputationRebindSign": "Firma autorizzazione",
+    "reputationInvalidIdentity": "Questo non è un npub valido."
 }
