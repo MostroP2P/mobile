@@ -7,6 +7,8 @@ import 'package:mostro_mobile/data/models/payment_failed.dart';
 import 'package:mostro_mobile/data/models/payment_request.dart';
 import 'package:mostro_mobile/data/models/peer.dart';
 import 'package:mostro_mobile/data/models/rating_user.dart';
+import 'package:mostro_mobile/data/models/reputation_attestation_payload.dart';
+import 'package:mostro_mobile/data/models/reputation_export_request.dart';
 import 'package:mostro_mobile/data/models/text_message.dart';
 
 abstract class Payload {
@@ -36,6 +38,10 @@ abstract class Payload {
       return NextTrade.fromJson(json['next_trade']);
     } else if (json.containsKey('text_message')) {
       return TextMessage.fromJson(json);
+    } else if (json.containsKey('reputation_export_request')) {
+      return ReputationExportRequest.fromJson(json['reputation_export_request']);
+    } else if (json.containsKey('reputation_attestation')) {
+      return ReputationAttestationPayload(json['reputation_attestation'] as String);
     } else {
       throw UnsupportedError('Unknown payload type');
     }

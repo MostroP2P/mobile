@@ -51,7 +51,13 @@ enum Action {
   tradePubkey('trade-pubkey'),
   restore('restore-session'),
   orders('orders'),
-  lastTradeIndex('last-trade-index');
+  lastTradeIndex('last-trade-index'),
+  // Reputation portability: export from one node, import into another.
+  // Identity-level request/response pairs with no order id.
+  exportReputation('export-reputation'),
+  reputationExported('reputation-exported'),
+  importReputation('import-reputation'),
+  reputationImported('reputation-imported');
 
   final String value;
 
