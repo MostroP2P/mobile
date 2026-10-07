@@ -73,6 +73,28 @@ void main() {
       expect(latestPayoutMessage(history), isNull);
     });
 
+    // `Order.fromJson` defaults a missing `amount` to zero, and a range order
+    // carries zero until it is priced. Selecting it would make the screen ask
+    // for a zero-sat invoice, which is exactly the dead end this change is
+    // meant to remove.
+    test('treats a zero amount as unknown rather than a payout', () {
+      final history = [
+        message(Action.addInvoice, 0),
+        message(Action.orders, 937952),
+      ];
+
+      expect(latestPayoutMessage(history), isNull);
+    });
+
+    test('falls through a zero amount to an older real payout message', () {
+      final history = [
+        message(Action.addInvoice, 0),
+        message(Action.addInvoice, 935138),
+      ];
+
+      expect(latestPayoutMessage(history)?.getPayload<Order>()?.amount, 935138);
+    });
+
     test('skips a payout action whose payload is not an order', () {
       final history = <MostroMessage>[
         MostroMessage<Payload>(action: Action.addInvoice, id: orderId),

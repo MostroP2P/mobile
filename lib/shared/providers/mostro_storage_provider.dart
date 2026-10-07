@@ -49,7 +49,12 @@ bool statesPayoutAmount(Action action) =>
 MostroMessage? latestPayoutMessage(List<MostroMessage> history) {
   for (final message in history) {
     if (!statesPayoutAmount(message.action)) continue;
-    if (message.getPayload<Order>() != null) return message;
+    final order = message.getPayload<Order>();
+    // A missing `amount` decodes to zero — `Order.fromJson` defaults it, and
+    // the field is non-nullable — and a range order carries zero until it is
+    // priced. Nobody can pay a zero-sat invoice, so that is an unknown amount,
+    // not a payout worth nothing.
+    if (order != null && order.amount > 0) return message;
   }
   return null;
 }
