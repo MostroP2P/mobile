@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:dart_nostr/nostr/core/key_pairs.dart';
 import 'package:dart_nostr/nostr/model/event/event.dart';
@@ -45,12 +46,41 @@ abstract class ReputationTransport {
 
 /// [ReputationTransport] over the app's relays: subscribes on the trade key
 /// before publishing, like the restore flow, and waits for the node's reply.
+///
+/// A request goes out on a fresh trade key, which the node associates with no
+/// active order or dispute, so it is a first contact: the node drops it
+/// without a word unless it carries the `pow_first_contact` proof of work.
 class NostrReputationTransport implements ReputationTransport {
+  /// Highest difficulty guessed for a node that does not publish
+  /// `pow_first_contact`.
+  static const maxGuessedPow = 16;
+
   final Ref ref;
+
+  /// How long each attempt waits for the answer.
   final Duration timeout;
 
   NostrReputationTransport(this.ref,
       {this.timeout = const Duration(seconds: 15)});
+
+  /// The difficulties to mine a request at, one attempt each. A node that
+  /// publishes [firstContact] gets exactly that. Otherwise the toll is
+  /// unknown, and silence is the only sign of an under-powered event, so the
+  /// first attempt is mined at [pow] and each retry at twice the bits (at
+  /// least 8), up to [maxGuessedPow].
+  static List<int> difficulties({required int pow, int? firstContact}) {
+    if (firstContact != null) {
+      return [min(max(firstContact, pow), NostrUtils.maxPowDifficulty)];
+    }
+    final schedule = [min(pow, NostrUtils.maxPowDifficulty)];
+    var next = pow == 0 ? 8 : pow * 2;
+    while (next < maxGuessedPow) {
+      schedule.add(next);
+      next *= 2;
+    }
+    if (schedule.last < maxGuessedPow) schedule.add(maxGuessedPow);
+    return schedule;
+  }
 
   @override
   Future<Map<String, dynamic>> request(
@@ -68,31 +98,50 @@ class NostrReputationTransport implements ReputationTransport {
       NostrFilter(kinds: [14], authors: [node], p: [tradeKey.public], limit: 0),
     ]))
         .listen((event) {
+      // A relay may hand over more than the filter asks for; only the node's
+      // own kind 14 is its answer.
+      if (event.kind != 14 || event.pubkey != node) return;
       if (!reply.isCompleted) reply.complete(event);
     });
     try {
-      final event = await message.wrapForTransport(
-        protocolVersion: instance?.protocolVersion,
-        tradeKey: tradeKey,
-        recipientPubKey: node,
-        masterKey: identity,
-        difficulty: instance?.pow ?? 0,
+      final attempts = difficulties(
+        pow: instance?.pow ?? 0,
+        firstContact: instance?.powFirstContact,
       );
-      await nostr.publishEvent(event);
-      final answer = await reply.future.timeout(
-        timeout,
-        onTimeout: () =>
-            throw const ReputationException(ReputationService.noResponse),
-      );
+      NostrEvent? answer;
+      for (final difficulty in attempts) {
+        // Built afresh each time: the node drops a re-sent identical id.
+        final event = await message.wrapForTransport(
+          protocolVersion: instance?.protocolVersion,
+          tradeKey: tradeKey,
+          recipientPubKey: node,
+          masterKey: identity,
+          difficulty: difficulty,
+        );
+        await nostr.publishEvent(event);
+        answer = await reply.future
+            .then<NostrEvent?>((event) => event)
+            .timeout(timeout, onTimeout: () => null);
+        if (answer != null) break;
+        logger.i('Reputation: no answer at proof of work $difficulty');
+      }
+      if (answer == null) {
+        throw const ReputationException(ReputationService.noResponse);
+      }
       // Nodes that advertise these actions speak protocol v2: a kind 14
       // NIP-44 direct message whose content is the message tuple.
-      final content = await NostrUtils.decryptNIP44DirectEvent(
-        answer,
-        tradeKey.private,
-        expectedAuthor: node,
-      );
-      final tuple = jsonDecode(content) as List<dynamic>;
-      return tuple.first as Map<String, dynamic>;
+      try {
+        final content = await NostrUtils.decryptNIP44DirectEvent(
+          answer,
+          tradeKey.private,
+          expectedAuthor: node,
+        );
+        final tuple = jsonDecode(content) as List<dynamic>;
+        return tuple.first as Map<String, dynamic>;
+      } catch (e) {
+        logger.w('Reputation: unreadable answer from $node: $e');
+        throw const ReputationException('invalid_payload');
+      }
     } finally {
       await subscription.cancel();
     }

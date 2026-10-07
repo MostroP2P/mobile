@@ -171,6 +171,15 @@ extension MostroInstanceExtensions on NostrEvent {
     return tag.sublist(1).map((key) => key.trim()).toList();
   }
 
+  /// Proof of work the node requires of a first contact: an event from a
+  /// trade key it associates with no active order or dispute
+  /// (`pow_first_contact`). `null` when the node does not publish it, which
+  /// means unknown, not `pow`.
+  int? get powFirstContact {
+    final raw = _getOptionalTagValue('pow_first_contact');
+    return raw == null ? null : int.tryParse(raw);
+  }
+
   String get pubKey => _getTagValue('d');
   String get mostroVersion => _getTagValue('mostro_version');
   String get commitHash => _getTagValue('mostro_commit_hash');
