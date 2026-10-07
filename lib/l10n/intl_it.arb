@@ -857,6 +857,7 @@
         }
     },
     "payoutInvoiceInstruction": "Aggiungi una fattura Lightning di {sats} sats, equivalenti a {fiat_amount} {fiat_code}, per ricevere il pagamento del tuo acquisto.",
+    "payoutInvoiceInstructionNoAmount": "Aggiungi una fattura Lightning senza importo fisso per ricevere il pagamento del tuo acquisto.",
     "@payoutInvoiceInstruction": {
         "placeholders": {
             "sats": {

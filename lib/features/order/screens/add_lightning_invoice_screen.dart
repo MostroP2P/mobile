@@ -61,11 +61,15 @@ class _AddLightningInvoiceScreenState
         // for the payout one, which has its own screen. It deliberately ignores
         // `lnAddress`: the address may be what broke the payout to begin with.
         if (orderState.status.isPayoutInvoice) {
+          // Deliberately not `orderPayload`, nor the notifier's order: both
+          // hold whatever Order payload is newest, and a restore reply carries
+          // the order's gross rather than the payout amount. Asking for the
+          // gross made the node reject every invoice the buyer sent, with
+          // nothing on screen to explain it (#748).
+          final payout = ref.watch(payoutOrderStreamProvider(orderId));
           return PayoutInvoiceScreen(
             orderId: orderId,
-            // The stream only matches messages whose payload is an Order; the
-            // notifier also keeps one carried by a PaymentRequest.
-            order: orderPayload ?? orderState.order,
+            order: payout.valueOrNull?.getPayload<Order>(),
           );
         }
         final amount = orderPayload?.amount;
