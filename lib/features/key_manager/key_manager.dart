@@ -17,6 +17,12 @@ class KeyManager {
   /// master key changes.
   final Map<int, NostrKeyPairs> _tradeKeyCache = {};
 
+  /// Tail of the queue of index reservations. Reading the counter and storing
+  /// the next value are two awaits apart, so two reservations started
+  /// together (a new order and a reputation request, say) would otherwise
+  /// read the same value and hand out the same trade key.
+  Future<void> _reservations = Future.value();
+
   /// Test hook: prime the in-memory master key without touching secure
   /// storage. Clears the trade-key memo like a real master-key change.
   @visibleForTesting
@@ -83,21 +89,23 @@ class KeyManager {
     return _storage.readMnemonic();
   }
 
-  Future<NostrKeyPairs> deriveTradeKey() async {
-    final masterKeyHex = _masterKeyHex ??= await _storage.readMasterKey();
-    if (masterKeyHex == null) {
-      throw MasterKeyNotFoundException('No master key found in secure storage');
-    }
-    final currentIndex = await _storage.readTradeKeyIndex();
+  Future<NostrKeyPairs> deriveTradeKey() => _reserve(() async {
+        final masterKeyHex = _masterKeyHex ??= await _storage.readMasterKey();
+        if (masterKeyHex == null) {
+          throw MasterKeyNotFoundException(
+            'No master key found in secure storage',
+          );
+        }
+        final currentIndex = await _storage.readTradeKeyIndex();
 
-    final tradePrivateHex =
-        _derivator.derivePrivateKey(masterKeyHex, currentIndex);
+        final tradePrivateHex =
+            _derivator.derivePrivateKey(masterKeyHex, currentIndex);
 
-    // increment index
-    await setCurrentKeyIndex(currentIndex + 1);
+        // increment index
+        await setCurrentKeyIndex(currentIndex + 1);
 
-    return NostrKeyPairs(private: tradePrivateHex);
-  }
+        return NostrKeyPairs(private: tradePrivateHex);
+      });
 
   NostrKeyPairs deriveTradeKeyPair(int index) {
     return _tradeKeyCache.putIfAbsent(
@@ -141,11 +149,19 @@ class KeyManager {
   /// [deriveTradeKey] call. Two live sessions then shared a trade key, and
   /// with a common counterparty also the ECDH shared key the chat envelope is
   /// derived from, so one conversation surfaced as two chat rooms.
-  Future<int> getNextKeyIndex() async {
-    final currentIndex = await getCurrentKeyIndex();
-    await setCurrentKeyIndex(currentIndex + 1);
+  Future<int> getNextKeyIndex() => _reserve(() async {
+        final currentIndex = await getCurrentKeyIndex();
+        await setCurrentKeyIndex(currentIndex + 1);
 
-    return currentIndex;
+        return currentIndex;
+      });
+
+  /// Runs [reservation] after every reservation started before it, so each
+  /// one reads the counter the previous one stored.
+  Future<T> _reserve<T>(Future<T> Function() reservation) {
+    final result = _reservations.then((_) => reservation());
+    _reservations = result.then<void>((_) {}, onError: (_) {});
+    return result;
   }
 
   Future<void> setCurrentKeyIndex(int index) async {

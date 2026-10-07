@@ -155,6 +155,31 @@ extension MostroInstanceExtensions on NostrEvent {
     return value.isEmpty ? null : value;
   }
 
+  /// The key this node signs reputation attestations with, when it exports
+  /// reputation (`reputation_issuer`); `null` otherwise.
+  String? get reputationIssuer => _getOptionalTagValue('reputation_issuer');
+
+  /// The issuer keys this node imports reputation from
+  /// (`reputation_import_issuers`); `null` when it does not import, empty
+  /// when it imports from nobody yet.
+  List<String>? get reputationImportIssuers {
+    final tag = tags?.firstWhere(
+      (t) => t.isNotEmpty && t[0] == 'reputation_import_issuers',
+      orElse: () => const <String>[],
+    );
+    if (tag == null || tag.isEmpty) return null;
+    return tag.sublist(1).map((key) => key.trim()).toList();
+  }
+
+  /// Proof of work the node requires of a first contact: an event from a
+  /// trade key it associates with no active order or dispute
+  /// (`pow_first_contact`). `null` when the node does not publish it, which
+  /// means unknown, not `pow`.
+  int? get powFirstContact {
+    final raw = _getOptionalTagValue('pow_first_contact');
+    return raw == null ? null : int.tryParse(raw);
+  }
+
   String get pubKey => _getTagValue('d');
   String get mostroVersion => _getTagValue('mostro_version');
   String get commitHash => _getTagValue('mostro_commit_hash');
@@ -229,8 +254,8 @@ extension MostroInstanceExtensions on NostrEvent {
   /// other than `"true"` or `"false"` (case-insensitive) so malformed data
   /// is not silently collapsed into a valid policy state.
   bool? get bondSlashOnWaitingTimeout {
-    final raw = _getOptionalTagValue('bond_slash_on_waiting_timeout')
-        ?.toLowerCase();
+    final raw =
+        _getOptionalTagValue('bond_slash_on_waiting_timeout')?.toLowerCase();
     if (raw == 'true') return true;
     if (raw == 'false') return false;
     return null;
