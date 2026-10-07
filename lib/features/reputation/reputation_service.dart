@@ -267,6 +267,11 @@ class ReputationService {
         createdAt: now(),
       );
 
+  /// The identity reputation is moved for, to hand to an issuer such as
+  /// lnp2pBot. Throws `reputation_identity_required` in full privacy mode,
+  /// where the identity must not leave the app.
+  String identityPublicKey() => _identity().public;
+
   NostrKeyPairs _identity() {
     if (ref.read(settingsProvider).fullPrivacyMode) {
       throw const ReputationException('reputation_identity_required');

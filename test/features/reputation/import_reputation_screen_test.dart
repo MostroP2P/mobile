@@ -17,6 +17,15 @@ class _FakeService implements ReputationService {
   final List<String> imported = [];
   String? refuseWith;
   ReputationAttestation? pending;
+  bool fullPrivacy = false;
+
+  @override
+  String identityPublicKey() {
+    if (fullPrivacy) {
+      throw const ReputationException('reputation_identity_required');
+    }
+    return vectors['attestation']['valid']['expect']['destination'] as String;
+  }
 
   @override
   Future<ReputationAttestation?> pendingAttestation() async => pending;
@@ -96,5 +105,43 @@ void main() {
     await tester.tap(find.text('Import into this Mostro'));
     await tester.pumpAndSettle();
     expect(find.textContaining('already imported'), findsOneWidget);
+  });
+
+  testWidgets('never hands the identity to Telegram in full privacy mode',
+      (tester) async {
+    // Arrange
+    final service = await pump(tester);
+    service.fullPrivacy = true;
+
+    // Act
+    await tester.tap(find.text('Get it from lnp2pBot'));
+    await tester.pumpAndSettle();
+
+    // Assert: the link would carry the identity; the screen explains why not.
+    expect(find.textContaining('Turn off full privacy mode'), findsOneWidget);
+  });
+
+  testWidgets('clears a failed attempt once a retry succeeds', (tester) async {
+    // Arrange: the first import gets no answer from the node.
+    final service = await pump(tester);
+    service.refuseWith = 'no_response';
+    await tester.enterText(find.byType(TextField), valid);
+    await tester.ensureVisible(find.text('Check'));
+    await tester.tap(find.text('Check'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Import into this Mostro'));
+    await tester.tap(find.text('Import into this Mostro'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('did not answer'), findsOneWidget);
+
+    // Act
+    service.refuseWith = null;
+    await tester.ensureVisible(find.text('Import into this Mostro'));
+    await tester.tap(find.text('Import into this Mostro'));
+    await tester.pumpAndSettle();
+
+    // Assert
+    expect(find.text('Your reputation was imported.'), findsOneWidget);
+    expect(find.textContaining('did not answer'), findsNothing);
   });
 }

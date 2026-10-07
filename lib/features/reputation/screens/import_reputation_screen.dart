@@ -6,7 +6,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:mostro_mobile/core/app_theme.dart';
 import 'package:mostro_mobile/core/automation/automation_id.dart';
 import 'package:mostro_mobile/core/automation/automation_ids.dart';
-import 'package:mostro_mobile/features/key_manager/key_manager_provider.dart';
 import 'package:mostro_mobile/features/reputation/lnp2pbot.dart';
 import 'package:mostro_mobile/features/reputation/reputation_attestation.dart';
 import 'package:mostro_mobile/features/reputation/reputation_errors.dart';
@@ -76,7 +75,10 @@ class _ImportReputationScreenState
     final attestation = _attestation;
     if (attestation == null) return;
     final s = S.of(context)!;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
       await ref
           .read(reputationServiceProvider)
@@ -90,10 +92,17 @@ class _ImportReputationScreenState
   }
 
   Future<void> _openBot() async {
-    final identity = ref.read(keyManagerProvider).masterKeyPair;
-    if (identity == null) return;
+    final s = S.of(context)!;
+    final String identity;
+    try {
+      // The link carries the identity: never in full privacy mode.
+      identity = ref.read(reputationServiceProvider).identityPublicKey();
+    } on ReputationException catch (e) {
+      setState(() => _error = reputationErrorText(s, e.reason));
+      return;
+    }
     await launchUrl(
-      lnp2pbotExportUri(identity.public),
+      lnp2pbotExportUri(identity),
       mode: LaunchMode.externalApplication,
     );
   }
