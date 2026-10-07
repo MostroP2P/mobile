@@ -67,9 +67,22 @@ class _AddLightningInvoiceScreenState
           // gross made the node reject every invoice the buyer sent, with
           // nothing on screen to explain it (#748).
           final payout = ref.watch(payoutOrderStreamProvider(orderId));
-          return PayoutInvoiceScreen(
-            orderId: orderId,
-            order: payout.valueOrNull?.getPayload<Order>(),
+          return payout.when(
+            data: (message) => PayoutInvoiceScreen(
+              orderId: orderId,
+              order: message?.getPayload<Order>(),
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            // A storage failure must not read as "no payout amount known":
+            // that would quietly ask for an amountless invoice for good. The
+            // screen still opens, because an amountless invoice is the one
+            // thing that works without knowing the amount and the user's sats
+            // are already settled and waiting, but the failure leaves a trace.
+            error: (e, st) {
+              logger.e('Payout amount unavailable for order $orderId',
+                  error: e, stackTrace: st);
+              return PayoutInvoiceScreen(orderId: orderId, order: null);
+            },
           );
         }
         final amount = orderPayload?.amount;
