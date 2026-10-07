@@ -78,11 +78,12 @@ class _AddLightningInvoiceScreenState
             // screen still opens, because an amountless invoice is the one
             // thing that works without knowing the amount and the user's sats
             // are already settled and waiting, but the failure leaves a trace.
-            error: (e, st) {
-              logger.e('Payout amount unavailable for order $orderId',
-                  error: e, stackTrace: st);
-              return PayoutInvoiceScreen(orderId: orderId, order: null);
-            },
+            // The provider logs the failure; the screen still opens without
+            // an amount, because an amountless invoice is the one thing that
+            // works without knowing it and the user's sats are already settled
+            // and waiting. An error page would close their only exit.
+            error: (_, __) =>
+                PayoutInvoiceScreen(orderId: orderId, order: null),
           );
         }
         final amount = orderPayload?.amount;

@@ -48,21 +48,23 @@ void main() {
     return m;
   }
 
+  /// Reads the provider the screen consumes, not the storage call behind it:
+  /// the family key, the storage lookup and the mapping are all part of what
+  /// can regress.
   Future<int?> payoutAmount() async {
-    final storage = container.read(mostroStorageProvider);
-    final history = await storage.watchAllMessages(orderId).first;
-    return latestPayoutMessage(history)?.getPayload<Order>()?.amount;
+    final message =
+        await container.read(payoutOrderStreamProvider(orderId).future);
+    return message?.getPayload<Order>()?.amount;
   }
+
+  Future<void> store(String key, MostroMessage message) =>
+      container.read(mostroStorageProvider).addMessage(key, message);
 
   test('a newer restore reply does not replace the payout amount', () async {
     // What production stored: the payout request first, the restore reply
     // nearly two hours later, carrying the order's gross.
-    await container
-        .read(mostroStorageProvider)
-        .addMessage('k1', message(Action.addInvoice, 935138, 1000));
-    await container
-        .read(mostroStorageProvider)
-        .addMessage('k2', message(Action.orders, 937952, 9000));
+    await store('k1', message(Action.addInvoice, 935138, 1000));
+    await store('k2', message(Action.orders, 937952, 9000));
 
     expect(await payoutAmount(), 935138);
   });
@@ -72,24 +74,32 @@ void main() {
   // Confirmed by flipping the sort in MostroStorage, which fails this with
   // `Expected: <935138> Actual: <111111>`.
   test('a newer payout request wins over an older one', () async {
-    await container
-        .read(mostroStorageProvider)
-        .addMessage('k1', message(Action.addInvoice, 111111, 1000));
-    await container
-        .read(mostroStorageProvider)
-        .addMessage('k2', message(Action.addInvoice, 935138, 9000));
+    await store('k1', message(Action.addInvoice, 111111, 1000));
+    await store('k2', message(Action.addInvoice, 935138, 9000));
 
     expect(await payoutAmount(), 935138);
   });
 
   test('no payout message yields no amount, never another payload', () async {
-    await container
-        .read(mostroStorageProvider)
-        .addMessage('k1', message(Action.orders, 937952, 1000));
-    await container
-        .read(mostroStorageProvider)
-        .addMessage('k2', message(Action.buyerTookOrder, 940766, 9000));
+    await store('k1', message(Action.orders, 937952, 1000));
+    await store('k2', message(Action.buyerTookOrder, 940766, 9000));
 
     expect(await payoutAmount(), isNull);
+  });
+
+  test('re-emits when the payout amount arrives later', () async {
+    final seen = <int?>[];
+    final sub = container.listen(
+      payoutOrderStreamProvider(orderId),
+      (_, next) => seen.add(next.valueOrNull?.getPayload<Order>()?.amount),
+    );
+    addTearDown(sub.close);
+
+    await store('k1', message(Action.orders, 937952, 1000));
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    await store('k2', message(Action.addInvoice, 935138, 9000));
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    expect(seen.last, 935138);
   });
 }

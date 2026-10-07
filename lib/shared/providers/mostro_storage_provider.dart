@@ -3,6 +3,7 @@ import 'package:mostro_mobile/data/models/enums/action.dart';
 import 'package:mostro_mobile/data/models/mostro_message.dart';
 import 'package:mostro_mobile/data/models/order.dart';
 import 'package:mostro_mobile/data/repositories/mostro_storage.dart';
+import 'package:mostro_mobile/services/logger_service.dart';
 import 'package:mostro_mobile/shared/providers/mostro_database_provider.dart';
 
 final mostroStorageProvider = Provider<MostroStorage>((ref) {
@@ -67,5 +68,14 @@ MostroMessage? latestPayoutMessage(List<MostroMessage> history) {
 final payoutOrderStreamProvider =
     StreamProvider.family<MostroMessage?, String>((ref, orderId) {
   final storage = ref.read(mostroStorageProvider);
-  return storage.watchAllMessages(orderId).map(latestPayoutMessage);
+  // Logged here rather than in the consumer's error branch: that one runs on
+  // every rebuild while the provider stays in error, and the trace is only
+  // worth having once per failure.
+  return storage.watchAllMessages(orderId).map(latestPayoutMessage).handleError(
+    (Object error, StackTrace stackTrace) {
+      logger.e('Payout amount unavailable for order $orderId',
+          error: error, stackTrace: stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    },
+  );
 });
