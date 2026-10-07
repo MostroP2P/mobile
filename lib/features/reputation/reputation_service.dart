@@ -267,6 +267,11 @@ class ReputationService {
         createdAt: now(),
       );
 
+  /// The identity reputation is moved for, to hand to an issuer such as
+  /// lnp2pBot. Throws `reputation_identity_required` in full privacy mode,
+  /// where the identity must not leave the app.
+  String identityPublicKey() => _identity().public;
+
   NostrKeyPairs _identity() {
     if (ref.read(settingsProvider).fullPrivacyMode) {
       throw const ReputationException('reputation_identity_required');
@@ -332,6 +337,11 @@ class ReputationService {
   }
 }
 
+/// Unix seconds, as reputation checks read the clock; overridden in tests.
+final reputationClockProvider = Provider<int Function()>(
+  (ref) => () => DateTime.now().millisecondsSinceEpoch ~/ 1000,
+);
+
 final reputationServiceProvider = Provider<ReputationService>(
-  (ref) => ReputationService(ref),
+  (ref) => ReputationService(ref, now: ref.watch(reputationClockProvider)),
 );

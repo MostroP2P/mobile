@@ -1784,5 +1784,26 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "reputationNodeDoesNotExport": "Dieser Mostro exportiert keine Reputation.",
+    "reputationNodeDoesNotImport": "Dieser Mostro importiert keine Reputation.",
+    "reputationNoResponse": "Mostro hat nicht geantwortet. Prüfe deine Verbindung und versuche es erneut.",
+    "reputationIdentityRequired": "Reputation kann nur von einem Konto übertragen werden, das seine Reputation behält. Schalte den vollständigen Privatsphäre-Modus aus und versuche es erneut.",
+    "reputationNotEligible": "Dein Konto kann seine Reputation noch nicht exportieren: Es braucht mindestens 10 abgeschlossene Trades und 5 erhaltene Bewertungen.",
+    "reputationBoundToOtherIdentity": "Deine Reputation dort ist bereits an eine andere Identität gebunden. Autorisiere den Wechsel mit der Identität, an die sie gebunden ist.",
+    "reputationInvalidRebind": "Die Autorisierung zum Übertragen deiner Reputation ist ungültig oder abgelaufen. Erstelle eine neue.",
+    "reputationExpiredAttestation": "Diese Reputation ist abgelaufen. Fordere sie erneut bei ihrer Quelle an.",
+    "reputationUntrustedIssuer": "Dieser Mostro akzeptiert keine Reputation aus dieser Quelle.",
+    "reputationIdentityMismatch": "Diese Reputation wurde für eine andere Identität ausgestellt als die, die du verwendest.",
+    "reputationAlreadyImported": "Diese Reputation wurde auf diesem Mostro bereits importiert.",
+    "reputationInvalidAttestation": "Das ist keine gültige Reputation. Fordere sie erneut bei ihrer Quelle an.",
+    "reputationImportTitle": "Reputation importieren",
+    "reputationImportIntro": "Bring die Reputation, die du auf lnp2pBot oder einem anderen Mostro verdient hast, auf diesen. Der Import verknüpft die beiden Konten: Die Quelle und dieser Mostro wissen, dass sie derselben Person gehören.",
+    "reputationOpenLnp2pbot": "Von lnp2pBot holen",
+    "reputationPasteHint": "Füge die erhaltene Reputation ein",
+    "reputationCheck": "Prüfen",
+    "reputationImported": "Deine Reputation wurde importiert.",
+    "reputationImportConfirm": "In diesen Mostro importieren",
+    "reputationFigures": "{reviews} erhaltene Bewertungen, im Schnitt {rating}, seit {days} Tagen am Handeln",
+    "reputationFiguresNote": "Importierte Reputation wird zu deiner hiesigen addiert; deine Handelspartner sehen beide zusammen."
 }

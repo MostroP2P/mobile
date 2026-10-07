@@ -1829,5 +1829,39 @@
                 "type": "int"
             }
         }
-    }
+    },
+    "reputationNodeDoesNotExport": "This Mostro does not export reputation.",
+    "reputationNodeDoesNotImport": "This Mostro does not import reputation.",
+    "reputationNoResponse": "Mostro did not answer. Check your connection and try again.",
+    "reputationIdentityRequired": "Reputation can only be moved from an account that keeps its reputation. Turn off full privacy mode and try again.",
+    "reputationNotEligible": "Your account cannot export its reputation yet: it needs at least 10 completed trades and 5 ratings received.",
+    "reputationBoundToOtherIdentity": "Your reputation there is already bound to another identity. Authorize the move from the identity it is bound to.",
+    "reputationInvalidRebind": "The authorization to move your reputation is invalid or has expired. Create a new one.",
+    "reputationExpiredAttestation": "This reputation has expired. Request it again from its source.",
+    "reputationUntrustedIssuer": "This Mostro does not accept reputation from that source.",
+    "reputationIdentityMismatch": "This reputation was issued for another identity than the one you are using.",
+    "reputationAlreadyImported": "This reputation was already imported on this Mostro.",
+    "reputationInvalidAttestation": "This is not a valid reputation. Request it again from its source.",
+    "reputationImportTitle": "Import reputation",
+    "reputationImportIntro": "Bring the reputation you earned on lnp2pBot or on another Mostro to this one. Importing links the two accounts: the source and this Mostro learn they belong to the same person.",
+    "reputationOpenLnp2pbot": "Get it from lnp2pBot",
+    "reputationPasteHint": "Paste the reputation you received",
+    "reputationCheck": "Check",
+    "reputationImported": "Your reputation was imported.",
+    "reputationImportConfirm": "Import into this Mostro",
+    "reputationFigures": "{reviews} ratings received, {rating} on average, trading for {days} days",
+    "@reputationFigures": {
+        "placeholders": {
+            "reviews": {
+                "type": "int"
+            },
+            "rating": {
+                "type": "String"
+            },
+            "days": {
+                "type": "int"
+            }
+        }
+    },
+    "reputationFiguresNote": "Imported reputation is added to the one you have here; your counterparties see them merged."
 }
