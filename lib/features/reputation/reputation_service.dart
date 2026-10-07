@@ -186,6 +186,9 @@ class ReputationService {
     if (issuer == null) throw const ReputationException(nodeDoesNotExport);
     final identity = _identity();
     final target = destination ?? identity.public;
+    if (rebind != null) {
+      _checkRebind(rebind, issuer: issuer, destination: target);
+    }
     final reply = await _send(
       node,
       identity,
@@ -273,6 +276,25 @@ class ReputationService {
       throw const ReputationException('reputation_identity_required');
     }
     return identity;
+  }
+
+  /// A rebind authorisation consents to one new identity at one issuer: the
+  /// node refuses it for any other `destination`, so it is not sent at all.
+  void _checkRebind(
+    String json, {
+    required String issuer,
+    required String destination,
+  }) {
+    const invalid = ReputationException('invalid_reputation_rebind');
+    final ReputationRebind rebind;
+    try {
+      rebind = ReputationRebind.parse(json, now: now());
+    } on AttestationException {
+      throw invalid;
+    }
+    if (rebind.newIdentity != destination || rebind.issuer != issuer) {
+      throw invalid;
+    }
   }
 
   ReputationAttestation _parse(String json) {

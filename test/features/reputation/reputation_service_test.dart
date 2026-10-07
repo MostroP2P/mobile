@@ -223,6 +223,68 @@ void main() {
       expect(parsed.boundIdentity, identity.public);
       expect((parsed.issuer, parsed.newIdentity), (issuer, newIdentity));
     });
+
+    test('sends the rebind authorisation with the export it authorises',
+        () async {
+      // Arrange: the identity the account was bound to authorised this one.
+      final fake = _FakeNode(
+          _reply('reputation-exported', {'reputation_attestation': validJson}));
+      final c = container(fake, infoTags: [
+        ['reputation_issuer', issuer]
+      ]);
+      final rebind = ReputationRebind.build(
+        boundIdentity:
+            NostrKeyPairs(private: secrets['new-identity'] as String),
+        issuer: issuer,
+        newIdentity: identity.public,
+        createdAt: now,
+      );
+
+      // Act
+      await c.read(reputationServiceProvider).exportReputation(rebind: rebind);
+
+      // Assert
+      final sent = fake.received.single.payload as ReputationExportRequest;
+      expect((sent.destination, sent.rebind), (identity.public, rebind));
+    });
+
+    test('never sends a rebind for another identity or issuer', () async {
+      // Arrange
+      final fake = _FakeNode(
+          _reply('reputation-exported', {'reputation_attestation': validJson}));
+      final c = container(fake, infoTags: [
+        ['reputation_issuer', issuer]
+      ]);
+      final bound = NostrKeyPairs(private: secrets['new-identity'] as String);
+      final otherIdentity =
+          NostrKeyPairs(private: secrets['other-identity'] as String).public;
+      final otherIssuer =
+          NostrKeyPairs(private: secrets['issuer-b'] as String).public;
+      final refused = [
+        // The node refuses a rebind whose p is not the request destination.
+        ReputationRebind.build(
+            boundIdentity: bound,
+            issuer: issuer,
+            newIdentity: otherIdentity,
+            createdAt: now),
+        ReputationRebind.build(
+            boundIdentity: bound,
+            issuer: otherIssuer,
+            newIdentity: identity.public,
+            createdAt: now),
+        'not a rebind',
+      ];
+
+      for (final rebind in refused) {
+        // Act / Assert
+        await expectLater(
+          c.read(reputationServiceProvider).exportReputation(rebind: rebind),
+          throwsA(isA<ReputationException>()
+              .having((e) => e.reason, 'reason', 'invalid_reputation_rebind')),
+        );
+      }
+      expect(fake.received, isEmpty);
+    });
   });
 
   group('import', () {
