@@ -1883,5 +1883,6 @@
     "reputationRebindBody": "Moving to a new identity? Sign here, with the identity your reputation is bound to now, an authorization for the new one, then use it from the new identity.",
     "reputationNewIdentityHint": "New identity (npub)",
     "reputationRebindSign": "Sign authorization",
-    "reputationInvalidIdentity": "That is not a valid npub."
+    "reputationInvalidIdentity": "That is not a valid npub.",
+    "reputationRebindPasteHint": "Authorization from your previous identity, only if you are moving to this one"
 }

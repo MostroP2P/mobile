@@ -33,6 +33,7 @@ class _Settings extends SettingsNotifier {
 
 class _FakeService implements ReputationService {
   int exports = 0;
+  final List<String?> rebinds = [];
   String? refuseWith;
   final String json;
   final int clock;
@@ -43,6 +44,7 @@ class _FakeService implements ReputationService {
   Future<ReputationAttestation> exportReputation(
       {String? destination, String? rebind}) async {
     exports++;
+    rebinds.add(rebind);
     if (refuseWith != null) throw ReputationException(refuseWith!);
     return ReputationAttestation.parse(json, now: clock);
   }
@@ -65,6 +67,7 @@ void main() {
   Future<_FakeService> pump(
     WidgetTester tester, {
     String? nodeIssuer,
+    List<String>? importIssuers = const [],
     bool fullPrivacy = false,
   }) async {
     tester.view.physicalSize = const Size(1080, 2400);
@@ -77,7 +80,7 @@ void main() {
       overrides: [
         reputationServiceProvider.overrideWithValue(service),
         reputationNodeSupportProvider.overrideWith(
-          (ref) async => (issuer: nodeIssuer, importIssuers: <String>[]),
+          (ref) async => (issuer: nodeIssuer, importIssuers: importIssuers),
         ),
         settingsProvider.overrideWith((ref) => _Settings(fullPrivacy)),
         keyManagerProvider.overrideWithValue(keys),
@@ -134,15 +137,15 @@ void main() {
   testWidgets('signs a rebind authorisation for a valid npub only',
       (tester) async {
     await pump(tester, nodeIssuer: issuer);
-    await tester.enterText(find.byType(TextField), 'not-an-npub');
+    await tester.enterText(find.byType(TextField).last, 'not-an-npub');
     await tester.tap(find.text('Sign authorization'));
     await tester.pumpAndSettle();
     expect(find.text('That is not a valid npub.'), findsOneWidget);
 
     final newIdentity =
         NostrKeyPairs(private: secrets['new-identity'] as String).public;
-    await tester.enterText(
-        find.byType(TextField), NostrUtils.encodePublicKeyToNpub(newIdentity));
+    await tester.enterText(find.byType(TextField).last,
+        NostrUtils.encodePublicKeyToNpub(newIdentity));
     await tester.tap(find.text('Sign authorization'));
     await tester.pumpAndSettle();
     expect(find.text('rebind:$issuer:$newIdentity'), findsOneWidget);
@@ -154,5 +157,37 @@ void main() {
     final export = tester.widget<ElevatedButton>(
         find.widgetWithText(ElevatedButton, 'Export my reputation'));
     expect(export.onPressed, isNull);
+  });
+
+  testWidgets('exports with a pasted rebind authorisation', (tester) async {
+    // Arrange: on the new identity, the user pastes the authorisation the
+    // identity the reputation is bound to signed for it.
+    final service = await pump(tester, nodeIssuer: issuer);
+    const authorisation = '{"kind":38388,"tags":[["z","reputation-rebind"]]}';
+
+    // Act: one export without it, one with it.
+    await tester.tap(find.text('Export my reputation').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Export'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, '  $authorisation\n');
+    await tester.tap(find.text('Export my reputation').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Export'));
+    await tester.pumpAndSettle();
+
+    // Assert
+    expect(service.rebinds, [null, authorisation]);
+  });
+
+  testWidgets('a node that does not import says so', (tester) async {
+    // Arrange / Act
+    await pump(tester, nodeIssuer: issuer, importIssuers: null);
+
+    // Assert: no way into a flow that can only end in node_does_not_import.
+    expect(
+        find.text('This Mostro does not import reputation.'), findsOneWidget);
+    expect(
+        find.widgetWithText(ElevatedButton, 'Import reputation'), findsNothing);
   });
 }

@@ -1863,5 +1863,6 @@
     "reputationRebindBody": "Stap je over op een nieuwe identiteit? Onderteken hier, met de identiteit waaraan je reputatie nu gekoppeld is, een toestemming voor de nieuwe en gebruik die vanaf de nieuwe identiteit.",
     "reputationNewIdentityHint": "Nieuwe identiteit (npub)",
     "reputationRebindSign": "Toestemming ondertekenen",
-    "reputationInvalidIdentity": "Dat is geen geldige npub."
+    "reputationInvalidIdentity": "Dat is geen geldige npub.",
+    "reputationRebindPasteHint": "Toestemming van je vorige identiteit, alleen als je naar deze overstapt"
 }

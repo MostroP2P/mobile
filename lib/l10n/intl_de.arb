@@ -1818,5 +1818,6 @@
     "reputationRebindBody": "Wechselst du zu einer neuen Identität? Signiere hier mit der Identität, an die deine Reputation jetzt gebunden ist, eine Autorisierung für die neue und verwende sie dann von der neuen Identität aus.",
     "reputationNewIdentityHint": "Neue Identität (npub)",
     "reputationRebindSign": "Autorisierung signieren",
-    "reputationInvalidIdentity": "Das ist kein gültiger npub."
+    "reputationInvalidIdentity": "Das ist kein gültiger npub.",
+    "reputationRebindPasteHint": "Autorisierung deiner bisherigen Identität, nur wenn du zu dieser wechselst"
 }

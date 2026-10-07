@@ -1793,5 +1793,6 @@
     "reputationRebindBody": "¿Te mudas a una identidad nueva? Firma aquí, con la identidad a la que está ligada tu reputación ahora, una autorización para la nueva y luego úsala desde la nueva identidad.",
     "reputationNewIdentityHint": "Identidad nueva (npub)",
     "reputationRebindSign": "Firmar autorización",
-    "reputationInvalidIdentity": "Ese no es un npub válido."
+    "reputationInvalidIdentity": "Ese no es un npub válido.",
+    "reputationRebindPasteHint": "Autorización de tu identidad anterior, solo si te mudas a esta"
 }

@@ -60,6 +60,7 @@ class AutomationIds {
   static const String reputationExported = 'reputation.export.result';
   static const String reputationRebindIdentity = 'reputation.rebind.identity';
   static const String reputationRebindSign = 'reputation.rebind.sign';
+  static const String reputationRebindPaste = 'reputation.rebind.paste';
   static const String reputationImportOpenBot = 'reputation.import.open_bot';
   static const String reputationImportInput = 'reputation.import.input';
   static const String reputationImportCheck = 'reputation.import.check';

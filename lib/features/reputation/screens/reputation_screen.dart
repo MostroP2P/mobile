@@ -45,10 +45,12 @@ class _ReputationScreenState extends ConsumerState<ReputationScreen> {
   String? _error;
   bool _busy = false;
   final _newIdentity = TextEditingController();
+  final _rebindInput = TextEditingController();
 
   @override
   void dispose() {
     _newIdentity.dispose();
+    _rebindInput.dispose();
     super.dispose();
   }
 
@@ -83,9 +85,13 @@ class _ReputationScreenState extends ConsumerState<ReputationScreen> {
       _error = null;
       _exported = null;
     });
+    // Moving to this identity from the one the account is bound to needs the
+    // authorisation that identity signed for this one.
+    final rebind = _rebindInput.text.trim();
     try {
-      final attestation =
-          await ref.read(reputationServiceProvider).exportReputation();
+      final attestation = await ref
+          .read(reputationServiceProvider)
+          .exportReputation(rebind: rebind.isEmpty ? null : rebind);
       if (mounted) setState(() => _exported = attestation.json);
     } on ReputationException catch (e) {
       if (mounted) setState(() => _error = reputationErrorText(s, e.reason));
@@ -165,12 +171,20 @@ class _ReputationScreenState extends ConsumerState<ReputationScreen> {
                 children: [
                   Text(s.reputationImportCardBody, style: _body),
                   const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: fullPrivacy
-                        ? null
-                        : () => context.push('/import_reputation'),
-                    child: Text(s.reputationImportTitle),
-                  ).withAutomationId(AutomationIds.reputationOpenImport),
+                  support.when(
+                    loading: () => const LinearProgressIndicator(),
+                    error: (_, __) =>
+                        Text(s.reputationNodeDoesNotImport, style: _body),
+                    data: (node) => node.importIssuers == null
+                        ? Text(s.reputationNodeDoesNotImport, style: _body)
+                        : ElevatedButton(
+                            onPressed: fullPrivacy
+                                ? null
+                                : () => context.push('/import_reputation'),
+                            child: Text(s.reputationImportTitle),
+                          ).withAutomationId(
+                            AutomationIds.reputationOpenImport),
+                  ),
                 ],
               ),
             ),
@@ -186,6 +200,17 @@ class _ReputationScreenState extends ConsumerState<ReputationScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(s.reputationExportCardBody, style: _body),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _rebindInput,
+                            minLines: 1,
+                            maxLines: 3,
+                            style: const TextStyle(
+                                color: AppTheme.textPrimary, fontSize: 12),
+                            decoration: InputDecoration(
+                                hintText: s.reputationRebindPasteHint),
+                          ).withAutomationId(
+                              AutomationIds.reputationRebindPaste),
                           const SizedBox(height: 12),
                           ElevatedButton(
                             onPressed: fullPrivacy || _busy ? null : _export,

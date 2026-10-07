@@ -1818,5 +1818,6 @@
     "reputationRebindBody": "Vous changez d'identité ? Signez ici, avec l'identité à laquelle votre réputation est liée maintenant, une autorisation pour la nouvelle, puis utilisez-la depuis la nouvelle identité.",
     "reputationNewIdentityHint": "Nouvelle identité (npub)",
     "reputationRebindSign": "Signer l'autorisation",
-    "reputationInvalidIdentity": "Ce n'est pas un npub valide."
+    "reputationInvalidIdentity": "Ce n'est pas un npub valide.",
+    "reputationRebindPasteHint": "Autorisation de votre identité précédente, seulement si vous passez à celle-ci"
 }
