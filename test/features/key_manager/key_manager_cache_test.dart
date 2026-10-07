@@ -91,4 +91,24 @@ void main() {
     expect(await manager.getCurrentKeyIndex(), 7,
         reason: 'both handed-out indices are consumed, leaving no gap');
   });
+
+  test('concurrent reservations never hand out the same index', () async {
+    // Arrange: a reputation request and a new order reserve a trade key at
+    // the same time, each reading the counter before the other writes it.
+    await manager.setCurrentKeyIndex(3);
+
+    // Act
+    final results = await Future.wait([
+      manager.getNextKeyIndex(),
+      manager.deriveTradeKey().then((key) => key.public),
+      manager.getNextKeyIndex(),
+    ]);
+    final derivedIndex = [3, 4, 5]
+        .firstWhere((i) => manager.deriveTradeKeyPair(i).public == results[1]);
+
+    // Assert: two requests on one trade key would each take the other's
+    // reply, as both subscribe to events tagged with that key.
+    expect({results[0], derivedIndex, results[2]}, {3, 4, 5});
+    expect(await manager.getCurrentKeyIndex(), 6);
+  });
 }
