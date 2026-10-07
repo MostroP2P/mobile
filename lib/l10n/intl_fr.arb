@@ -1805,5 +1805,19 @@
     "reputationImported": "Votre réputation a été importée.",
     "reputationImportConfirm": "Importer sur ce Mostro",
     "reputationFigures": "{reviews} évaluations reçues, {rating} en moyenne, échange depuis {days} jours",
-    "reputationFiguresNote": "La réputation importée s'ajoute à celle que vous avez ici ; vos contreparties les voient fusionnées."
+    "reputationFiguresNote": "La réputation importée s'ajoute à celle que vous avez ici ; vos contreparties les voient fusionnées.",
+    "reputationSettingsDescription": "Emportez sur un autre Mostro la réputation gagnée ici, ou apportez celle gagnée ailleurs.",
+    "reputationMove": "Transférer la réputation",
+    "reputationImportCardBody": "Apportez sur ce Mostro la réputation gagnée sur lnp2pBot ou sur un autre Mostro.",
+    "reputationExportTitle": "Exporter ma réputation",
+    "reputationExportCardBody": "Obtenez une copie signée de la réputation gagnée sur ce Mostro pour l'importer sur un autre.",
+    "reputationExportConfirmTitle": "Exporter vers cette identité ?",
+    "reputationExportConfirmBody": "Votre réputation sur ce Mostro sera exportée pour cette identité :\n\n{npub}\n\nUne fois exportée, elle y est liée : l'exporter plus tard pour une autre identité exige une autorisation signée avec celle-ci.",
+    "reputationExportConfirmButton": "Exporter",
+    "reputationExported": "Votre réputation est prête. Passez au Mostro où vous la voulez et importez-la ; elle est valable 7 jours.",
+    "reputationRebindBody": "Vous changez d'identité ? Signez ici, avec l'identité à laquelle votre réputation est liée maintenant, une autorisation pour la nouvelle, puis utilisez-la depuis la nouvelle identité.",
+    "reputationNewIdentityHint": "Nouvelle identité (npub)",
+    "reputationRebindSign": "Signer l'autorisation",
+    "reputationInvalidIdentity": "Ce n'est pas un npub valide.",
+    "reputationRebindPasteHint": "Autorisation de votre identité précédente, seulement si vous passez à celle-ci"
 }
