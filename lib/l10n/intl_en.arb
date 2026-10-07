@@ -347,6 +347,7 @@
         }
     },
     "payoutInvoiceInstruction": "Add a Lightning invoice for {sats} sats, equivalent to {fiat_amount} {fiat_code}, to receive the payment for your purchase.",
+    "payoutInvoiceInstructionNoAmount": "Add a Lightning invoice with no fixed amount to receive the payment for your purchase.",
     "@payoutInvoiceInstruction": {
         "placeholders": {
             "sats": {

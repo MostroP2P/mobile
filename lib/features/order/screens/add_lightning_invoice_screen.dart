@@ -61,11 +61,29 @@ class _AddLightningInvoiceScreenState
         // for the payout one, which has its own screen. It deliberately ignores
         // `lnAddress`: the address may be what broke the payout to begin with.
         if (orderState.status.isPayoutInvoice) {
-          return PayoutInvoiceScreen(
-            orderId: orderId,
-            // The stream only matches messages whose payload is an Order; the
-            // notifier also keeps one carried by a PaymentRequest.
-            order: orderPayload ?? orderState.order,
+          // Deliberately not `orderPayload`, nor the notifier's order: both
+          // hold whatever Order payload is newest, and a restore reply carries
+          // the order's gross rather than the payout amount. Asking for the
+          // gross made the node reject every invoice the buyer sent, with
+          // nothing on screen to explain it (#748).
+          final payout = ref.watch(payoutOrderStreamProvider(orderId));
+          return payout.when(
+            data: (message) => PayoutInvoiceScreen(
+              orderId: orderId,
+              order: message?.getPayload<Order>(),
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            // A storage failure must not read as "no payout amount known":
+            // that would quietly ask for an amountless invoice for good. The
+            // screen still opens, because an amountless invoice is the one
+            // thing that works without knowing the amount and the user's sats
+            // are already settled and waiting, but the failure leaves a trace.
+            // The provider logs the failure; the screen still opens without
+            // an amount, because an amountless invoice is the one thing that
+            // works without knowing it and the user's sats are already settled
+            // and waiting. An error page would close their only exit.
+            error: (_, __) =>
+                PayoutInvoiceScreen(orderId: orderId, order: null),
           );
         }
         final amount = orderPayload?.amount;
