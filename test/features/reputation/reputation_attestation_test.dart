@@ -20,8 +20,13 @@ const contextRefusals = [
   'own_issuer_key'
 ];
 
-/// Well-formed rebinds only the issuer's context refuses.
-const rebindContextRefusals = ['signed_by_other_identity', 'other_issuer'];
+/// Well-formed rebinds only the issuer's context refuses: the bound identity,
+/// the issuer key and the destination of the export request.
+const rebindContextRefusals = [
+  'signed_by_other_identity',
+  'other_issuer',
+  'other_destination',
+];
 
 void main() {
   final context = vectors['context'] as Map<String, dynamic>;
@@ -122,6 +127,8 @@ void main() {
       expect(parsed.issuer, expected['issuer']);
       expect(parsed.createdAt, expected['created_at']);
       expect(parsed.expiration, expected['expiration']);
+      expect(parsed.newIdentity, rebindContext['destination'],
+          reason: 'a rebind names the destination of its export request');
     });
 
     test('every invalid rebind is refused, by the event or by the issuer', () {
@@ -132,7 +139,8 @@ void main() {
           final parsed = ReputationRebind.parse(json, now: rebindNow);
           expect(
             parsed.boundIdentity != rebindContext['bound_identity'] ||
-                parsed.issuer != rebindContext['issuer_key'],
+                parsed.issuer != rebindContext['issuer_key'] ||
+                parsed.newIdentity != rebindContext['destination'],
             isTrue,
             reason: name,
           );
