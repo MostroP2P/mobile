@@ -1,0 +1,100 @@
+name: iOS unsigned build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    name: Build iOS unsigned
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: "3.32.2"
+          channel: stable
+          cache: true
+
+      - name: Select Xcode 16.4
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+
+      - name: Install CocoaPods 1.16.2
+        run: sudo gem install cocoapods -v 1.16.2 --no-document
+
+      - name: Show Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate required files
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd ios
+          pod _1.16.2_ install
+          cd ..
+
+      - name: Build iOS without code signing
+        run: |
+          flutter build ios \
+            --release \
+            --no-codesign \
+            --dart-define=APP_VERSION=${{ github.ref_name }} \
+            --dart-define=GIT_COMMIT=${{ github.sha }}
+
+      - name: Verify iOS app
+        run: |
+          test -d build/ios/iphoneos/Runner.app
+          ls -lah build/ios/iphoneos/Runner.app
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+
+          mkdir -p artifacts
+          rm -rf Payload
+          mkdir -p Payload
+
+          cp -R build/ios/iphoneos/Runner.app Payload/
+
+          zip -r artifacts/Mostro-iOS-unsigned.ipa Payload
+
+          rm -rf Payload
+
+          echo "Generated IPA:"
+          ls -lh artifacts/Mostro-iOS-unsigned.ipa
+
+          echo "SHA-256:"
+          shasum -a 256 artifacts/Mostro-iOS-unsigned.ipa
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Mostro-iOS-unsigned-${{ github.sha }}
+          path: artifacts/Mostro-iOS-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
