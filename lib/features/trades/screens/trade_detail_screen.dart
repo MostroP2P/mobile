@@ -32,8 +32,6 @@ import 'package:mostro_mobile/features/disputes/providers/dispute_providers.dart
 import 'package:mostro_mobile/generated/l10n.dart';
 import 'package:mostro_mobile/shared/utils/bond_payout_helpers.dart';
 import 'package:mostro_mobile/shared/utils/snack_bar_helper.dart';
-import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
-import 'package:mostro_mobile/shared/utils/effective_rate.dart';
 
 class TradeDetailScreen extends ConsumerWidget {
   final String orderId;
@@ -142,22 +140,6 @@ class TradeDetailScreen extends ConsumerWidget {
     return order.fiatAmount.toString();
   }
 
-  /// Computes the effective fiat/USD rate for a market price order, applying
-  /// the creator's premium/discount to the market rate. Returns null when the
-  /// required exchange rates are not available.
-  String? _effectiveFiatPerUsdText(BuildContext context, WidgetRef ref,
-      String currency, double premiumValue) {
-    final fiatRateAsync = ref.watch(exchangeRateProvider(currency));
-    final usdRateAsync = ref.watch(exchangeRateProvider('USD'));
-    final rate = EffectiveRate.fiatPerUsd(
-      fiatPerBtc: fiatRateAsync.value ?? 0,
-      usdPerBtc: usdRateAsync.value ?? 0,
-      premiumPercent: premiumValue,
-    );
-    if (rate == null) return null;
-    return S.of(context)!.effectiveRateUsd(rate.toStringAsFixed(2), currency);
-  }
-
   /// Builds a card showing the user is "selling/buying X sats for Y fiat" etc.
   Widget _buildSellerAmount(
       BuildContext context, WidgetRef ref, OrderState tradeState) {
@@ -193,12 +175,6 @@ class TradeDetailScreen extends ConsumerWidget {
           final premiumDisplay =
               isPremiumPositive ? '(+$premiumValue%)' : '($premiumValue%)';
           priceText = '${S.of(context)!.atMarketPrice} $premiumDisplay';
-        }
-
-        final effectiveRate = _effectiveFiatPerUsdText(
-            context, ref, tradeState.order!.fiatCode, premiumValue);
-        if (effectiveRate != null) {
-          priceText = '$priceText · $effectiveRate';
         }
       }
 
@@ -268,12 +244,6 @@ class TradeDetailScreen extends ConsumerWidget {
         final premiumDisplay =
             isPremiumPositive ? '(+$premiumValue%)' : '($premiumValue%)';
         priceText = '${S.of(context)!.atMarketPrice} $premiumDisplay';
-      }
-
-      final effectiveRate = _effectiveFiatPerUsdText(
-          context, ref, tradeState.order!.fiatCode, premiumValue);
-      if (effectiveRate != null) {
-        priceText = '$priceText · $effectiveRate';
       }
     }
 
