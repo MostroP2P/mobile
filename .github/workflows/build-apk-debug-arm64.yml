@@ -1,0 +1,73 @@
+commit c1729dc8ddef1372d7da95749cb45667d9ae9c49
+Author: @Delagado74 <yuridelgadoamaran@gmail.com>
+Date:   Sun Oct 11 01:17:16 2026 -0400
+
+    ci: add manual workflow to build arm64-v8a debug APK
+
+diff --git a/.github/workflows/build-apk-debug-arm64.yml b/.github/workflows/build-apk-debug-arm64.yml
+new file mode 100644
+index 00000000..239d641d
+--- /dev/null
++++ b/.github/workflows/build-apk-debug-arm64.yml
+@@ -0,0 +1,61 @@
++name: Build Android APK (arm64-v8a debug)
++
++on:
++  workflow_dispatch:
++    inputs:
++      branch:
++        description: 'Select branch to build'
++        required: true
++        default: 'main'
++        type: choice
++        options:
++          - main
++          - feat/effective-fiat-rate
++
++jobs:
++  build:
++    runs-on: ubuntu-latest
++
++    steps:
++      - name: Checkout repository
++        uses: actions/checkout@v4
++        with:
++          ref: ${{ github.event.inputs.branch }}
++          fetch-depth: 0
++
++      - name: Set up Java
++        uses: actions/setup-java@v4
++        with:
++          distribution: 'temurin'
++          java-version: '17'
++
++      - name: Set up Flutter
++        uses: subosito/flutter-action@v2
++        with:
++          flutter-version: '3.32.2'
++          channel: 'stable'
++          cache: true
++
++      - name: Install dependencies
++        run: flutter pub get
++
++      - name: Generate required files
++        run: dart run build_runner build -d
++
++      - name: Generate localizations
++        run: flutter gen-l10n
++
++      - name: Build debug APK (arm64-v8a)
++        run: flutter build apk --debug --target-platform android-arm64
++
++      - name: Rename APK
++        run: |
++          mkdir -p artifacts
++          cp build/app/outputs/flutter-apk/app-debug.apk artifacts/mostro-debug-arm64-v8a.apk
++
++      - name: Upload APK artifact
++        uses: actions/upload-artifact@v4
++        with:
++          name: mostro-debug-arm64-v8a
++          path: artifacts/mostro-debug-arm64-v8a.apk
++          retention-days: 7
