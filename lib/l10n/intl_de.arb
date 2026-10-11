@@ -468,6 +468,17 @@
             }
         }
     },
+    "effectiveRateUsd": "~{rate} {currency}/USD",
+    "@effectiveRateUsd": {
+        "placeholders": {
+            "rate": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
     "hoursAgo": "vor {count} Stunden",
     "@hoursAgo": {
         "placeholders": {

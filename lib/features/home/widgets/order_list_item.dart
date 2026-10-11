@@ -13,6 +13,7 @@ import 'package:mostro_mobile/shared/providers/time_provider.dart';
 import 'package:mostro_mobile/shared/widgets/star_rating_row.dart';
 import 'package:mostro_mobile/shared/providers/exchange_service_provider.dart';
 import 'package:mostro_mobile/shared/utils/currency_utils.dart';
+import 'package:mostro_mobile/shared/utils/effective_rate.dart';
 import 'package:mostro_mobile/generated/l10n.dart';
 
 class OrderListItem extends ConsumerWidget {
@@ -23,6 +24,9 @@ class OrderListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currencyData = ref.watch(currencyCodesProvider).asData?.value;
+    final fiatCurrency = order.currency ?? 'CUP';
+    final fiatRateAsync = ref.watch(exchangeRateProvider(fiatCurrency));
+    final usdRateAsync = ref.watch(exchangeRateProvider('USD'));
 
     // Determine if this is a fixed order (has specific sats amount and is not zero)
     final bool isFixedOrder =
@@ -38,6 +42,20 @@ class OrderListItem extends ConsumerWidget {
         : isPremiumPositive
             ? "(+$premiumValue%)"
             : "($premiumValue%)";
+
+    String? effectiveRateText;
+    if (!isFixedOrder && fiatRateAsync.hasValue && usdRateAsync.hasValue) {
+      final rate = EffectiveRate.fiatPerUsd(
+        fiatPerBtc: fiatRateAsync.value,
+        usdPerBtc: usdRateAsync.value,
+        premiumPercent: premiumValue,
+      );
+      if (rate != null) {
+        effectiveRateText = S
+            .of(context)!
+            .effectiveRateUsd(rate.toStringAsFixed(2), fiatCurrency);
+      }
+    }
 
     String orderLabel = order.orderType == OrderType.buy
         ? S.of(context)!.buying.toUpperCase()
@@ -162,44 +180,58 @@ class OrderListItem extends ConsumerWidget {
                     // Display sats amount for all orders (simplified)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: isFixedOrder
-                          ? Text(
-                              S.of(context)!.forSats(order.amount!),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white70,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            )
-                          : premiumValue == 0
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          isFixedOrder
                               ? Text(
-                                  S.of(context)!.marketPrice,
+                                  S.of(context)!.forSats(order.amount!),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.white70,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 )
-                              : Row(
-                                  children: [
-                                    Text(
-                                      '${S.of(context)!.marketPrice} ',
+                              : premiumValue == 0
+                                  ? Text(
+                                      S.of(context)!.marketPrice,
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Colors.white70,
                                         fontWeight: FontWeight.w500,
                                       ),
+                                    )
+                                  : Row(
+                                      children: [
+                                        Text(
+                                          '${S.of(context)!.marketPrice} ',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Text(
+                                          premiumText,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: premiumColor,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    Text(
-                                      premiumText,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: premiumColor,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                          if (!isFixedOrder && effectiveRateText != null)
+                            Text(
+                              effectiveRateText,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white54,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
