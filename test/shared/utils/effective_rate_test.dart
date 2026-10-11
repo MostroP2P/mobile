@@ -71,5 +71,46 @@ void main() {
         isNull,
       );
     });
+
+    test('returns null when any input is not finite', () {
+      expect(
+        EffectiveRate.fiatPerUsd(
+          fiatPerBtc: double.infinity,
+          usdPerBtc: 100000,
+          premiumPercent: 0,
+        ),
+        isNull,
+      );
+      expect(
+        EffectiveRate.fiatPerUsd(
+          fiatPerBtc: 1200,
+          usdPerBtc: double.nan,
+          premiumPercent: 0,
+        ),
+        isNull,
+      );
+      expect(
+        EffectiveRate.fiatPerUsd(
+          fiatPerBtc: 1200,
+          usdPerBtc: 100000,
+          premiumPercent: double.infinity,
+        ),
+        isNull,
+      );
+    });
+  });
+
+  group('EffectiveRate.format', () {
+    test('keeps small positive rates instead of rounding them to zero', () {
+      expect(EffectiveRate.format(0.0084, 'en'), '0.0084');
+    });
+
+    test('groups large values for readability', () {
+      expect(EffectiveRate.format(15000.5, 'en'), '15,000.5');
+    });
+
+    test('adapts the decimal separator to the locale', () {
+      expect(EffectiveRate.format(15000.5, 'es'), isNot('15,000.5'));
+    });
   });
 }

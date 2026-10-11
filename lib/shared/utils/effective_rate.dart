@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 /// Utility to compute the effective fiat rate of a market price offer after
 /// applying the creator's premium/discount.
 class EffectiveRate {
@@ -10,17 +12,30 @@ class EffectiveRate {
   /// A positive [premiumPercent] is a premium, a negative value is a discount.
   /// [usdPerBtc] is the market rate of USD against BTC.
   ///
-  /// Returns null when any input makes the cross rate meaningless (rates not
-  /// available, zero or negative).
+  /// Returns null when any input is not a finite positive number or when the
+  /// resulting cross rate is not a finite positive number.
   static double? fiatPerUsd({
     required double fiatPerBtc,
     required double usdPerBtc,
     required double premiumPercent,
   }) {
+    if (!fiatPerBtc.isFinite ||
+        !usdPerBtc.isFinite ||
+        !premiumPercent.isFinite) {
+      return null;
+    }
     if (fiatPerBtc <= 0 || usdPerBtc <= 0) return null;
     final effectiveFiatPerBtc = fiatPerBtc * (1 + premiumPercent / 100);
-    if (effectiveFiatPerBtc <= 0) return null;
+    if (!effectiveFiatPerBtc.isFinite || effectiveFiatPerBtc <= 0) return null;
     final rate = effectiveFiatPerBtc / usdPerBtc;
-    return rate > 0 ? rate : null;
+    if (!rate.isFinite || rate <= 0) return null;
+    return rate;
+  }
+
+  /// Formats [rate] using the given [locale], keeping up to six fraction
+  /// digits so small positive rates are not rounded away, while grouping
+  /// large values for readability.
+  static String format(double rate, String locale) {
+    return NumberFormat('#,##0.######', locale).format(rate);
   }
 }

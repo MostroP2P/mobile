@@ -24,9 +24,6 @@ class OrderListItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currencyData = ref.watch(currencyCodesProvider).asData?.value;
-    final fiatCurrency = order.currency ?? 'CUP';
-    final fiatRateAsync = ref.watch(exchangeRateProvider(fiatCurrency));
-    final usdRateAsync = ref.watch(exchangeRateProvider('USD'));
 
     // Determine if this is a fixed order (has specific sats amount and is not zero)
     final bool isFixedOrder =
@@ -45,15 +42,21 @@ class OrderListItem extends ConsumerWidget {
 
     String? effectiveRateText;
     if (!isFixedOrder) {
+      // Watch rates only for market price orders so fixed price cards do not
+      // create rate providers nor trigger unnecessary fetches.
+      final fiatCurrency = order.currency ?? 'CUP';
+      final fiatRateAsync = ref.watch(exchangeRateProvider(fiatCurrency));
+      final usdRateAsync = ref.watch(exchangeRateProvider('USD'));
       final rate = EffectiveRate.fiatPerUsd(
-        fiatPerBtc: fiatRateAsync.value ?? 0,
-        usdPerBtc: usdRateAsync.value ?? 0,
+        fiatPerBtc: fiatRateAsync.asData?.value ?? 0,
+        usdPerBtc: usdRateAsync.asData?.value ?? 0,
         premiumPercent: premiumValue,
       );
       if (rate != null) {
+        final locale = Localizations.localeOf(context).toString();
         effectiveRateText = S
             .of(context)!
-            .effectiveRateUsd(rate.toStringAsFixed(2), fiatCurrency);
+            .effectiveRateUsd(EffectiveRate.format(rate, locale), fiatCurrency);
       }
     }
 
