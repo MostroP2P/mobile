@@ -149,10 +149,9 @@ class TradeDetailScreen extends ConsumerWidget {
       String currency, double premiumValue) {
     final fiatRateAsync = ref.watch(exchangeRateProvider(currency));
     final usdRateAsync = ref.watch(exchangeRateProvider('USD'));
-    if (!fiatRateAsync.hasValue || !usdRateAsync.hasValue) return null;
     final rate = EffectiveRate.fiatPerUsd(
-      fiatPerBtc: fiatRateAsync.value,
-      usdPerBtc: usdRateAsync.value,
+      fiatPerBtc: fiatRateAsync.value ?? 0,
+      usdPerBtc: usdRateAsync.value ?? 0,
       premiumPercent: premiumValue,
     );
     if (rate == null) return null;

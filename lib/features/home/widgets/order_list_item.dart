@@ -44,10 +44,10 @@ class OrderListItem extends ConsumerWidget {
             : "($premiumValue%)";
 
     String? effectiveRateText;
-    if (!isFixedOrder && fiatRateAsync.hasValue && usdRateAsync.hasValue) {
+    if (!isFixedOrder) {
       final rate = EffectiveRate.fiatPerUsd(
-        fiatPerBtc: fiatRateAsync.value,
-        usdPerBtc: usdRateAsync.value,
+        fiatPerBtc: fiatRateAsync.value ?? 0,
+        usdPerBtc: usdRateAsync.value ?? 0,
         premiumPercent: premiumValue,
       );
       if (rate != null) {
