@@ -1,5 +1,10 @@
 # Mostro Mobile Client
 
+> [!WARNING]
+> **This app is deprecated and this repository is archived.** v1.5.0 is the last release and it receives no more updates or fixes.
+> Its replacement is the **[Mostro App](https://github.com/MostroP2P/app)**, for Android, Windows, macOS, Linux and the web.
+> Download it from [GitHub Releases](https://github.com/MostroP2P/app/releases/latest) or [Zapstore](https://zapstore.dev/apps/foundation.mostro.app), or open it at [mostro.network/app](https://mostro.network/app/).
+
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/MostroP2P/mobile)   
   *Ask questions about this project using DeepWiki AI*  
 
