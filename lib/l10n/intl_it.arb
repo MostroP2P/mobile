@@ -349,6 +349,17 @@
             }
         }
     },
+    "effectiveRateUsd": "~{rate} {currency}/USD",
+    "@effectiveRateUsd": {
+        "placeholders": {
+            "rate": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
     "hoursAgo": "{count} ore fa",
     "@hoursAgo": {
         "placeholders": {

@@ -315,6 +315,17 @@
             }
         }
     },
+    "effectiveRateUsd": "~{rate} {currency}/USD",
+    "@effectiveRateUsd": {
+        "placeholders": {
+            "rate": {
+                "type": "String"
+            },
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
     "hoursAgo": "hace {count} horas",
     "@hoursAgo": {
         "placeholders": {
