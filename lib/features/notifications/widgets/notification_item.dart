@@ -138,6 +138,10 @@ class NotificationItem extends ConsumerWidget {
         case mostro_action.Action.restore:
         case mostro_action.Action.orders:
         case mostro_action.Action.lastTradeIndex:
+        case mostro_action.Action.exportReputation:
+        case mostro_action.Action.reputationExported:
+        case mostro_action.Action.importReputation:
+        case mostro_action.Action.reputationImported:
         case mostro_action.Action.addBondInvoice:
         case mostro_action.Action.bondInvoiceAccepted:
         case mostro_action.Action.bondPayoutCompleted:

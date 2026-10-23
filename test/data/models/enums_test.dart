@@ -151,8 +151,8 @@ void main() {
           CantDoReason.tooManyRequests);
     });
 
-    test('throws ArgumentError for an unknown value', () {
-      expect(() => CantDoReason.fromString('whatever'), throwsArgumentError);
+    test('reads an unknown value as unknown', () {
+      expect(CantDoReason.fromString('whatever'), CantDoReason.unknown);
     });
 
     test('uses snake_case wire values without dashes', () {

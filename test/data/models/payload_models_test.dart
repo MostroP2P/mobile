@@ -197,8 +197,12 @@ void main() {
           () => CantDo.fromJson(const {'cant_do': 42}), throwsFormatException);
       expect(() => CantDo.fromJson(const {'cant_do': <String, dynamic>{}}),
           throwsFormatException);
-      expect(() => CantDo.fromJson(const {'cant_do': 'unknown_reason'}),
-          throwsFormatException);
+    });
+
+    test('reads a reason it does not know as unknown instead of failing', () {
+      // Newer daemons add reasons; the refusal must still reach the user.
+      expect(CantDo.fromJson(const {'cant_do': 'a_reason_from_the_future'}),
+          CantDo(cantDoReason: CantDoReason.unknown));
     });
 
     test('compares by value', () {
