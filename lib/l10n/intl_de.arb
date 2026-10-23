@@ -347,6 +347,7 @@
         }
     },
     "payoutInvoiceInstruction": "Füge eine Lightning-Rechnung über {sats} Sats hinzu, entsprechend {fiat_amount} {fiat_code}, um die Zahlung für deinen Kauf zu erhalten.",
+    "payoutInvoiceInstructionNoAmount": "Füge eine Lightning-Rechnung ohne festen Betrag hinzu, um die Zahlung für deinen Kauf zu erhalten.",
     "@payoutInvoiceInstruction": {
         "placeholders": {
             "sats": {

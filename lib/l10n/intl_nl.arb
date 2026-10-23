@@ -347,6 +347,7 @@
         }
     },
     "payoutInvoiceInstruction": "Voeg een Lightning-invoice toe voor {sats} sats, gelijk aan {fiat_amount} {fiat_code}, om de betaling voor je aankoop te ontvangen.",
+    "payoutInvoiceInstructionNoAmount": "Voeg een Lightning-invoice zonder vast bedrag toe om de betaling voor je aankoop te ontvangen.",
     "@payoutInvoiceInstruction": {
         "placeholders": {
             "sats": {

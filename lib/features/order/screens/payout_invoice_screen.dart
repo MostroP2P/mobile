@@ -48,16 +48,20 @@ class _PayoutInvoiceScreenState extends ConsumerState<PayoutInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
     final order = widget.order;
-    // Only what is displayed falls back to zero; an unknown amount travels as
-    // null instead of claiming the payout is worth nothing.
-    final sats = order?.amount ?? 0;
+    // The node pays the order amount minus its fee and rejects an invoice
+    // worth anything else, so a wrong figure here traps the user in a loop of
+    // rejections. When nothing has stated the payout amount, say so and let
+    // them send an amountless invoice, which the node accepts (#748).
+    final sats = order?.amount;
     final fiatAmount = order?.fiatAmount.toString() ?? '0';
     final fiatCode = order?.fiatCode ?? '';
     final orderIdValue = order?.id ?? widget.orderId;
 
     final nwcState = ref.watch(nwcProvider);
-    final showNwcInvoice =
-        nwcState.status == NwcStatus.connected && !_manualMode && sats > 0;
+    final showNwcInvoice = nwcState.status == NwcStatus.connected &&
+        !_manualMode &&
+        sats != null &&
+        sats > 0;
 
     final header = _PayoutHeader(
       sats: sats,
@@ -104,7 +108,9 @@ class _PayoutInvoiceScreenState extends ConsumerState<PayoutInvoiceScreen> {
                     await _submitInvoice(invoice, order?.amount);
                   }
                 },
-                amount: sats,
+                // Only the widget's own fallback header uses this, and this
+                // screen always supplies its own.
+                amount: sats ?? 0,
                 fiatAmount: fiatAmount,
                 fiatCode: fiatCode,
                 orderId: orderIdValue,
@@ -137,7 +143,8 @@ class _PayoutInvoiceScreenState extends ConsumerState<PayoutInvoiceScreen> {
 /// nothing about the counterpart or about a failed payment, because the screen
 /// is also reached while the payout is still on its way.
 class _PayoutHeader extends StatelessWidget {
-  final int sats;
+  /// Null when no message has stated the payout amount.
+  final int? sats;
   final String fiatAmount;
   final String fiatCode;
   final String orderId;
@@ -160,7 +167,10 @@ class _PayoutHeader extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          s.payoutInvoiceInstruction(sats.toString(), fiatAmount, fiatCode),
+          sats == null
+              ? s.payoutInvoiceInstructionNoAmount
+              : s.payoutInvoiceInstruction(
+                  sats.toString(), fiatAmount, fiatCode),
           style: bodyStyle,
         ),
         const SizedBox(height: 12),
