@@ -39,19 +39,20 @@ class DeepLinkHandler {
     );
   }
 
-  /// Handles initial deep link from app launch
-  Future<void> handleInitialDeepLink(Uri uri, GoRouter router) async {
-    await _handleDeepLink(uri, router);
+  /// Handles initial deep link from app launch. Returns false when the app was
+  /// not in a state to attempt it, so the caller can hand it over again.
+  Future<bool> handleInitialDeepLink(Uri uri, GoRouter router) {
+    return _handleDeepLink(uri, router);
   }
 
   /// Handles incoming deep links
-  Future<void> _handleDeepLink(Uri uri, GoRouter router) async {
+  Future<bool> _handleDeepLink(Uri uri, GoRouter router) async {
     try {
       logger.i('Handling deep link: $uri');
 
       // Check if it's a mostro: scheme
       if (uri.scheme == 'mostro') {
-        await _handleMostroDeepLink(uri.toString(), router);
+        return await _handleMostroDeepLink(uri.toString(), router);
       } else {
         logger.w('Unsupported deep link scheme: ${uri.scheme}');
         final context = router.routerDelegate.navigatorKey.currentContext;
@@ -59,31 +60,37 @@ class DeepLinkHandler {
           _showErrorSnackBar(context, S.of(context)!.unsupportedLinkFormat);
         }
       }
+      return true;
     } catch (e) {
       logger.e('Error handling deep link: $e');
       final context = router.routerDelegate.navigatorKey.currentContext;
       if (context != null && context.mounted) {
         _showErrorSnackBar(context, S.of(context)!.failedToOpenLink);
       }
+      return true;
     }
   }
 
   /// Handles mostro: scheme deep links
-  Future<void> _handleMostroDeepLink(String url, GoRouter router) async {
+  Future<bool> _handleMostroDeepLink(String url, GoRouter router) async {
     final now = DateTime.now();
     final isDuplicateRecent =
         _lastHandledDeepLinkUrl == url &&
         _lastHandledDeepLinkAt != null &&
         now.difference(_lastHandledDeepLinkAt!) < const Duration(seconds: 2);
 
-    if (_isHandlingMostroDeepLink || isDuplicateRecent) {
-      logger.i('Ignoring duplicate/concurrent deep link handling for: $url');
-      return;
+    if (isDuplicateRecent) {
+      logger.i('Ignoring duplicate deep link handling for: $url');
+      return true;
+    }
+
+    if (_isHandlingMostroDeepLink) {
+      // Another link is being opened right now; this one has not been tried.
+      logger.i('Deferring deep link while another one is handled: $url');
+      return false;
     }
 
     _isHandlingMostroDeepLink = true;
-    _lastHandledDeepLinkUrl = url;
-    _lastHandledDeepLinkAt = now;
 
     BuildContext? context;
     try {
@@ -93,17 +100,23 @@ class DeepLinkHandler {
         _showLoadingDialog(context);
       }
 
-      // Get the services
-      final nostrService = _ref.read(nostrServiceProvider);
-      final deepLinkService = _ref.read(deepLinkServiceProvider);
-
       // Ensure we have a valid context for processing
       final processingContext =
           context ?? router.routerDelegate.navigatorKey.currentContext;
       if (processingContext == null || !processingContext.mounted) {
         logger.e('No valid context available for deep link processing');
-        return;
+        _hideLoadingDialog();
+        return false;
       }
+
+      // Get the services
+      final nostrService = _ref.read(nostrServiceProvider);
+      final deepLinkService = _ref.read(deepLinkServiceProvider);
+
+      // Stamped here so a link that was never attempted is not taken for a
+      // duplicate when it comes back.
+      _lastHandledDeepLinkUrl = url;
+      _lastHandledDeepLinkAt = now;
 
       // Process the mostro link
       final result = await deepLinkService.processMostroLink(
@@ -132,7 +145,7 @@ class DeepLinkHandler {
             );
             if (shouldSwitch != true) {
               logger.i('User declined Mostro switch for deep link');
-              return;
+              return true;
             }
             // Switch Mostro instance
             await _ref
@@ -149,6 +162,7 @@ class DeepLinkHandler {
         logger.i(
           'Successfully navigated to order: ${orderInfo.orderId} (${orderInfo.orderType.value})',
         );
+        return true;
       } else {
         final errorContext = router.routerDelegate.navigatorKey.currentContext;
         if (errorContext != null && errorContext.mounted) {
@@ -157,6 +171,7 @@ class DeepLinkHandler {
           _showErrorSnackBar(errorContext, errorMessage);
         }
         logger.w('Failed to process mostro link: ${result.error}');
+        return true;
       }
     } catch (e) {
       logger.e('Error processing mostro deep link: $e');
@@ -166,6 +181,7 @@ class DeepLinkHandler {
       if (errorContext != null && errorContext.mounted) {
         _showErrorSnackBar(errorContext, S.of(errorContext)!.failedToOpenOrder);
       }
+      return true;
     } finally {
       _isHandlingMostroDeepLink = false;
     }
