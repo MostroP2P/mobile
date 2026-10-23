@@ -117,4 +117,28 @@ void main() {
       );
     });
   });
+
+  // Mostrod reports created_at in seconds; MostroMessage timestamps are
+  // milliseconds. Restored messages now drive the take-cycle bookkeeping, so
+  // the scale is load-bearing (#732 review).
+  group('restoreCreatedAtMillis', () {
+    test('scales the daemon seconds to milliseconds', () {
+      // 2026-10-02T23:23:29Z, as the node's orders table stores it.
+      expect(restoreCreatedAtMillis(1790983409), 1790983409000);
+      expect(
+        DateTime.fromMillisecondsSinceEpoch(
+                restoreCreatedAtMillis(1790983409), isUtc: true)
+            .year,
+        2026,
+      );
+    });
+
+    test('falls back to now, already in milliseconds', () {
+      final before = DateTime.now().millisecondsSinceEpoch;
+      final value = restoreCreatedAtMillis(null);
+      expect(value, greaterThanOrEqualTo(before));
+      expect(DateTime.fromMillisecondsSinceEpoch(value).year,
+          DateTime.now().year);
+    });
+  });
 }
