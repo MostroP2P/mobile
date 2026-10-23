@@ -7,8 +7,6 @@
 		android:allowBackup="false"
 		android:fullBackupContent="false"
 		android:enableOnBackInvokedCallback="true">
-		
-		<meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
 
 		<activity
 			android:name=".MainActivity"
@@ -22,6 +20,14 @@
 			<meta-data
 				android:name="io.flutter.embedding.android.NormalTheme"
 				android:resource="@style/NormalTheme" />
+			<!-- Must be activity-level: FlutterActivity.getMetaData() reads only
+			     activity metadata, and FlutterActivityLaunchConfigs.deepLinkEnabled()
+			     defaults to true when the key is absent. Declared under
+			     <application> it was never read, so the engine handed cold-start
+			     links over as the initial route (#670). -->
+			<meta-data
+				android:name="flutter_deeplinking_enabled"
+				android:value="false" />
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
